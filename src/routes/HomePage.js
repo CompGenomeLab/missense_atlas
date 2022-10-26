@@ -1,6 +1,4 @@
 
-
-// import HeatMap from "../components/HeatMap";
 import React from "react";
 import { Link } from "react-router-dom";
 
