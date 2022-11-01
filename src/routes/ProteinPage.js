@@ -41,13 +41,13 @@ import axios from "axios";
 // so 0.00 to 0.05   red to yellow,   0.05 to 1.0 = yellow to green;
 // Dismiss previous line, 0.00 to 0.05 red to white, 0.05 to 1.0, white to green
 const protein_sequence = 'MTVLEITLAVILTLLGLAILAILLTRWARCKQSEMYISRYSSEQSARLLDYEDGRGSRHAYSTQSDTSYDNRERSKRDYTPSTNSLVSMASKFSLGQTELILLLMCFILALSRSSIGSIKCLQTTEEPPSRTAGAMMQFTAPIPGATGPIKLSQKTIVQTPGPIVQYPGSNAGPPSAPRGPPMAPIIISQRTARIPQVHTMDSSGKITLTPVVILTGYMDEELAKKSCSKIQILKCGGTARSQNSREENKEALKNDIIFTNSVESLKSAHIKEPEREGKGTDLEKDKIGMEVKVDSDAGIPKRQETQLKISEMSIPQGQGAQIKKSVSDVPRGQESQVKKSESGVPKGQEAQVTKSGLVVLKGQEAQVEKSEMGVPRRQESQVKKSQSGVSKGQEAQVKKRESVVLKGQEAQVEKSELKVPKGQEGQVEKTEADVPKEQEVQEKKSEAGVLKGPESQVKNTEVSVPETLESQVKKSESGVLKGQEAQEKKESFEDKGNNDKEKERDAEKDPNKKEKGDKNTKGDKGKDKVKGKRESEINGEKSKGSKRAKANTGRKYNKKVEE'; // can be accessed from protein_data values as reference is there, but If we send requests by typing the protein sequence, it won't be needed;
-const protein_len = 563; // this value must be taken from the input data; (protein_data_sift variable)
+const sequence_length = 563; // this value must be taken from the input data; (protein_data_sift variable)
 const md5sum = "8a8c1b6c6d5e7589f18afd6455086c82"; // for our current protein;
 const protein_name = "Q5SRN2"; // also this value must be taken from input data
 const aminoacid_ordering = ['A','R','N','D','C','Q','E','G','H','I','L','K','M','F','P','S','T','W','Y','V'];
 const polyphen2_parameters = {
   toolname: "Polyphen-2",
-  toolname_api : "polyphen" ,
+  toolname_api : "polyphen" , // used in the api url
   score_ranges: [
     {
       start: 0.0,
@@ -126,8 +126,34 @@ const ProteinPage = () => {  // add ?q=1, to the url to get uniprot metadata
     // , {headers:{'Access-Control-Allow-Origin' : '*',}}
     // const request_url = "polyphen/8a8c1b6c6d5e7589f18afd6455086c82"
 
+    const color_lists_array = useMemo( () => { //color lists to use in drawing heatmap 
+      let temp_color_lists_array = []; // generate 30 colors between the score ranges
+      for (let i = 0; i < currentPredictionToolParameters.score_ranges.length; i++)
+      {
+        const current_range_start_color = currentPredictionToolParameters.score_ranges[i].start_color;
+        const current_range_end_color = currentPredictionToolParameters.score_ranges[i].end_color;
+        // chroma.scale(['#fafa6e','#2A4858']).mode('lch').colors(6)
+        const temp_list = chroma.scale([current_range_start_color,current_range_end_color]).mode('lrgb').colors(number_of_colors); // 30 is the number of colors, if you change 30 here, you must change it in drawheatmap color determination based on tool's value
+        temp_color_lists_array.push(temp_list);
+      }
+      return temp_color_lists_array;
+    }, [currentPredictionToolParameters] );
+
+    const sequence_length = useMemo ( () => { // calculate sequence length based on the return value of the api
+      if ( Object.hasOwn( proteinData, 'scores' ) == false ){
+        return 0;
+      }
+      let i = 1;
+      while( Object.hasOwn (proteinData.scores, i)  )
+      {
+        i += 1;
+      }
+      return i - 1 ;
+    }, [proteinData.md5sum] )
+
     useEffect( () => {
       const request_url = currentPredictionToolParameters.toolname_api + "/" + md5sum
+      drawColorRangesLegend();
       axios.get(database_url + request_url ) // cors policy
       .then(function (response) {
         // handle success
@@ -145,17 +171,15 @@ const ProteinPage = () => {  // add ?q=1, to the url to get uniprot metadata
     },[currentPredictionToolParameters] );
     
     useEffect(()=>{
-      if (heatmapRef && heatmapRef.current && Object.keys(proteinData).length !== 0)
+      if (heatmapRef && heatmapRef.current &&  sequence_length > 0) // Object.keys(proteinData).length !== 0 &&
       { 
-        console.log("pdata= ");
-        console.log(proteinData);
+       
 
         // maybe we can remove currentPredictionToolParameters from function arguemnts, as it is the state 
         // we can also remove canvas scale and origin, but I believe currently it makes it to understnad read the code
         drawHeatmap2(canvasScaleAndOriginX2.scale,canvasScaleAndOriginX2.originX,currentPredictionToolParameters);
         drawAminoAcidLegend();
         drawCurrentViewWindow();
-        console.log("jj  = " + heatmapRef.current )
       } 
       
       // tooltipRef.current.addEventListener("wheel" , (e) => wheelZoom(e,topCanvasScalePrevRef)); // to cancel scrolling while on heatmap
@@ -253,7 +277,6 @@ const ProteinPage = () => {  // add ?q=1, to the url to get uniprot metadata
       for(let i = 0; i< currentPredictionToolParameters.score_ranges.length; i++){ // i = 0,1 
         for(let j = 0; j< color_lists_array[i].length; j++){
           if(j == Math.floor(color_lists_array[i].length/2) ){ // middle element
-            console.log("j  = " + j);
             ctx.fillText(currentPredictionToolParameters.score_ranges[i].risk_assessment, current_x, 15 , number_of_colors * step_size); // 30 = number of colors
           }
           // normal color line;
@@ -289,21 +312,19 @@ const ProteinPage = () => {  // add ?q=1, to the url to get uniprot metadata
       ctx.fillRect(0,h/2,1200,h/2); // 1200 = width of heatmap
       ctx.fillStyle = 'hotpink';
       ctx.fillRect(canvasScaleAndOriginX2.originX,h/2 ,  1200/canvasScaleAndOriginX2.scale , h/2)  // 1200 = width of the heatmap
-      // canvas_originX = 0 = protein's 0 , canvas_originX = 1200 = proteins' last; canvas_originX / 1200 * protein_len = leftmost
+      // canvas_originX = 0 = protein's 0 , canvas_originX = 1200 = proteins' last; canvas_originX / 1200 * sequence_length = leftmost
       // rightmost visible = left_most visible + 
-      const leftmost_visible_index = String (((canvasScaleAndOriginX2.originX/1200 * protein_len) +1 ).toFixed(0));
+      const leftmost_visible_index = String (((canvasScaleAndOriginX2.originX/1200 * sequence_length) +1 ).toFixed(0));
       const rightmost_visible_index = (
-        (canvasScaleAndOriginX2.originX/1200 * protein_len) + (protein_len/canvasScaleAndOriginX2.scale)
+        (canvasScaleAndOriginX2.originX/1200 * sequence_length) + (sequence_length/canvasScaleAndOriginX2.scale)
         ).toFixed(0);  
       
       ctx.textBaseline = 'top';
       ctx.font = '12px Arial';
-      if (((canvasScaleAndOriginX2.originX/1200 * protein_len) +1 ) > 10){ // if left most index is smaller than 20, textAlign to right;
-        console.log("canvas originx = " + canvasScaleAndOriginX2.originX/1200 * protein_len);
+      if (((canvasScaleAndOriginX2.originX/1200 * sequence_length) +1 ) > 10){ // if left most index is smaller than 20, textAlign to right;
         ctx.textAlign = 'right';
       }
       else{
-        console.log("canvas originx = " + canvasScaleAndOriginX2.originX/1200 * protein_len);
         ctx.textAlign = 'left';
       }
       ctx.fillText( leftmost_visible_index , canvasScaleAndOriginX2.originX,  0 , 50) // leftmost visible of the window;
@@ -375,18 +396,7 @@ const ProteinPage = () => {  // add ?q=1, to the url to get uniprot metadata
     }
     
 
-    const color_lists_array = useMemo( () => {
-      let temp_color_lists_array = []; // generate 30 colors between the score ranges
-      for (let i = 0; i < currentPredictionToolParameters.score_ranges.length; i++)
-      {
-        const current_range_start_color = currentPredictionToolParameters.score_ranges[i].start_color;
-        const current_range_end_color = currentPredictionToolParameters.score_ranges[i].end_color;
-        // chroma.scale(['#fafa6e','#2A4858']).mode('lch').colors(6)
-        const temp_list = chroma.scale([current_range_start_color,current_range_end_color]).mode('lrgb').colors(number_of_colors); // 30 is the number of colors, if you change 30 here, you must change it in drawheatmap color determination based on tool's value
-        temp_color_lists_array.push(temp_list);
-      }
-      return temp_color_lists_array;
-    }, [currentPredictionToolParameters] );
+    
 
     const drawHeatmap2 = (canvas_scale,canvas_originX, tool_parameters) => { // scale is given as parameter right now;
       //// be careful, cell_height and width must be the same in the tooltio, if you change this also change tooltip;
@@ -415,9 +425,9 @@ const ProteinPage = () => {  // add ?q=1, to the url to get uniprot metadata
       
       const cell_height = (heatmap_height - 70)/20; //!! must be same in drawtooltip //10, number 20 = aminoacids, also left 50 px space in the bottom;
       // const cell_width = Math.floor(c.width/563); // 1200/563 = 2 , number 563 is the protein sequence length;if we use floor, it will result in 0 cell width when protein length is larger than c.width;
-      const cell_width = (heatmap_width/protein_len); // !! must be same in draw tooltip 
+      const cell_width = (heatmap_width/sequence_length); // !! must be same in draw tooltip !!!! THIS IS THE REASON OF BORDERS BETWEEN SQUARES !!!
       
-      for (let i = 0; i<protein_len; i++) // for every aminoacid
+      for (let i = 0; i<sequence_length; i++) // for every aminoacid
       {
         for( let j = 0 ; j < 20 ; j++ )// for every position
         {// sift value = protein_data_sift[i].data[j].y 
@@ -462,12 +472,12 @@ const ProteinPage = () => {  // add ?q=1, to the url to get uniprot metadata
       ctx.font = "12px Arial";
         // i want 20 numbers at most,
         // at scale = 1; number visible = protein len; so I must multiply protein len by (20/protein len)
-        // numbefr visible = protein_len/scale
+        // numbefr visible = sequence_length/scale
         // step_size = (num_visible/20)
-      const num_visible = protein_len/canvas_scale;
+      const num_visible = sequence_length/canvas_scale;
       const step_size = Math.max(Math.floor(num_visible/20),1); // so that step_size isn't smaller than 1; // if stepsize becomes 0 I get infinite loop;
 
-      for (let i = 0; i< protein_len; i+= step_size) 
+      for (let i = 0; i< sequence_length; i+= step_size) 
       {
         // let number_text = String(i+1);
         ctx.fillText(String(i+1),cell_width * (i+0.5) * canvas_scale,cell_height*22);
@@ -475,7 +485,7 @@ const ProteinPage = () => {  // add ?q=1, to the url to get uniprot metadata
       ctx.scale(canvas_scale,1); // canvas scale returned back to state before we wrote positions;
 
       // !!! IMPORTANT, instead of this take the average of colors in all 20 slots 
-      for ( let i = 0; i< protein_len; i++) // alternative is to count greens/yellows, or take the average of their colors
+      for ( let i = 0; i< sequence_length; i++) // alternative is to count greens/yellows, or take the average of their colors
       { // because in sift 0 to 0.05 is benign, not all ranges are equal; 
         // trying the median value now,;
         let cur_pos_mean = 0;
@@ -579,7 +589,7 @@ const ProteinPage = () => {  // add ?q=1, to the url to get uniprot metadata
     }
     
     const cell_height = (heatmapRect_height-70)/20; //!! must be same in drawheatmap // 300/20 = 15 ,  number 20 is same for all 
-    const cell_width = (heatmapRect_width/protein_len); //!! must be same in drawheatmap // if we use floor, it will result in 0 cell width when protein length is larger than c.width;
+    const cell_width = (heatmapRect_width/sequence_length); //!! must be same in drawheatmap // if we use floor, it will result in 0 cell width when protein length is larger than c.width;
     // const xcor = e.clientX;
     // const ycor = e.clientY;
 
@@ -647,7 +657,6 @@ const ProteinPage = () => {  // add ?q=1, to the url to get uniprot metadata
     {
       console.log("isdonwnnnn2");
       const dx_normalized = (panningStartX - mouse_xcor) / canvas_scale; // change in X direction
-      console.log("dx_ norm = " + dx_normalized);
 
       let canvas_originX_next = canvas_originX_prev + dx_normalized;
       // console.log("temp_top_canvas_priginX_prev = " + temp_top_canvas_originX_prev);
@@ -763,18 +772,7 @@ const ProteinPage = () => {  // add ?q=1, to the url to get uniprot metadata
   //       </div>
   //     </li>
   //   );
-  const colors_legend = currentPredictionToolParameters.score_ranges.map(
-    (range) => {
-      return ( // style={{display:'inline-flex'}}
-      <li 
-        key= {JSON.stringify(range)}>
-        <p> 
-          {range.risk_assessment} - start_color ={">"} {range.start_color} , end color ={">"} {range.end_color}
-        </p>
-      </li>
-      )
-    }
-  );
+  
 
     return(
         <>
@@ -821,7 +819,7 @@ const ProteinPage = () => {  // add ?q=1, to the url to get uniprot metadata
                       <canvas ref={aminoAcidLegendRef} style={{position:"absolute",top:"40px", left:"0px"}} height = {"300"} width={"120"}>
                       </canvas>
 
-                      <canvas  id="2" ref={tooltipRef}  style = {{position:"absolute",top:"0", left:"120"}} height={"350"} width={"2550"} 
+                      <canvas  id="2" ref={tooltipRef}  style = {{position:"absolute",top:"0", left:"120"}} height={"350"} width={"1800"} 
                         // onClick = {clickLogger} 
                         // onWheel={wheelZoom} added event listener in UseEffect, because "Unable to preventDefault inside passive event listener invocation."
                         onMouseMove = {(e) => drawTooltipOrPan2(e,currentPredictionToolParameters)}
@@ -844,15 +842,7 @@ const ProteinPage = () => {  // add ?q=1, to the url to get uniprot metadata
                         summary :
                     </h1>
                     
-                      {/* <div id="asds" ref={heatmapRef2} style={{ width:6000, height:300 }}>  */}
-                      <div id="asds" style={{ width:6000, height:300 }}> 
-                      {/* <button onClick={(e) => {
-                        console.log(zoomAmount);
-                        setZoomAmount(prevzoom => prevzoom + 1)
-                        }}>   checking if re renders break the canvas
-                        press
-                      </button> */}
-                  </div>
+                      
                     
                 </div>
                 
