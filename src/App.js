@@ -15,10 +15,12 @@ import ProteinPage from './routes/ProteinPage.js'
 
 function App() {
 
+
+  // make pages urls dependent on md5sum values of proteins or another name like uniprot ID;
+
   return (
     <>
     <h1>
-      test
       {/* <div style={{width : 1200 ,height : 300}}> 
       <HeatMap data={data2}/>
       </div> */}
@@ -28,7 +30,7 @@ function App() {
     <Router>
       <Routes>
         <Route path = '/' element={<HomePage/>}/>
-        <Route path = '/protein/TSBP1' element={<ProteinPage/>}/>
+        <Route path = '/protein/TSBP1' element={<ProteinPage/>}/> 
       </Routes>
     </Router>
     </>
