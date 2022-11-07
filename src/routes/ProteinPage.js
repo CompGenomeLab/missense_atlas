@@ -1,50 +1,18 @@
 import React, { useState,useRef, useEffect, useMemo } from "react";
 import chroma from "chroma-js"
 import axios from "axios";
-// placed here for now because it is taking too many lines
+import { useParams } from "react-router-dom";
  
-// import {version} from "react"
-// import disableScroll from 'disable-scroll'; // uninstalled because it causes stuttering while preventing scorll
 
-// import * as d3 from "d3"
-// import { Touch, Canvas } from 'react-touch-canvas'
-
-// const zoomed = () => {
-//   svg.attr(
-//     "transform",
-//     "translate(" + d3.event.translate + ")" + " scale(" + d3.event.scale + ")"
-//   )
-
-//   console.log("inside zoomed")
-// }
-
-// // zoom base element
-// let svg = d3.select("svg")
-
-
-// // zoom behaviour
-// let zoom = d3.zoom().on("zoom", zoomed)
-
-// // call behaviour on base element
-// svg.call(zoom)
 // http://10.3.2.13:8080/database/efin/8a8c1b6c6d5e7589f18afd6455086c82
 // http://10.3.2.13:8080/database/sift/8a8c1b6c6d5e7589f18afd6455086c82
 // http://10.3.2.13:8080/database/provean/8a8c1b6c6d5e7589f18afd6455086c82 // what is del?; also has negative values; be careful;
 // http://10.3.2.13:8080/database/lists2/8a8c1b6c6d5e7589f18afd6455086c82
 
-
-/*
-{"md5sum":"8a8c1b6c6d5e7589f18afd6455086c82","sequence":"MTVLEITLAVILTLLGLAILAILLTRWARCKQSEMYISRYSSEQSARLLDYEDGRGSRHAYSTQSDTSYDNRERSKRDYTPSTNSLVSMASKFSLGQTELILLLMCFILALSRSSIGSIKCLQTTEEPPSRTAGAMMQFTAPIPGATGPIKLSQKTIVQTPGPIVQYPGSNAGPPSAPRGPPMAPIIISQRTARIPQVHTMDSSGKITLTPVVILTGYMDEELAKKSCSKIQILKCGGTARSQNSREENKEALKNDIIFTNSVESLKSAHIKEPEREGKGTDLEKDKIGMEVKVDSDAGIPKRQETQLKISEMSIPQGQGAQIKKSVSDVPRGQESQVKKSESGVPKGQEAQVTKSGLVVLKGQEAQVEKSEMGVPRRQESQVKKSQSGVSKGQEAQVKKRESVVLKGQEAQVEKSELKVPKGQEGQVEKTEADVPKEQEVQEKKSEAGVLKGPESQVKNTEVSVPETLESQVKKSESGVLKGQEAQEKKESFEDKGNNDKEKERDAEKDPNKKEKGDKNTKGDKGKDKVKGKRESEINGEKSKGSKRAKANTGRKYNKKVEE"}
-*/
-
-// sift 0.00 to 0.05 => deleterious,  0.05 to 1.0 benign,;
-// so 0.00 to 0.05   red to yellow,   0.05 to 1.0 = yellow to green;
-// Dismiss previous line, 0.00 to 0.05 red to white, 0.05 to 1.0, white to green
-const protein_sequence = 'MTVLEITLAVILTLLGLAILAILLTRWARCKQSEMYISRYSSEQSARLLDYEDGRGSRHAYSTQSDTSYDNRERSKRDYTPSTNSLVSMASKFSLGQTELILLLMCFILALSRSSIGSIKCLQTTEEPPSRTAGAMMQFTAPIPGATGPIKLSQKTIVQTPGPIVQYPGSNAGPPSAPRGPPMAPIIISQRTARIPQVHTMDSSGKITLTPVVILTGYMDEELAKKSCSKIQILKCGGTARSQNSREENKEALKNDIIFTNSVESLKSAHIKEPEREGKGTDLEKDKIGMEVKVDSDAGIPKRQETQLKISEMSIPQGQGAQIKKSVSDVPRGQESQVKKSESGVPKGQEAQVTKSGLVVLKGQEAQVEKSEMGVPRRQESQVKKSQSGVSKGQEAQVKKRESVVLKGQEAQVEKSELKVPKGQEGQVEKTEADVPKEQEVQEKKSEAGVLKGPESQVKNTEVSVPETLESQVKKSESGVLKGQEAQEKKESFEDKGNNDKEKERDAEKDPNKKEKGDKNTKGDKGKDKVKGKRESEINGEKSKGSKRAKANTGRKYNKKVEE'; // can be accessed from protein_data values as reference is there, but If we send requests by typing the protein sequence, it won't be needed;
-const sequence_length = 563; // this value must be taken from the input data; (protein_data_sift variable)
-const md5sum = "8a8c1b6c6d5e7589f18afd6455086c82"; // for our current protein;
-const protein_name = "Q5SRN2"; // also this value must be taken from input data
+// const md5sum = "8a8c1b6c6d5e7589f18afd6455086c82"; // for our current protein; // will be passed as a prop ? 
+const protein_name = "Q5SRN2"; // can also be passed as a prop or taken from metadata?
 const aminoacid_ordering = ['A','R','N','D','C','Q','E','G','H','I','L','K','M','F','P','S','T','W','Y','V'];
+const database_url = "http://10.3.2.13:8080/database/";
 const polyphen2_parameters = {
   toolname: "Polyphen-2",
   toolname_api : "polyphen" , // used in the api url
@@ -97,7 +65,7 @@ const sift_parameters = {
 const number_of_colors = 30;
 const ProteinPage = () => {  // add ?q=1, to the url to get uniprot metadata
     // console.log(version);
-    const database_url = "http://10.3.2.13:8080/database/";
+    const {md5sum} = useParams();
     // console.log("qqqqq");
     const [proteinData,setProteinData] = useState({});
   
@@ -114,15 +82,11 @@ const ProteinPage = () => {  // add ?q=1, to the url to get uniprot metadata
     
     // be careful, always update canvasScaleAndOrigin ref everytime you use setstate, so that wheelzoom doesn't get stale values
 
-    const [prevTime, setPrevTime] = useState( () => Date.now() ); // so that usestate intitial function is only run once
-    // use date.now() if we want to limit number of drawings per second;
+    const [prevTime, setPrevTime] = useState( () => Date.now() ); // limit number of drawings per second, must have for resizing window
      
    // const [currentPredictionTool , setCurrentPredictionTool] = useState('Polyphen2'); no need;
     const [currentPredictionToolParameters, setCurrentPredictionToolParameters ] = useState(sift_parameters);
-    // console.log("current_predicition_tool_params = ");
-    // console.log(currentPredictionToolParameters);
-    // console.log(proteinData);
-    //cors-anywhere-herokuapp.com
+    
     // , {headers:{'Access-Control-Allow-Origin' : '*',}}
     // const request_url = "polyphen/8a8c1b6c6d5e7589f18afd6455086c82"
 
@@ -140,7 +104,7 @@ const ProteinPage = () => {  // add ?q=1, to the url to get uniprot metadata
     }, [currentPredictionToolParameters] );
 
     const sequence_length = useMemo ( () => { // calculate sequence length based on the return value of the api
-      if ( Object.hasOwn( proteinData, 'scores' ) == false ){
+      if ( Object.hasOwn( proteinData, 'scores' ) === false ){
         return 0;
       }
       let i = 1;
@@ -169,14 +133,14 @@ const ProteinPage = () => {  // add ?q=1, to the url to get uniprot metadata
         // always executed
       });
     },[currentPredictionToolParameters] );
+
+    
     
     useEffect(()=>{
+      
       if (heatmapRef && heatmapRef.current &&  sequence_length > 0) // Object.keys(proteinData).length !== 0 &&
       { 
-       
-
-        // maybe we can remove currentPredictionToolParameters from function arguemnts, as it is the state 
-        // we can also remove canvas scale and origin, but I believe currently it makes it to understnad read the code
+        // we can remove drawheatmap2 parameters as they are from the state 
         drawHeatmap2(canvasScaleAndOriginX2.scale,canvasScaleAndOriginX2.originX,currentPredictionToolParameters);
         drawAminoAcidLegend();
         drawCurrentViewWindow();
@@ -184,14 +148,17 @@ const ProteinPage = () => {  // add ?q=1, to the url to get uniprot metadata
       
       // tooltipRef.current.addEventListener("wheel" , (e) => wheelZoom(e,topCanvasScalePrevRef)); // to cancel scrolling while on heatmap
       const zoomListener = (e) => wheelZoom2(e,canvasScaleAndOriginX2);
-
-      tooltipRef.current.addEventListener("wheel" , zoomListener); // to cancel scrolling while on heatmap
-      // console.log("event listener added");
-      // tooltipRef.current.addEventListener("wheel" , (e) => wheelZoom2(e,canvasScaleAndOriginX2Ref)); // to cancel scrolling while on heatmap
+      let ttRefValue = null;
+      if (tooltipRef.current ){
+        tooltipRef.current.addEventListener("wheel", zoomListener);
+        ttRefValue = tooltipRef.current; // to cancel scrolling while on heatmap
+      }
 
       return () => {
         // console.log("cleanup runs");
-        tooltipRef.current.removeEventListener('wheel', zoomListener);
+        if (ttRefValue){
+          ttRefValue.removeEventListener('wheel', zoomListener);
+        }
       }
 
       // return () => { //probably no need to cleanup, as heatmapref.current becomes null;
@@ -200,6 +167,23 @@ const ProteinPage = () => {  // add ?q=1, to the url to get uniprot metadata
       // };
     },[canvasScaleAndOriginX2, proteinData]);
 
+    useEffect(() => {   // uselayouteffect didn't fix flickering
+      const handleResize = () => { // reset canvasScaleOrigin reference and draw in roughly 30 fps
+        const cur_time = Date.now();
+        if (cur_time - prevTime < 32) // 1000/40 = 25 fps
+        {
+          console.log("new_time = "+  String(cur_time - prevTime));
+          return;
+        }
+        // giving canvas scale a new reference so that drawing heatmap runs once again;
+        setCanvasScaleAndOriginX2( prev => { return( {scale: prev.scale , originX: prev.originX } ) } )
+        setPrevTime(prev => cur_time); // if removed, flickering will happen, but only because of this setState 
+      }
+      window.addEventListener("resize" , handleResize )
+
+      return () => window.removeEventListener("resize" , handleResize); // cleanup
+
+    },[prevTime]) // draw heatmap again on resize
     
     const drawAminoAcidLegend  = () =>{  // will only run once on startup of useEffect
       const c = aminoAcidLegendRef.current;
@@ -276,7 +260,7 @@ const ProteinPage = () => {  // add ?q=1, to the url to get uniprot metadata
       
       for(let i = 0; i< currentPredictionToolParameters.score_ranges.length; i++){ // i = 0,1 
         for(let j = 0; j< color_lists_array[i].length; j++){
-          if(j == Math.floor(color_lists_array[i].length/2) ){ // middle element
+          if(j === Math.floor(color_lists_array[i].length/2) ){ // middle element
             ctx.fillText(currentPredictionToolParameters.score_ranges[i].risk_assessment, current_x, 15 , number_of_colors * step_size); // 30 = number of colors
           }
           // normal color line;
@@ -402,6 +386,7 @@ const ProteinPage = () => {  // add ?q=1, to the url to get uniprot metadata
       //// be careful, cell_height and width must be the same in the tooltio, if you change this also change tooltip;
       // const c = ctxRef.current;
       // console.log("drawheatmap start originXprev = " + top_canvas_originX_prev);
+      // console.log('q');
       const c = heatmapRef.current;
       const ctx = c.getContext("2d");
       const rect = c.getBoundingClientRect(); //console.log(rect);
@@ -410,13 +395,13 @@ const ProteinPage = () => {  // add ?q=1, to the url to get uniprot metadata
       const ratio = window.devicePixelRatio;
       c.width = heatmap_width * ratio;
       c.height = heatmap_height * ratio;
-      c.style.width = heatmap_width + "px";
+      c.style.width = 'calc(100vw - 200px)'; // !!! IMPORTANT for sizing MUST BE SAME IN THE HTML CODE
       c.style.height = heatmap_height + "px";
       //ctx.resetTransform(); same as setTransform(1,0,0,1,0,0);
       ctx.setTransform(1, 0, 0, 1, 0, 0);
       ctx.scale(ratio,ratio);
       
-      ctx.imageSmoothingEnabled = false;
+      ctx.imageSmoothingEnabled = false; // doesn't actually do anything as this command is for imported images
       // ctx.clearRect(0,0,rect.width,rect.height); // size of canvas rect
       ctx.clearRect(0,0,heatmap_width,heatmap_height); 
        
@@ -426,7 +411,7 @@ const ProteinPage = () => {  // add ?q=1, to the url to get uniprot metadata
       const cell_height = (heatmap_height - 70)/20; //!! must be same in drawtooltip //10, number 20 = aminoacids, also left 50 px space in the bottom;
       // const cell_width = Math.floor(c.width/563); // 1200/563 = 2 , number 563 is the protein sequence length;if we use floor, it will result in 0 cell width when protein length is larger than c.width;
       const cell_width = (heatmap_width/sequence_length); // !! must be same in draw tooltip !!!! THIS IS THE REASON OF BORDERS BETWEEN SQUARES !!!
-      
+
       for (let i = 0; i<sequence_length; i++) // for every aminoacid
       {
         for( let j = 0 ; j < 20 ; j++ )// for every position
@@ -475,8 +460,9 @@ const ProteinPage = () => {  // add ?q=1, to the url to get uniprot metadata
         // numbefr visible = sequence_length/scale
         // step_size = (num_visible/20)
       const num_visible = sequence_length/canvas_scale;
-      const step_size = Math.max(Math.floor(num_visible/20),1); // so that step_size isn't smaller than 1; // if stepsize becomes 0 I get infinite loop;
-
+      const browser_resize_ratio = (window.innerWidth/window.screen.availWidth); // so that numbers don't get jumbled up
+      // the constant 20 in step_size calculation will be included in config.js
+      const step_size = Math.max(Math.floor(num_visible/ ( 20  *  browser_resize_ratio )),1); // so that step_size isn't smaller than 1; // if stepsize becomes 0 I get infinite loop;
       for (let i = 0; i< sequence_length; i+= step_size) 
       {
         // let number_text = String(i+1);
@@ -488,7 +474,7 @@ const ProteinPage = () => {  // add ?q=1, to the url to get uniprot metadata
       for ( let i = 0; i< sequence_length; i++) // alternative is to count greens/yellows, or take the average of their colors
       { // because in sift 0 to 0.05 is benign, not all ranges are equal; 
         // trying the median value now,;
-        let cur_pos_mean = 0;
+        // let cur_pos_mean = 0;
         let cur_pos_array = [];
         for (let j = 0; j<20; j++)
         {
@@ -500,7 +486,7 @@ const ProteinPage = () => {  // add ?q=1, to the url to get uniprot metadata
               current_score = tool_parameters.ref_value;
             }
             // const current_score = proteinData.scores[i+1][aminoacid_ordering[j]] || tool_parameters.ref_value;
-            cur_pos_mean += (current_score)/20;
+            // cur_pos_mean += (current_score)/20;
             cur_pos_array.push(current_score);
         }
         // median calculation
@@ -550,234 +536,217 @@ const ProteinPage = () => {  // add ?q=1, to the url to get uniprot metadata
         
   } 
 
-  function drawTooltipOrPan2(e, tool_parameters) // scale comes from top_canvas_scale
-  { // be careful, cell_height and width must be the same in the draw function, if you change this also change drawheatmap;
-    // if clause to check if xcor and ycor is inside the heatmapCanvas coordinates;
-    // !!!! DrawToolTip Part of the function; !!!
-    // console.log("tooltip start prevX  = " + topCanvasOriginXPrev);
-    
-    
-    const c = tooltipRef.current;
-    const ctx = c.getContext("2d");
-    const tooltipRect = c.getBoundingClientRect();
-    const tooltip_width = tooltipRect.width;// must be the same as in canvas width html element
-    const tooltip_height = tooltipRect.height;//must be the same as in canvas height html element
-    const ratio = window.devicePixelRatio;
-    c.width = tooltip_width * ratio;
-    c.height = tooltip_height * ratio;
-    c.style.width = tooltip_width + "px";
-    c.style.height = tooltip_height + "px";
-    // console.log("width =   "  + c.width);
-    ctx.scale(ratio,ratio);
-    ctx.clearRect(0,0,tooltip_width,tooltip_height);
-    
-    // const cHeatmap = ctxRef.current; // 
-    const cHeatmap = heatmapRef.current;
-    // !! get boundaries of the heatmap instead of the tooltip canvas, for the "rect" variable;
-    const heatmapRect = cHeatmap.getBoundingClientRect();  // !! get boundaries of the heatmap//console.log(rect);
-    const heatmapRect_height = heatmapRect.height;
-    const heatmapRect_width = heatmapRect.width;
-    
-    const mouse_xcor = e.clientX - heatmapRect.left;//console.log("hover mouse_xcor = " + mouse_xcor); // console.log(heatmapRect.width);
-    const mouse_ycor = e.clientY - heatmapRect.top; // scale doen't affect this, so this is the real_ycoordinate //console.log("hover mouse_ycor = " + mouse_ycor);// console.log(heatmapRect.height-50); // -50 space for position indexes;
-    
-    if (mouse_xcor >= heatmapRect_width || mouse_xcor <= 0 || mouse_ycor <= 0 || mouse_ycor >= (heatmapRect_height - 70)) 
-    { // boundary check for heatmap, -50 is for the space left for position indices
-      // bigger or equal to, so that index finders don't go out of bounds, as maxwidth/cell_width = an index 1 bigger than the sequence length
-      setIsDown(prev => false);// so that panning point resets when mouse goes out of bounds;
-      return
-    }
-    
-    const cell_height = (heatmapRect_height-70)/20; //!! must be same in drawheatmap // 300/20 = 15 ,  number 20 is same for all 
-    const cell_width = (heatmapRect_width/sequence_length); //!! must be same in drawheatmap // if we use floor, it will result in 0 cell width when protein length is larger than c.width;
-    // const xcor = e.clientX;
-    // const ycor = e.clientY;
-
-    // using real_xcor to calculate which aminoacid the current pointed cell corresponds to
-    const canvas_scale = canvasScaleAndOriginX2.scale; // value of zoom before scroll event
-    const canvas_originX_prev = canvasScaleAndOriginX2.originX;
-    let real_xcor =  canvas_originX_prev + (mouse_xcor/canvas_scale); // real x coordinate of the mouse pointer, this line and the if else block is reused in tooltip function
-    // real_xcor = topCanvasOriginXPrev + (mouse_xcor/topCanvasScalePrev); 
-
-
-    // got the context;    // console.log(e);
-    
-    const original_aminoacid_idx = Math.floor(real_xcor/cell_width) + 1 // real_xcor 0 to cell_wid = 0th aminoacid; realxcor cell_width to 2*cell_width = 1st aminoacid; // +1 because our scores start from 1;
-    //const original_aminoacid = protein_sequence.charAt(original_aminoacid_idx);
-    // const mutated_aminoacid = protein_data_sift[mutated_aminoacid_idx].id; // mouse_ycor/cell_height => in range 0-19, range of aminoacids
-    const original_aminoacid = proteinData.scores[original_aminoacid_idx].ref;
-    const mutated_aminoacid_idx = Math.floor(mouse_ycor/cell_height);
-    const mutated_aminoacid = aminoacid_ordering[mutated_aminoacid_idx]; // the resulting aminoacid from SNP mutation
-    // console.log("original_aminoacid = " + original_aminoacid);
-    // console.log("mutated_aminoacid = " + mutated_aminoacid);
-    
-    
-
-    // !!! IMPORTANT HAVE TO THINK ABOUT WHAT TO DO WHEN COMBINING MULTIPLE TOOLS VALUES !!!
-    let mutation_risk_raw_value;
-    if ( Object.hasOwn(proteinData.scores[original_aminoacid_idx] , mutated_aminoacid)  ){
-      mutation_risk_raw_value = proteinData.scores[original_aminoacid_idx][mutated_aminoacid];
-    }
-    else{
-      mutation_risk_raw_value = tool_parameters.ref_value;
-    }
-      //console.log("mutation risk_raw_value = " + mutation_risk_raw_value);
-    
-    let mutation_risk_assesment // 'Neutral';  // change based on mutation_risk_raw value;
-      // score_ranges:[ {start:0.00, end:0.15, risk_assessment : ' benign' , start_color:"2C663C", end_color:"D3D3D3" } , 
-      //            {start:0.15, end:0.85, risk_assessment :'possibly damaging',start_color:"D3D3D3", end_color:"FFA500" }, 
-      //            {start:0.85, end: 1.00, risk_assessment:'confidently damaging',start_color:"FFA500", end_color:"981E2A" }, ]
-      for (let i = 0; i< tool_parameters.score_ranges.length; i++){
-        const current_loop_range_start = tool_parameters.score_ranges[i].start;
-        const current_loop_range_end = tool_parameters.score_ranges[i].end;
-        const current_loop_range_risk_assessment = tool_parameters.score_ranges[i].risk_assessment;
-        if(mutation_risk_raw_value >= current_loop_range_start && mutation_risk_raw_value <= mutation_risk_raw_value ){
-          // is between current ranges
-          mutation_risk_assesment = current_loop_range_risk_assessment;
-        } 
-      }
-     
-    // String(original_aminoacid_idx) + ". " +
-    const text = String(original_aminoacid_idx) + ". " + String(original_aminoacid) + " --> " + String(mutated_aminoacid) + " " + String(mutation_risk_raw_value) + " " + String(mutation_risk_assesment); 
-
-    
-    ctx.fillStyle="black"
-    //ctx.fillRect(x,y,w,h);  // rect.left = 0 for now, rect.top = the offset of canvas element;
-    ctx.fillRect(mouse_xcor + 100 , mouse_ycor + 10  , 300,31 ); // cell_width*40,cell_height*5 250 for sift, 300 for polyphen2
-    // console.log("mouse_xcor = " + mouse_xcor);
-    // console.log("mouse_ycor = " + mouse_ycor);
-
-    // var text = "A to G 0.52 Neutral";
-    ctx.fillStyle = "white";
-    ctx.font = "15px Arial";
-    ctx.fillText(text, (mouse_xcor + 120) , mouse_ycor + 30 );
-    // ctx.resetTransform();
-    
-    if (isDown) // panning the canvas if mouse down is down;
-    {
-      console.log("isdonwnnnn2");
-      const dx_normalized = (panningStartX - mouse_xcor) / canvas_scale; // change in X direction
-
-      let canvas_originX_next = canvas_originX_prev + dx_normalized;
-      // console.log("temp_top_canvas_priginX_prev = " + temp_top_canvas_originX_prev);
-      // console.log("tooltip panStartX , mouse_xcor , topcanvasscaleprev =  " + panningStartX + " " + mouse_xcor + " " + topCanvasScalePrev);
-      // console.log("tooltip originXprev at start of Pan = " + topCanvasOriginXPrev);
-      canvas_originX_next = Math.max(canvas_originX_next,0); // origin not smaller than 0
-      canvas_originX_next = Math.min(canvas_originX_next, (heatmapRect_width - heatmapRect_width/canvas_scale)); // origin not larger than heatmap rightmost point;
+    function drawTooltipOrPan2(e, tool_parameters) // scale comes from top_canvas_scale
+    { // be careful, cell_height and width must be the same in the draw function, if you change this also change drawheatmap;
+      // if clause to check if xcor and ycor is inside the heatmapCanvas coordinates;
+      // !!!! DrawToolTip Part of the function; !!!
+      // console.log("tooltip start prevX  = " + topCanvasOriginXPrev);
       
-      setCanvasScaleAndOriginX2(prev => {
-        return (  
-          {scale: canvas_scale ,originX: canvas_originX_next }
-        )
-        } );
-      setPanningStartX(prev => mouse_xcor); 
-
-     
-
-    }
-    //ctx.resetTransform(); no need
-  }
-  
-  const wheelZoom2 = (e,canvas_scale_and_originX) => {  // zoomig function
-    // if (e.deltaY < 0) {
-    //   console.log("Zoom in");
-    //   top_canvas_scale += e.deltaY * -2;
-    // }
-    // else {
-    //   console.log("Zoom out");
-    //   top_canvas_scale -= e.deltaY * 2;
-    // }
-  const c = heatmapRef.current;
-  const rect = c.getBoundingClientRect()
-  const heatmap_width = rect.width;
-  const mouse_xcor = e.clientX - rect.left;
-  const mouse_ycor = e.clientY - rect.top;
-
- 
-  setIsDown(prev => false); // just to make sure, we are not panning while zooming
-  //console.log("mouse xcor_point = " +mouse_xcor);
-  //console.log("mouse_ycor " + mouse_ycor);
-  if (mouse_xcor > 1200 || mouse_xcor < 0 || mouse_ycor > 200 || mouse_ycor < 0 )  // heatmap boundaries;
-  {
-    return;
-  }
-  e.preventDefault(); // so that it doesn't scroll while zooming
-      // to limit the canvas re renderings to roughly 30 fps
-      const cur_time = Date.now();
-      if (cur_time - prevTime < 32) // 1000/40 = 25 fps
-      {
-        // console.log("new_time = "+  String(cur_time - prevTime));
+      if (sequence_length === 0 ){
         return;
       }
-      // console.log("prev_tiem O= " + prevTime);
-      // console.log("current time = " + cur_time);
-      // console.log("diff = " + String(cur_time - prevTime));
-      setPrevTime(prev => cur_time);
+      
+      const c = tooltipRef.current;
+      const ctx = c.getContext("2d");
+      const tooltipRect = c.getBoundingClientRect();
+      const tooltip_width = tooltipRect.width;// must be the same as in canvas width html element
+      const tooltip_height = tooltipRect.height;//must be the same as in canvas height html element
+      const ratio = window.devicePixelRatio;
+      c.width = tooltip_width * ratio;
+      c.height = tooltip_height * ratio;
+      c.style.width = "calc(100vw)";
+      c.style.height = tooltip_height + "px";
+      // console.log("width =   "  + c.width);
+      ctx.scale(ratio,ratio);
+      ctx.clearRect(0,0,tooltip_width,tooltip_height);
+      
+      // const cHeatmap = ctxRef.current; // 
+      const cHeatmap = heatmapRef.current;
+      // !! get boundaries of the heatmap instead of the tooltip canvas, for the "rect" variable;
+      const heatmapRect = cHeatmap.getBoundingClientRect();  // !! get boundaries of the heatmap//console.log(rect);
+      const heatmapRect_height = heatmapRect.height;
+      const heatmapRect_width = heatmapRect.width;
+      
+      const mouse_xcor = e.clientX - heatmapRect.left;//console.log("hover mouse_xcor = " + mouse_xcor); // console.log(heatmapRect.width);
+      const mouse_ycor = e.clientY - heatmapRect.top; // scale doen't affect this, so this is the real_ycoordinate //console.log("hover mouse_ycor = " + mouse_ycor);// console.log(heatmapRect.height-50); // -50 space for position indexes;
+      
+      if (mouse_xcor >= heatmapRect_width || mouse_xcor <= 0 || mouse_ycor <= 0 || mouse_ycor >= (heatmapRect_height - 70)) 
+      { // boundary check for heatmap, -50 is for the space left for position indices
+        // bigger or equal to, so that index finders don't go out of bounds, as maxwidth/cell_width = an index 1 bigger than the sequence length
+        setIsDown(prev => false);// so that panning point resets when mouse goes out of bounds;
+        return
+      }
+      
+      const cell_height = (heatmapRect_height-70)/20; //!! must be same in drawheatmap // 300/20 = 15 ,  number 20 is same for all 
+      const cell_width = (heatmapRect_width/sequence_length); //!! must be same in drawheatmap // if we use floor, it will result in 0 cell width when protein length is larger than c.width;
+      // const xcor = e.clientX;
+      // const ycor = e.clientY;
+
+      // using real_xcor to calculate which aminoacid the current pointed cell corresponds to
+      const canvas_scale = canvasScaleAndOriginX2.scale; // value of zoom before scroll event
+      const canvas_originX_prev = canvasScaleAndOriginX2.originX;
+      let real_xcor =  canvas_originX_prev + (mouse_xcor/canvas_scale); // real x coordinate of the mouse pointer, this line and the if else block is reused in tooltip function
+      // real_xcor = topCanvasOriginXPrev + (mouse_xcor/topCanvasScalePrev); 
+
+
+      // got the context;    // console.log(e);
+      
+      const original_aminoacid_idx = Math.floor(real_xcor/cell_width) + 1 // real_xcor 0 to cell_wid = 0th aminoacid; realxcor cell_width to 2*cell_width = 1st aminoacid; // +1 because our scores start from 1;
+      const original_aminoacid = proteinData.scores[original_aminoacid_idx].ref;
+      const mutated_aminoacid_idx = Math.floor(mouse_ycor/cell_height);
+      const mutated_aminoacid = aminoacid_ordering[mutated_aminoacid_idx]; // the resulting aminoacid from SNP mutation
+      // console.log("original_aminoacid = " + original_aminoacid);
+      // console.log("mutated_aminoacid = " + mutated_aminoacid);
+      
+      
+
+      // !!! IMPORTANT HAVE TO THINK ABOUT WHAT TO DO WHEN COMBINING MULTIPLE TOOLS VALUES !!!
+      let mutation_risk_raw_value;
+      if ( Object.hasOwn(proteinData.scores[original_aminoacid_idx] , mutated_aminoacid)  ){
+        mutation_risk_raw_value = proteinData.scores[original_aminoacid_idx][mutated_aminoacid];
+      }
+      else{
+        mutation_risk_raw_value = tool_parameters.ref_value;
+      }
+        //console.log("mutation risk_raw_value = " + mutation_risk_raw_value);
+      
+      let mutation_risk_assesment // 'Neutral';  // change based on mutation_risk_raw value;
+        // score_ranges:[ {start:0.00, end:0.15, risk_assessment : ' benign' , start_color:"2C663C", end_color:"D3D3D3" } , 
+        //            {start:0.15, end:0.85, risk_assessment :'possibly damaging',start_color:"D3D3D3", end_color:"FFA500" }, 
+        //            {start:0.85, end: 1.00, risk_assessment:'confidently damaging',start_color:"FFA500", end_color:"981E2A" }, ]
+        for (let i = 0; i< tool_parameters.score_ranges.length; i++){
+          const current_loop_range_start = tool_parameters.score_ranges[i].start;
+          const current_loop_range_end = tool_parameters.score_ranges[i].end;
+          const current_loop_range_risk_assessment = tool_parameters.score_ranges[i].risk_assessment;
+          if(mutation_risk_raw_value >= current_loop_range_start && mutation_risk_raw_value <= current_loop_range_end ){
+            // is between current ranges
+            mutation_risk_assesment = current_loop_range_risk_assessment;
+          } 
+        }
+      
+      // String(original_aminoacid_idx) + ". " +
+      const text = String(original_aminoacid_idx) + ". " + String(original_aminoacid) + " --> " + String(mutated_aminoacid) + " " + String(mutation_risk_raw_value) + " " + String(mutation_risk_assesment); 
+
+      
+      ctx.fillStyle="black"
+      //ctx.fillRect(x,y,w,h);  // rect.left = 0 for now, rect.top = the offset of canvas element;
+      ctx.fillRect(mouse_xcor + 100 , mouse_ycor + 10  , 300,31 ); // cell_width*40,cell_height*5 250 for sift, 300 for polyphen2
+      // console.log("mouse_xcor = " + mouse_xcor);
+      // console.log("mouse_ycor = " + mouse_ycor);
+
+      // var text = "A to G 0.52 Neutral";
+      ctx.fillStyle = "white";
+      ctx.font = "15px Arial";
+      ctx.fillText(text, (mouse_xcor + 120) , mouse_ycor + 30 );
+      // console.log("text width = + " );
+      // console.log(ctx.measureText(text));
+      // console.log("text ending = " + (parseInt(mouse_xcor) + 120 + ctx.measureText(text).width) );
+      // ctx.resetTransform();
+      
+      if (isDown) // panning the canvas if mouse down is down;
+      {
+        console.log("isdonwnnnn2");
+        const dx_normalized = (panningStartX - mouse_xcor) / canvas_scale; // change in X direction
+
+        let canvas_originX_next = canvas_originX_prev + dx_normalized;
+        // console.log("temp_top_canvas_priginX_prev = " + temp_top_canvas_originX_prev);
+        // console.log("tooltip panStartX , mouse_xcor , topcanvasscaleprev =  " + panningStartX + " " + mouse_xcor + " " + topCanvasScalePrev);
+        // console.log("tooltip originXprev at start of Pan = " + topCanvasOriginXPrev);
+        canvas_originX_next = Math.max(canvas_originX_next,0); // origin not smaller than 0
+        canvas_originX_next = Math.min(canvas_originX_next, (heatmapRect_width - heatmapRect_width/canvas_scale)); // origin not larger than heatmap rightmost point;
+        
+        setCanvasScaleAndOriginX2(prev => {
+          return (  
+            {scale: canvas_scale ,originX: canvas_originX_next }
+          )
+          } );
+        setPanningStartX(prev => mouse_xcor); 
+
+      
+
+      }
+      //ctx.resetTransform(); no need
+    }
   
-  //top_canvas_scale -= (e.deltaY/120); // zoom in if deltaY < 0 , zoom out if deltaY > 0
-  // console.log("topCanvasScalePrev_in zoom = " + top_canvas_scale_prev_ref.current); //1
-  //{scale:1,originX:0}
-  // const canvas_scale_prev = canvas_scale_and_originX_ref.current.scale; // value of zoom before scroll event
-  // const canvas_originX_prev = canvas_scale_and_originX_ref.current.originX;
-  
-  const canvas_scale_prev = canvas_scale_and_originX.scale; // value of zoom before scroll event
-  const canvas_originX_prev = canvas_scale_and_originX.originX;
-
-
-  // console.log("originX prev = ")
-  let canvas_scale_next = (1 - (e.deltaY/180)) * canvas_scale_prev; //new value of zoom after scroll
-  canvas_scale_next = Math.min(Math.max(1, canvas_scale_next), 64);
-  const scalechange = canvas_scale_next / canvas_scale_prev; // 
-
-  let real_xcor = canvas_originX_prev + (mouse_xcor/canvas_scale_prev);; // real x coordinate of the mouse pointer, this line is reused in tooltip function
-    // real coordinate of current mouse point;
-  // console.log("mouse_xcor in drawheatmap " + mouse_xcor);
-  // console.log("real Xcord = " + real_xcor);
-  // console.log("realxcor = + " + real_xcor + " scalechange = " + scalechange + " canvas_originX_prev =  " + canvas_originX_prev);
-  let canvas_originX_next = Math.max( (real_xcor - ((real_xcor - canvas_originX_prev)/scalechange)), 0); // so that it doesn't become smaller than 0
-  canvas_originX_next = Math.min(canvas_originX_next,(heatmap_width - heatmap_width/canvas_scale_next)) // so that heatmap new originX isn't too large, (start and end is constant)
-
-  // canvas_scale_and_originX_ref.current.scale = canvas_scale_next;
-  // canvas_scale_and_originX_ref.current.originX = canvas_originX_next;
-  setCanvasScaleAndOriginX2(prev => {
-    return (  
-      {scale: canvas_scale_next ,originX: canvas_originX_next }
-    )
-    } );
+    const wheelZoom2 = (e,canvas_scale_and_originX) => {  // zoomig function
+      // if (e.deltaY < 0) {
+      //   console.log("Zoom in");
+      //   top_canvas_scale += e.deltaY * -2;
+      // }
+      // else {
+      //   console.log("Zoom out");
+      //   top_canvas_scale -= e.deltaY * 2;
+      // }
+    const c = heatmapRef.current;
+    const rect = c.getBoundingClientRect()
+    const heatmap_width = rect.width;
+    const mouse_xcor = e.clientX - rect.left;
+    const mouse_ycor = e.clientY - rect.top;
 
   
-}
+    setIsDown(prev => false); // just to make sure, we are not panning while zooming
+    //console.log("mouse xcor_point = " +mouse_xcor);
+    //console.log("mouse_ycor " + mouse_ycor);
+    if (mouse_xcor > 1200 || mouse_xcor < 0 || mouse_ycor > 200 || mouse_ycor < 0 )  // heatmap boundaries;
+    {
+      return;
+    }
+    e.preventDefault(); // so that it doesn't scroll while zooming
+        // to limit the canvas re renderings to roughly 30 fps
+        const cur_time = Date.now();
+        if (cur_time - prevTime < 32) // 1000/40 = 25 fps
+        {
+          // console.log("new_time = "+  String(cur_time - prevTime));
+          return;
+        }
+        // console.log("prev_tiem O= " + prevTime);
+        // console.log("current time = " + cur_time);
+        // console.log("diff = " + String(cur_time - prevTime));
+        setPrevTime(prev => cur_time);
+    
+    //top_canvas_scale -= (e.deltaY/120); // zoom in if deltaY < 0 , zoom out if deltaY > 0
+    // console.log("topCanvasScalePrev_in zoom = " + top_canvas_scale_prev_ref.current); //1
+    //{scale:1,originX:0}
+    // const canvas_scale_prev = canvas_scale_and_originX_ref.current.scale; // value of zoom before scroll event
+    // const canvas_originX_prev = canvas_scale_and_originX_ref.current.originX;
+    
+    const canvas_scale_prev = canvas_scale_and_originX.scale; // value of zoom before scroll event
+    const canvas_originX_prev = canvas_scale_and_originX.originX;
 
-  const switchTool = (e,prediction_tool_parameters) => {
-    e.preventDefault();
-    // setCurrentPredictionTool(() => prediction_tool);
-    setCurrentPredictionToolParameters(prev => prediction_tool_parameters )
+
+    // console.log("originX prev = ")
+    let canvas_scale_next = (1 - (e.deltaY/180)) * canvas_scale_prev; //new value of zoom after scroll
+    canvas_scale_next = Math.min(Math.max(1, canvas_scale_next), 64);
+    const scalechange = canvas_scale_next / canvas_scale_prev; // 
+
+    let real_xcor = canvas_originX_prev + (mouse_xcor/canvas_scale_prev);; // real x coordinate of the mouse pointer, this line is reused in tooltip function
+      // real coordinate of current mouse point;
+    // console.log("mouse_xcor in drawheatmap " + mouse_xcor);
+    // console.log("real Xcord = " + real_xcor);
+    // console.log("realxcor = + " + real_xcor + " scalechange = " + scalechange + " canvas_originX_prev =  " + canvas_originX_prev);
+    let canvas_originX_next = Math.max( (real_xcor - ((real_xcor - canvas_originX_prev)/scalechange)), 0); // so that it doesn't become smaller than 0
+    canvas_originX_next = Math.min(canvas_originX_next,(heatmap_width - heatmap_width/canvas_scale_next)) // so that heatmap new originX isn't too large, (start and end is constant)
+
+    // canvas_scale_and_originX_ref.current.scale = canvas_scale_next;
+    // canvas_scale_and_originX_ref.current.originX = canvas_originX_next;
+    setCanvasScaleAndOriginX2(prev => {
+      return (  
+        {scale: canvas_scale_next ,originX: canvas_originX_next }
+      )
+      } );
+
+    
   }
-  // const x = notes.map((note) => {
-  //   // what should its type be
-  //   // buggy onclick function or unnecessary renders; because onclicl function needs to change;
-  //   console.log("222");
 
-  //   return (
-  //     <li style={{ margin: "15px 0px" }} key={note.id}>
-  //       <div
-  //         style={{ border: "solid", width: "20em" }}
-  //         onClick={() => {
-  //           console.log("click");
-  //           handleSideBarNoteClick(note);
-  //         }}
-  //       >
-  //         <span> Data = {note.data} </span>
-  //         <span> Edit Date = {note.last_edit_date}</span>
-  //       </div>
-  //     </li>
-  //   );
-  
-
+    const switchTool = (e,prediction_tool_parameters) => {
+      e.preventDefault();
+      // setCurrentPredictionTool(() => prediction_tool);
+      setCurrentPredictionToolParameters(prev => prediction_tool_parameters )
+    }
     return(
         <>
             <h1>
-                {protein_name}
+                {md5sum}
             </h1>
             
             <div > {/* style={{width:1400 , height:900,overflow:"scroll"  }}*/}
@@ -810,7 +779,7 @@ const ProteinPage = () => {  // add ?q=1, to the url to get uniprot metadata
 
                   {/* onClick={(e) => console.log(e.clientX + " " + e.clientY)} */}
                   <div id="asds" style={{ width:1400, height:300 , position: "relative"}}> 
-                      <canvas  id="canvas1" ref={heatmapRef} style = {{position:"absolute",top:"40px", left:"120px"}} height={"270"} width={"1200"} 
+                      <canvas  id="heatmap_canvas" ref={heatmapRef} style = {{position:"absolute",top:"40px", left:"120px"}} height={"270"} width={window.innerWidth - 200} 
                         // onClick={(e) => console.log("asfasfasfasfs")}
                         // onclick or other functions don't work here as the topmost layers is the canvas below
                       >
@@ -819,7 +788,7 @@ const ProteinPage = () => {  // add ?q=1, to the url to get uniprot metadata
                       <canvas ref={aminoAcidLegendRef} style={{position:"absolute",top:"40px", left:"0px"}} height = {"300"} width={"120"}>
                       </canvas>
 
-                      <canvas  id="2" ref={tooltipRef}  style = {{position:"absolute",top:"0", left:"120"}} height={"350"} width={"1800"} 
+                      <canvas  id="heatmap_tooltip_canvas" ref={tooltipRef}  style = {{position:"absolute",top:"0", left:"120"}} height={"350"} width={window.innerWidth}
                         // onClick = {clickLogger} 
                         // onWheel={wheelZoom} added event listener in UseEffect, because "Unable to preventDefault inside passive event listener invocation."
                         onMouseMove = {(e) => drawTooltipOrPan2(e,currentPredictionToolParameters)}

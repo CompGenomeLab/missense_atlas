@@ -1,6 +1,5 @@
 // import logo from './logo.svg';
 import React from 'react';
-import ReactDOM from 'react-dom';
 import './App.css';
 // import HeatMapSvg from './components/HeatMapSvg';
 // import {UncontrolledReactSVGPanZoom} from 'react-svg-pan-zoom';
@@ -30,7 +29,7 @@ function App() {
     <Router>
       <Routes>
         <Route path = '/' element={<HomePage/>}/>
-        <Route path = '/protein/TSBP1' element={<ProteinPage/>}/> 
+        <Route path = '/protein/:md5sum' element={<ProteinPage/>}/> 
       </Routes>
     </Router>
     </>
