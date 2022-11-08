@@ -720,10 +720,7 @@ const ProteinPage = () => {  // add ?q=1, to the url to get uniprot metadata
             
             <div > {/* style={{width:1400 , height:900,overflow:"scroll"  }}*/}
                 <div > 
-                  <button
-                    onClick={helperConsoleLogger}
-                  > logger helper
-                  </button>
+                  
                   <button
                     onClick={(e) => switchTool(e, polyphen2_parameters)}
                   >
