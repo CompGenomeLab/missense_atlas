@@ -317,38 +317,7 @@ const ProteinPage = () => {  // add ?q=1, to the url to get uniprot metadata
       ctx.fillText(rightmost_visible_index, canvasScaleAndOriginX2.originX + 1200/canvasScaleAndOriginX2.scale , 0 , 50   );  // rightmost visilbe of the window
     };
 
-    const helperConsoleLogger = () => {
-      
-      // 
-      return;
-      /*
-      console.log(typeof(protein_data_sift[0].data))
-      console.log((Object.keys(protein_data_sift[0])))
-      console.log(protein_data_sift[0].data[0].y)
-      // for (let i = 0; i< 20; i++) {
-      //   console.log(protein_data_sift[i].id);
-      // }
-      // console.log()
-      console.log(protein_data_sift[12].id);
-      console.log(protein_data_sift[12].data[0].y);
-      console.log(Math.floor((protein_data_sift[12].data[0].y)*10));
-      const c = heatmapRef.current;
-      const ctx = c.getContext("2d");
-      ctx.fillStyle = 'rgba(152, 30, 42)';
-      ctx.fillRect(0,0,10,15);
-      */
-      // setDummyCounter(prev => prev+1);
-      // console.log("dummy counter = " + dummyCounter);
-      // console.log("Dummy ref = " + dummyRef.current);
-      // console.log("dummy ref = " + dummyRef);
-      // setTestObj( () => { 
-      //   return(
-      //     {asd:'q',qwe:'f'}
-      //   )
-      
-      // } )
-    } 
-
+    
     const onMouseDownHelper = (e) =>{
 
       e.preventDefault();
@@ -826,3 +795,36 @@ const ProteinPage = () => {  // add ?q=1, to the url to get uniprot metadata
 
 }
 export default ProteinPage;
+
+
+// const helperConsoleLogger = () => {
+      
+//   // 
+//   return;
+//   /*
+//   console.log(typeof(protein_data_sift[0].data))
+//   console.log((Object.keys(protein_data_sift[0])))
+//   console.log(protein_data_sift[0].data[0].y)
+//   // for (let i = 0; i< 20; i++) {
+//   //   console.log(protein_data_sift[i].id);
+//   // }
+//   // console.log()
+//   console.log(protein_data_sift[12].id);
+//   console.log(protein_data_sift[12].data[0].y);
+//   console.log(Math.floor((protein_data_sift[12].data[0].y)*10));
+//   const c = heatmapRef.current;
+//   const ctx = c.getContext("2d");
+//   ctx.fillStyle = 'rgba(152, 30, 42)';
+//   ctx.fillRect(0,0,10,15);
+//   */
+//   // setDummyCounter(prev => prev+1);
+//   // console.log("dummy counter = " + dummyCounter);
+//   // console.log("Dummy ref = " + dummyRef.current);
+//   // console.log("dummy ref = " + dummyRef);
+//   // setTestObj( () => { 
+//   //   return(
+//   //     {asd:'q',qwe:'f'}
+//   //   )
+  
+//   // } )
+// } 
