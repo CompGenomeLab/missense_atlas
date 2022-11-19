@@ -1,5 +1,4 @@
 
-import axios from "axios";
 import React, { useCallback, useEffect, useRef, useState,useMemo } from "react";
 
 
@@ -420,12 +419,71 @@ function Heatmap( props ){
   
     } ;
     
+
+    const drawTooltipHeatmapMain = (c,cHeatmap,e) => {
+
+      const tool_parameters =  currentPredictionToolParameters;
+      // tooltip ref variables
+      const ctx = c.getContext("2d");      
+      //heatmap ref variables
+      const heatmapRect = cHeatmap.getBoundingClientRect();  // !! get boundaries of the heatmap//console.log(rect);
+      const heatmapRect_height = heatmapRect.height;
+      const heatmapRect_width = heatmapRect.width;
+      const mouse_xcor = e.clientX - heatmapRect.left;//console.log("hover mouse_xcor = " + mouse_xcor); // console.log(heatmapRect.width);
+      const mouse_ycor = e.clientY - heatmapRect.top; // scale doen't affect this, so this is the real_ycoordinate //console.log("hover mouse_ycor = " + mouse_ycor);// console.log(heatmapRect.height-50); // -50 space for position indexes;
+      
+
+      const cell_height = (heatmapRect_height-70)/20; //!! must be same in drawheatmap // 300/20 = 15 ,  number 20 is same for all 
+      const cell_width = (heatmapRect_width/sequence_length); //!! must be same in drawheatmap // if we use floor, it will result in 0 cell width when protein length is larger than c.width;
+     
+      const canvas_scale = canvasScaleAndOriginX2.scale; // value of zoom before scroll event
+      const canvas_originX_prev = canvasScaleAndOriginX2.originX * heatmapRect_width; // QZY
+      //const canvas_originX_prev = canvasScaleAndOriginX2.originX;
+      let real_xcor =  canvas_originX_prev + (mouse_xcor/canvas_scale); // real x coordinate of the mouse pointer, this line and the if else block is reused in tooltip function
+            
+      const original_aminoacid_idx = Math.floor(real_xcor/cell_width) + 1 // real_xcor 0 to cell_wid = 0th aminoacid; realxcor cell_width to 2*cell_width = 1st aminoacid; // +1 because our scores start from 1;
+      const original_aminoacid = proteinData.scores[original_aminoacid_idx].ref;
+      const mutated_aminoacid_idx = Math.floor(mouse_ycor/cell_height);
+      const mutated_aminoacid = aminoacid_ordering[mutated_aminoacid_idx]; // the resulting aminoacid from SNP mutation    
+
+      let mutation_risk_raw_value;
+      if ( Object.hasOwn(proteinData.scores[original_aminoacid_idx] , mutated_aminoacid)  ){
+        mutation_risk_raw_value = proteinData.scores[original_aminoacid_idx][mutated_aminoacid];
+      }
+      else{
+        mutation_risk_raw_value = tool_parameters.ref_value;
+      }      
+      let mutation_risk_assesment // 'Neutral';  // change based on mutation_risk_raw value;
+        // score_ranges:[ {start:0.00, end:0.15, risk_assessment : ' benign' , start_color:"2C663C", end_color:"D3D3D3" } , 
+        //            {start:0.15, end:0.85, risk_assessment :'possibly damaging',start_color:"D3D3D3", end_color:"FFA500" }, 
+        //            {start:0.85, end: 1.00, risk_assessment:'confidently damaging',start_color:"FFA500", end_color:"981E2A" }, ]
+      for (let i = 0; i< tool_parameters.score_ranges.length; i++){
+        const current_loop_range_start = tool_parameters.score_ranges[i].start;
+        const current_loop_range_end = tool_parameters.score_ranges[i].end;
+        const current_loop_range_risk_assessment = tool_parameters.score_ranges[i].risk_assessment;
+        if(mutation_risk_raw_value >= current_loop_range_start && mutation_risk_raw_value <= current_loop_range_end ){
+          // is between current ranges
+          mutation_risk_assesment = current_loop_range_risk_assessment;
+        } 
+      }
+
+      const text = String(original_aminoacid_idx) + ". " + String(original_aminoacid) + " --> " + String(mutated_aminoacid) + " " + String(mutation_risk_raw_value) + " " + String(mutation_risk_assesment); 
+
+      ctx.fillStyle="black"
+      //ctx.fillRect(x,y,w,h);  // rect.left = 0 for now, rect.top = the offset of canvas element;
+      ctx.fillRect(mouse_xcor + 100 , mouse_ycor + 10  , 300,31 ); // cell_width*40,cell_height*5 250 for sift, 300 for polyphen2
+ 
+      ctx.fillStyle = "white";
+      ctx.font = "15px Arial";
+      ctx.fillText(text, (mouse_xcor + 120) , mouse_ycor + 30 );
+      // console.log("text ending = " + (parseInt(mouse_xcor) + 120 + ctx.measureText(text).width) );      
+    }
+
     function drawTooltipOrPan2(e) // scale comes from top_canvas_scale
     { // be careful, cell_height and width must be the same in the draw function, if you change this also change drawheatmap;
       // if clause to check if xcor and ycor is inside the heatmapCanvas coordinates;
       // !!!! DrawToolTip Part of the function; !!!
       // console.log("tooltip start prevX  = " + topCanvasOriginXPrev);
-      const tool_parameters =  currentPredictionToolParameters;
       if (sequence_length === 0 ){
         return;
       }
@@ -454,83 +512,22 @@ function Heatmap( props ){
       const mouse_xcor = e.clientX - heatmapRect.left;//console.log("hover mouse_xcor = " + mouse_xcor); // console.log(heatmapRect.width);
       const mouse_ycor = e.clientY - heatmapRect.top; // scale doen't affect this, so this is the real_ycoordinate //console.log("hover mouse_ycor = " + mouse_ycor);// console.log(heatmapRect.height-50); // -50 space for position indexes;
       
+      const canvas_scale = canvasScaleAndOriginX2.scale; // value of zoom before scroll event
+      const canvas_originX_prev = canvasScaleAndOriginX2.originX * heatmapRect_width; // QZY
+
       if (mouse_xcor >= heatmapRect_width || mouse_xcor <= 0 || mouse_ycor <= 0 || mouse_ycor >= (heatmapRect_height - 70)) 
       { // boundary check for heatmap, -50 is for the space left for position indices
         // bigger or equal to, so that index finders don't go out of bounds, as maxwidth/cell_width = an index 1 bigger than the sequence length
+        // if (inside heatmap summary)
+        // {
+        //  drawToolTipHeatmapSummary
+        // }
         setIsDown(prev => false);// so that panning point resets when mouse goes out of bounds;
         return
       }
-      
-      const cell_height = (heatmapRect_height-70)/20; //!! must be same in drawheatmap // 300/20 = 15 ,  number 20 is same for all 
-      const cell_width = (heatmapRect_width/sequence_length); //!! must be same in drawheatmap // if we use floor, it will result in 0 cell width when protein length is larger than c.width;
-      // const xcor = e.clientX;
-      // const ycor = e.clientY;
-
-      // using real_xcor to calculate which aminoacid the current pointed cell corresponds to
-      const canvas_scale = canvasScaleAndOriginX2.scale; // value of zoom before scroll event
-      const canvas_originX_prev = canvasScaleAndOriginX2.originX * heatmapRect_width; // QZY
-      //const canvas_originX_prev = canvasScaleAndOriginX2.originX;
-      let real_xcor =  canvas_originX_prev + (mouse_xcor/canvas_scale); // real x coordinate of the mouse pointer, this line and the if else block is reused in tooltip function
-      // console.log(canvas_originX_prev);
-      // real_xcor = topCanvasOriginXPrev + (mouse_xcor/topCanvasScalePrev); 
-
-
-      // got the context;    // console.log(e);
-      
-      const original_aminoacid_idx = Math.floor(real_xcor/cell_width) + 1 // real_xcor 0 to cell_wid = 0th aminoacid; realxcor cell_width to 2*cell_width = 1st aminoacid; // +1 because our scores start from 1;
-      const original_aminoacid = proteinData.scores[original_aminoacid_idx].ref;
-      const mutated_aminoacid_idx = Math.floor(mouse_ycor/cell_height);
-      const mutated_aminoacid = aminoacid_ordering[mutated_aminoacid_idx]; // the resulting aminoacid from SNP mutation
-      // console.log("original_aminoacid = " + original_aminoacid);
-      // console.log("mutated_aminoacid = " + mutated_aminoacid);
-      
-      
-
-      // !!! IMPORTANT HAVE TO THINK ABOUT WHAT TO DO WHEN COMBINING MULTIPLE TOOLS VALUES !!!
-      let mutation_risk_raw_value;
-      // console.log("1")
-      if ( Object.hasOwn(proteinData.scores[original_aminoacid_idx] , mutated_aminoacid)  ){
-        mutation_risk_raw_value = proteinData.scores[original_aminoacid_idx][mutated_aminoacid];
-        // console.log("2")
+      else{ // inside main heatmap
+        drawTooltipHeatmapMain(c,cHeatmap,e);
       }
-      else{
-        mutation_risk_raw_value = tool_parameters.ref_value;
-        // console.log("3")
-      }
-        //console.log("mutation risk_raw_value = " + mutation_risk_raw_value);
-      
-      let mutation_risk_assesment // 'Neutral';  // change based on mutation_risk_raw value;
-        // score_ranges:[ {start:0.00, end:0.15, risk_assessment : ' benign' , start_color:"2C663C", end_color:"D3D3D3" } , 
-        //            {start:0.15, end:0.85, risk_assessment :'possibly damaging',start_color:"D3D3D3", end_color:"FFA500" }, 
-        //            {start:0.85, end: 1.00, risk_assessment:'confidently damaging',start_color:"FFA500", end_color:"981E2A" }, ]
-        for (let i = 0; i< tool_parameters.score_ranges.length; i++){
-          const current_loop_range_start = tool_parameters.score_ranges[i].start;
-          const current_loop_range_end = tool_parameters.score_ranges[i].end;
-          const current_loop_range_risk_assessment = tool_parameters.score_ranges[i].risk_assessment;
-          if(mutation_risk_raw_value >= current_loop_range_start && mutation_risk_raw_value <= current_loop_range_end ){
-            // is between current ranges
-            mutation_risk_assesment = current_loop_range_risk_assessment;
-          } 
-        }
-      
-      // String(original_aminoacid_idx) + ". " +
-      const text = String(original_aminoacid_idx) + ". " + String(original_aminoacid) + " --> " + String(mutated_aminoacid) + " " + String(mutation_risk_raw_value) + " " + String(mutation_risk_assesment); 
-
-      
-      ctx.fillStyle="black"
-      //ctx.fillRect(x,y,w,h);  // rect.left = 0 for now, rect.top = the offset of canvas element;
-      ctx.fillRect(mouse_xcor + 100 , mouse_ycor + 10  , 300,31 ); // cell_width*40,cell_height*5 250 for sift, 300 for polyphen2
-      // console.log("mouse_xcor = " + mouse_xcor);
-      // console.log("mouse_ycor = " + mouse_ycor);
-
-      // var text = "A to G 0.52 Neutral";
-      ctx.fillStyle = "white";
-      ctx.font = "15px Arial";
-      ctx.fillText(text, (mouse_xcor + 120) , mouse_ycor + 30 );
-      // console.log("text width = + " );
-      // console.log(ctx.measureText(text));
-      // console.log("text ending = " + (parseInt(mouse_xcor) + 120 + ctx.measureText(text).width) );
-      // ctx.resetTransform();
       
       if (isDown) // panning the canvas if mouse down is down;
       {
@@ -578,34 +575,34 @@ function Heatmap( props ){
         setIsDown(false);
     }
 
-    const fetchDataTest = () => {
-      axios.get("https://www.ebi.ac.uk/proteins/api/proteins?offset=0&size=100&md5=8a8c1b6c6d5e7589f18afd6455086c82")
-      .then(function (response) {
-        console.log(response.data);
-      })
-      .catch(function (error) {
-        console.log(error);
-      })
-      .then(function(){
-        console.log("api called to fetfch metadata");
-      })
-    }
-    const fetchDataTest2 = () => {
-      axios.get("http://10.3.2.13:8080/database/all_scores/ddf94eb3daec5f4eaf652663b3c5772b")
-      .then(function (response) {
-        console.log(response.data);
-      })
-      .catch(function (error) {
-        console.log(error);
-      })
-      .then(function(){
-        console.log("api called to fetfch metadata");
-      })
-    }
+    // const fetchDataTest = () => {
+    //   axios.get("https://www.ebi.ac.uk/proteins/api/proteins?offset=0&size=100&md5=8a8c1b6c6d5e7589f18afd6455086c82")
+    //   .then(function (response) {
+    //     console.log(response.data);
+    //   })
+    //   .catch(function (error) {
+    //     console.log(error);
+    //   })
+    //   .then(function(){
+    //     console.log("api called to fetfch metadata");
+    //   })
+    // }
+    // const fetchDataTest2 = () => {
+    //   axios.get("http://10.3.2.13:8080/database/all_scores/ddf94eb3daec5f4eaf652663b3c5772b")
+    //   .then(function (response) {
+    //     console.log(response.data);
+    //   })
+    //   .catch(function (error) {
+    //     console.log(error);
+    //   })
+    //   .then(function(){
+    //     console.log("api called to fetfch metadata");
+    //   })
+    // }
     return (
         <>
-            <button onClick={fetchDataTest2}> Fetch all protein data</button>
-            <button onClick={fetchDataTest}> Metadata test</button>
+            {/* <button onClick={fetchDataTest2}> Fetch all protein data</button>
+            <button onClick={fetchDataTest}> Metadata test</button> */}
             <div id="asds" style={{ width:1400, height:300 , position: "relative"}}> 
                     <canvas  id="heatmap_canvas" ref={heatmapRef} style = {{position:"absolute",top:"40px", left:"120px"}} height={"270"} width={window.innerWidth - 200} 
                     // onClick={(e) => console.log("asfasfasfasfs")}

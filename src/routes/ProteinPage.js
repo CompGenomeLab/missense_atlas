@@ -2,6 +2,7 @@ import React, { useState,useRef, useEffect, useMemo} from "react";
 import chroma from "chroma-js"
 import axios from "axios";
 import { useParams } from "react-router-dom";
+import OpenInNewIcon from '@mui/icons-material/OpenInNew';
 import Heatmap from "../components/Heatmap"; 
 
 // http://10.3.2.13:8080/database/efin/8a8c1b6c6d5e7589f18afd6455086c82
@@ -68,6 +69,8 @@ const ProteinPage = () => {  // add ?q=1, to the url to get uniprot metadata
     const {md5sum} = useParams();
     const [proteinData,setProteinData] = useState({});
     const [metadata, setMetadata] = useState({});
+    // in case metadata, has more than 1 element, because if the protein exists in other animals;  example: 3d3f7f772cf34ea5db1998fc0eae9f72
+    const [metadataHumanIndex, setMetadataHumanIndex] = useState(-1); 
     const [currentPredictionToolParameters, setCurrentPredictionToolParameters ] = useState(sift_parameters);
     const [heatmapPredictionToolParameters, setHeatmapPredictionToolParameters] = useState(sift_parameters);
     const colorRangesLegendRef = useRef(null);
@@ -171,11 +174,24 @@ const ProteinPage = () => {  // add ?q=1, to the url to get uniprot metadata
     },[heatmapPredictionToolParameters,color_lists_array])
 
     useEffect( () => {
+
+      const findHumanIndex = (input_metadata) => {
+        let i = 0;
+        while(input_metadata[i]?.organism?.taxonomy !== 9606){
+          i += 1;
+          if (i > 2000){ // to make sure we don't get an infinite loop
+            console.log('Couldn\'t find the human protein in metadata')
+            return -1
+          }
+        }
+        return i;
+      }
       const fetchMetadata = () => {
         axios.get("https://www.ebi.ac.uk/proteins/api/proteins?offset=0&size=100&md5=" + md5sum)
         .then(function (response) {
           setMetadata(response.data);
           console.log(response.data)
+          setMetadataHumanIndex(findHumanIndex(response.data));
         })
         .catch(function (error) {
           console.log(error);
@@ -192,47 +208,120 @@ const ProteinPage = () => {  // add ?q=1, to the url to get uniprot metadata
       setCurrentPredictionToolParameters(prev => prediction_tool_parameters );
       // drawColorRangesLegend();
     }
-    return(
-        <>
-            <h1>
-                {md5sum} 
-                {/* metadata[0]?.accession */}
-            </h1>
-            
-            <div > {/* style={{width:1400 , height:900,overflow:"scroll"  }}*/}
-                <div > 
-                 
-                  <button
-                    onClick={(e) => switchTool(e, polyphen2_parameters)}
-                  >
-                    Polyphen2
-                  </button>
-                  <button
-                    onClick={(e) => switchTool(e, sift_parameters)}
-                  >
-                    Sift
-                  </button>
-                  <div style={{display:'flex',gap:'30px', justifyContent:'flex-end', marginRight: '50px'}}>  
-                    <h2 style={{marginLeft:'0px',marginRight:'auto'}}> Current tool : {currentPredictionToolParameters.toolname}</h2>
-                    <canvas id="color_ranges_legend" ref={colorRangesLegendRef} height={"85"} 
-                    width={currentPredictionToolParameters.score_ranges.length * number_of_colors * 6}  > </canvas>
-                  </div>
+    
+    /* <p> {(metadata[metadataHumanIndex]?.protein?.recommendedName?.fullName?.value)}</p> */
 
-               
-                </div>
-                <Heatmap 
-                  currentPredictionToolParameters={heatmapPredictionToolParameters} 
-                  proteinData={proteinData}
-                  color_lists_array={color_lists_array}
-                  number_of_colors={number_of_colors}
-                  sequence_length={sequence_length}
-                />
-                
+    // instead of parsing the metadata JSON in jsx code, I write the constant values here;
+    const uniprotId = metadata[metadataHumanIndex]?.accession;
+
+    const find_feature_keys = (input) => {
+      let temp_keys = new Set();
+      if (!input){
+        return 0;
+      }
+      else{
+        for (let i = 0; i< input.length; i++){
+          
+            temp_keys.add(input[i].category);
+        
+        }
+      }
+      return temp_keys;
+    }
+
+    let feature_keys = find_feature_keys(metadata[metadataHumanIndex]?.features); 
+    console.log(feature_keys);
+
+    const proteinKeywords = metadata[metadataHumanIndex]?.keywords.map( (keyword)  => {
+      return(
+        <li>
+          {keyword.value}
+        </li>
+      )
+    });
+
+    const features = metadata[metadataHumanIndex]?.features.map( (ftr,index) => { // loops over features of the JSON
+      return(
+        <p> {JSON.stringify(ftr)} </p>
+        // <p>{index}</p>
+      )
+    })
+
+    const gene_name = metadata[metadataHumanIndex]?.gene?.[0]?.name?.value;
+
+    // undefined if no synonyms exist
+    const synonyms_list = metadata[metadataHumanIndex]?.gene?.[0]?.synonyms?.map( (syn , idx) => {
+      return( // in first element add '(' to beggining in last element add ')' to the end instead of ','
+        <li> 
+          <h4>  
+            {idx === 0 && '('}
+            {syn?.value}
+            {(idx !== (metadata[metadataHumanIndex]?.gene?.[0]?.synonyms.length -1) ) ?  ',' :  ')' }
+          </h4>
+        </li>
+      )
+    }   )
+    return(
+      <>
+        <div style={{display:'flex', alignItems:'center'}}>
+            <h1>
+                Uniprot ID : {uniprotId} 
+            </h1>
+            <a href={"https://www.uniprot.org/uniprot/" + uniprotId }
+              style={{ textDecoration:'none'}} target="_blank" rel="noopener noreferrer"> <OpenInNewIcon/>
+            </a>
+
+        </div>
+            
+        <div > {/* style={{width:1400 , height:900,overflow:"scroll"  }}*/}
+            <div > 
+              
+              <button
+                onClick={(e) => switchTool(e, polyphen2_parameters)}
+              >
+                Polyphen2
+              </button>
+              <button
+                onClick={(e) => switchTool(e, sift_parameters)}
+              >
+                Sift
+              </button>
+              <div style={{display:'flex',gap:'30px', justifyContent:'flex-end', marginRight: '50px'}}>  
+                <h2 style={{marginLeft:'0px',marginRight:'auto'}}> Current tool : {currentPredictionToolParameters.toolname}</h2>
+                <canvas id="color_ranges_legend" ref={colorRangesLegendRef} height={"85"} 
+                width={currentPredictionToolParameters.score_ranges.length * number_of_colors * 6}  > </canvas>
+              </div>
+
+            
             </div>
+            <Heatmap 
+              currentPredictionToolParameters={heatmapPredictionToolParameters} 
+              proteinData={proteinData}
+              color_lists_array={color_lists_array}
+              number_of_colors={number_of_colors}
+              sequence_length={sequence_length}
+            />
+        </div>
         
-        
-        
-        </>
+
+        <div style={{display:'', gap:'10px'}}>  
+          {features}
+        </div>
+
+        <div>
+          <h3>Sequence Keywords:</h3>
+          <ul style={{listStyleType: 'none'}}>{proteinKeywords} </ul>
+        </div>
+        <div style={{display: 'flex'}}>
+          <h3>Gene name:</h3>
+          <h4 style={{paddingLeft:'0.25rem'}}> {gene_name}</h4>
+          {
+            synonyms_list && 
+            <ul style={{listStyleType: 'none', display: 'flex', marginTop:'0px',marginLeft:'0px',paddingLeft:'0.25rem'}}> {synonyms_list} </ul>
+          }
+          
+        </div>
+      </>
 
 
     )
