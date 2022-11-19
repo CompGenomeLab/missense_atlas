@@ -65,17 +65,12 @@ const sift_parameters = {
 const number_of_colors = 30;
 
 const ProteinPage = () => {  // add ?q=1, to the url to get uniprot metadata
-    // console.log(version);
     const {md5sum} = useParams();
-    // console.log("qqqqq");
     const [proteinData,setProteinData] = useState({});
-  ; // limit number of drawings per second, must have for resizing window
-    const colorRangesLegendRef = useRef(null);
-
-   // const [currentPredictionTool , setCurrentPredictionTool] = useState('Polyphen2'); no need;
+    const [metadata, setMetadata] = useState({});
     const [currentPredictionToolParameters, setCurrentPredictionToolParameters ] = useState(sift_parameters);
-
     const [heatmapPredictionToolParameters, setHeatmapPredictionToolParameters] = useState(sift_parameters);
+    const colorRangesLegendRef = useRef(null);
 
     // , {headers:{'Access-Control-Allow-Origin' : '*',}}
     // const request_url = "polyphen/8a8c1b6c6d5e7589f18afd6455086c82"
@@ -104,7 +99,6 @@ const ProteinPage = () => {  // add ?q=1, to the url to get uniprot metadata
       }
       return i - 1 ;
     }, [proteinData] )
-    
     useEffect( () => { // to fetch data
       const request_url = currentPredictionToolParameters.toolname_api + "/" + md5sum
       axios.get(database_url + request_url ) // cors policy
@@ -176,16 +170,33 @@ const ProteinPage = () => {  // add ?q=1, to the url to get uniprot metadata
       drawColorRangesLegend();
     },[heatmapPredictionToolParameters,color_lists_array])
 
+    useEffect( () => {
+      const fetchMetadata = () => {
+        axios.get("https://www.ebi.ac.uk/proteins/api/proteins?offset=0&size=100&md5=" + md5sum)
+        .then(function (response) {
+          setMetadata(response.data);
+          console.log(response.data)
+        })
+        .catch(function (error) {
+          console.log(error);
+        })
+        .then(function(){
+          console.log("api called to fetfch metadata");
+        })
+      }
+      fetchMetadata();
+    },[md5sum] ) // fetch metadata and protein data on load
+
     const switchTool = (e,prediction_tool_parameters) => {
       e.preventDefault();
-      // setCurrentPredictionTool(() => prediction_tool);
       setCurrentPredictionToolParameters(prev => prediction_tool_parameters );
       // drawColorRangesLegend();
     }
     return(
         <>
             <h1>
-                {md5sum}
+                {md5sum} 
+                {/* metadata[0]?.accession */}
             </h1>
             
             <div > {/* style={{width:1400 , height:900,overflow:"scroll"  }}*/}
@@ -206,55 +217,16 @@ const ProteinPage = () => {  // add ?q=1, to the url to get uniprot metadata
                     <canvas id="color_ranges_legend" ref={colorRangesLegendRef} height={"85"} 
                     width={currentPredictionToolParameters.score_ranges.length * number_of_colors * 6}  > </canvas>
                   </div>
-                  {/* <button
-                    onClick={scaleTest}
-                  > scale tester</button> */}
-                  
 
-                  <br/><br/>
-
-                  {/* onClick={(e) => console.log(e.clientX + " " + e.clientY)} */}
-                  {/* <div id="asds" style={{ width:1400, height:300 , position: "relative"}}> 
-                      <canvas  id="heatmap_canvas" ref={heatmapRef} style = {{position:"absolute",top:"40px", left:"120px"}} height={"270"} width={window.innerWidth - 200} 
-                        // onClick={(e) => console.log("asfasfasfasfs")}
-                        // onclick or other functions don't work here as the topmost layers is the canvas below
-                      >
-                      </canvas>
-                      
-                      <canvas ref={aminoAcidLegendRef} style={{position:"absolute",top:"40px", left:"0px"}} height = {"300"} width={"120"}>
-                      </canvas>
-
-                      <canvas  id="heatmap_tooltip_canvas" ref={tooltipRef}  style = {{position:"absolute",top:"0", left:"120"}} height={"350"} width={window.innerWidth}
-                        // onClick = {clickLogger} 
-                        // onWheel={wheelZoom} added event listener in UseEffect, because "Unable to preventDefault inside passive event listener invocation."
-                        onMouseMove = {(e) => drawTooltipOrPan2(e)}
-                        onMouseDown = {(e) => onMouseDownHelper(e)}
-                        onMouseUp= {(e) => onMouseUpHelper(e)}
-                        onDoubleClick= {(e) => setCanvasScaleAndOriginX2({scale:1, originX:0})} 
-                        // check if double click works fine later;
-                        
-                      >
-                      </canvas>
-                      
-                  </div> */}
+               
                 </div>
-                {/* <h5 style={{textAlign:'center', marginBottom:'2px'}}> current visible window: </h5>
-                <canvas id="current_view_window" ref={currentviewWindowRef} height={"30"} width={window.innerWidth -  200}
-                  style= {{marginLeft:'120px'}}  > 
-                 </canvas> */}
-
-                <div style={{width:1350, height:100}}>
-                    <h1>
-                        summary :
-                    </h1>
-                    {/* {currentPredictionToolParameters,proteinData,color_lists_array,number_of_colors,sequence_length} */}
-                    <Heatmap 
-                      currentPredictionToolParameters={heatmapPredictionToolParameters} 
-                      proteinData={proteinData}
-                      color_lists_array={color_lists_array}
-                      number_of_colors={number_of_colors}
-                      sequence_length={sequence_length} />
-                </div>
+                <Heatmap 
+                  currentPredictionToolParameters={heatmapPredictionToolParameters} 
+                  proteinData={proteinData}
+                  color_lists_array={color_lists_array}
+                  number_of_colors={number_of_colors}
+                  sequence_length={sequence_length}
+                />
                 
             </div>
         
