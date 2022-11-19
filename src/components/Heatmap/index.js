@@ -187,7 +187,7 @@ function Heatmap( props ){
         for ( let i = leftmost_visible_index; i< rightmost_visible_index; i++) // alternative is to count greens/yellows, or take the average of their colors
         {
           ctx.fillStyle = heatmapMeanColors[i];
-          ctx.fillRect(i * cell_width ,22.8 * cell_height ,cell_width ,cell_height* 4.2 )
+          ctx.fillRect(i * cell_width ,22.8 * cell_height ,cell_width ,cell_height* 4.2 );
         } 
       // const end_time = Date.now();
       // console.log("draw time = " + String(end_time - start_time));
@@ -419,7 +419,6 @@ function Heatmap( props ){
   
     } ;
     
-
     const drawTooltipHeatmapMain = (c,cHeatmap,e) => {
 
       const tool_parameters =  currentPredictionToolParameters;
@@ -479,6 +478,10 @@ function Heatmap( props ){
       // console.log("text ending = " + (parseInt(mouse_xcor) + 120 + ctx.measureText(text).width) );      
     }
 
+    const drawTooltipHeatmapSummary = (c,cHeatmap,e) => { // to be completd
+      console.log("inside summary part");
+    }
+
     function drawTooltipOrPan2(e) // scale comes from top_canvas_scale
     { // be careful, cell_height and width must be the same in the draw function, if you change this also change drawheatmap;
       // if clause to check if xcor and ycor is inside the heatmapCanvas coordinates;
@@ -509,23 +512,23 @@ function Heatmap( props ){
       const heatmapRect = cHeatmap.getBoundingClientRect();  // !! get boundaries of the heatmap//console.log(rect);
       const heatmapRect_height = heatmapRect.height;
       const heatmapRect_width = heatmapRect.width;
+      const cell_height = (heatmapRect_height-70)/20; //!! must be same in drawheatmap // 300/20 = 15 ,  number 20 is same for all 
       const mouse_xcor = e.clientX - heatmapRect.left;//console.log("hover mouse_xcor = " + mouse_xcor); // console.log(heatmapRect.width);
       const mouse_ycor = e.clientY - heatmapRect.top; // scale doen't affect this, so this is the real_ycoordinate //console.log("hover mouse_ycor = " + mouse_ycor);// console.log(heatmapRect.height-50); // -50 space for position indexes;
       
       const canvas_scale = canvasScaleAndOriginX2.scale; // value of zoom before scroll event
       const canvas_originX_prev = canvasScaleAndOriginX2.originX * heatmapRect_width; // QZY
 
-      if (mouse_xcor >= heatmapRect_width || mouse_xcor <= 0 || mouse_ycor <= 0 || mouse_ycor >= (heatmapRect_height - 70)) 
+      if (mouse_xcor >= heatmapRect_width || mouse_xcor <= 0 || mouse_ycor <= 0 || mouse_ycor >= (heatmapRect_height)) 
       { // boundary check for heatmap, -50 is for the space left for position indices
         // bigger or equal to, so that index finders don't go out of bounds, as maxwidth/cell_width = an index 1 bigger than the sequence length
-        // if (inside heatmap summary)
-        // {
-        //  drawToolTipHeatmapSummary
-        // }
         setIsDown(prev => false);// so that panning point resets when mouse goes out of bounds;
         return
       }
-      else{ // inside main heatmap
+      else if ( mouse_ycor >= (cell_height*22.8) ){ // inside summary part
+        drawTooltipHeatmapSummary(c,cHeatmap,e);
+      }
+      else if (mouse_ycor < (heatmapRect_height - 70)){ // inside main heatmap
         drawTooltipHeatmapMain(c,cHeatmap,e);
       }
       
