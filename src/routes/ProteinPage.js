@@ -1,22 +1,66 @@
-import React, { useState,useRef, useEffect, useMemo} from "react";
-import chroma from "chroma-js"
+import React, { useState, useRef, useEffect, useMemo } from "react";
+import chroma from "chroma-js";
 import axios from "axios";
 import { useParams } from "react-router-dom";
-import OpenInNewIcon from '@mui/icons-material/OpenInNew';
-import Heatmap from "../components/Heatmap"; 
+import OpenInNewIcon from "@mui/icons-material/OpenInNew";
+import Heatmap from "../components/Heatmap";
 
 // http://10.3.2.13:8080/database/efin/8a8c1b6c6d5e7589f18afd6455086c82
 // http://10.3.2.13:8080/database/sift/8a8c1b6c6d5e7589f18afd6455086c82
 // http://10.3.2.13:8080/database/provean/8a8c1b6c6d5e7589f18afd6455086c82 // what is del?; also has negative values; be careful;
 // http://10.3.2.13:8080/database/lists2/8a8c1b6c6d5e7589f18afd6455086c82
 
-// const md5sum = "8a8c1b6c6d5e7589f18afd6455086c82"; // for our current protein; // will be passed as a prop ? 
+// const md5sum = "8a8c1b6c6d5e7589f18afd6455086c82"; // for our current protein; // will be passed as a prop ?
 // const protein_name = "Q5SRN2"; // can also be passed as a prop or taken from metadata?
 // const aminoacid_ordering = ['A','R','N','D','C','Q','E','G','H','I','L','K','M','F','P','S','T','W','Y','V'];
+
 const database_url = "http://10.3.2.13:8080/database/";
+
+// List-s2 threshold values:
+
+// Generic threshold: 0.85
+
+// Equal to 0.85 or higher: deleterious
+
+// lower than 0.85: benign
+
+// Do another check to choose which one;
+// const efin_swissprot_parameters = { // to be completed
+
+// };
+// const efin_humdiv_parameters = { // to be completed
+
+// }
+
+const lists2_parameters = {
+  toolname: "LIST-S2",
+  toolname_api: "lists2",
+  toolname_json: "Lists2",
+  score_ranges: [
+    {
+      start: 0.0,
+      end: 0.85,
+      risk_assessment: "benign",
+      start_color: "#2c663c",
+      end_color: "#ffa500",
+      // end_color: "#fcedaa",
+    },
+    {
+      start: 0.85,
+      end: 1.0,
+      risk_assessment: "deleterious",
+      start_color: "#ffa500",
+      // start_color: "#fcedaa",
+      end_color: "#981e2a",
+    },
+  ],
+  ref_value: 0,
+};
+
 const polyphen2_parameters = {
   toolname: "Polyphen-2",
-  toolname_api : "polyphen" , // used in the api url
+  toolname_api: "polyphen", // used in the api url
+  toolname_json: "Polyphen", // used in the return value of the all_scores api
   score_ranges: [
     {
       start: 0.0,
@@ -45,6 +89,7 @@ const polyphen2_parameters = {
 const sift_parameters = {
   toolname: "Sift",
   toolname_api: "sift",
+  toolname_json: "Sift",
   score_ranges: [
     {
       start: 0.0,
@@ -63,53 +108,94 @@ const sift_parameters = {
   ],
   ref_value: 1,
 };
-const number_of_colors = 30;
 
-const ProteinPage = () => {  // add ?q=1, to the url to get uniprot metadata
-    const {md5sum} = useParams();
-    const [proteinData,setProteinData] = useState({});
-    const [metadata, setMetadata] = useState({});
-    // in case metadata, has more than 1 element, because if the protein exists in other animals;  example: 3d3f7f772cf34ea5db1998fc0eae9f72
-    const [metadataHumanIndex, setMetadataHumanIndex] = useState(-1); 
-    const [currentPredictionToolParameters, setCurrentPredictionToolParameters ] = useState(sift_parameters);
-    const [heatmapPredictionToolParameters, setHeatmapPredictionToolParameters] = useState(sift_parameters);
-    const colorRangesLegendRef = useRef(null);
+const possible_prediction_tools_array = [lists2_parameters,polyphen2_parameters,sift_parameters];
 
-    // , {headers:{'Access-Control-Allow-Origin' : '*',}}
-    // const request_url = "polyphen/8a8c1b6c6d5e7589f18afd6455086c82"
+const number_of_colors = 30; // add to config.js
 
-    const color_lists_array = useMemo( () => { //color lists to use in drawing heatmap 
-      let temp_color_lists_array = []; // generate 30 colors between the score ranges
-      for (let i = 0; i < heatmapPredictionToolParameters.score_ranges.length; i++)
+const ProteinPage = () => {
+  // add ?q=1, to the url to get uniprot metadata
+  const { md5sum } = useParams();
+  const [allProteinData, setAllProteinData] = useState({});
+  const [metadata, setMetadata] = useState({});
+  // in case metadata, has more than 1 element, because if the protein exists in other animals;  example: 3d3f7f772cf34ea5db1998fc0eae9f72
+  const [metadataHumanIndex, setMetadataHumanIndex] = useState(-1);
+  const [currentPredictionToolParameters, setCurrentPredictionToolParameters] =
+    useState();
+  const colorRangesLegendRef = useRef(null);
+
+  // , {headers:{'Access-Control-Allow-Origin' : '*',}}
+  // const request_url = "polyphen/8a8c1b6c6d5e7589f18afd6455086c82"
+
+  const color_lists_array = useMemo(() => {
+    //color lists to use in drawing heatmap
+    let temp_color_lists_array = []; // generate 30 colors between the score ranges
+    for (
+      let i = 0;
+      i < currentPredictionToolParameters?.score_ranges.length;
+      i++
+    ) {
+      const current_range_start_color =
+        currentPredictionToolParameters.score_ranges[i].start_color;
+      const current_range_end_color =
+        currentPredictionToolParameters.score_ranges[i].end_color;
+      // chroma.scale(['#fafa6e','#2A4858']).mode('lch').colors(6)
+      const temp_list = chroma
+        .scale([current_range_start_color, current_range_end_color])
+        .mode("lrgb")
+        .colors(number_of_colors); // 30 is the number of colors, if you change 30 here, you must change it in drawheatmap color determination based on tool's value
+      temp_color_lists_array.push(temp_list);
+    }
+    return temp_color_lists_array;
+  }, [currentPredictionToolParameters]);
+
+  // useEffect( () => { // to fetch for tools data one by one;
+  //   const request_url = currentPredictionToolParameters.toolname_api + "/" + md5sum
+  //   axios.get(database_url + request_url ) // cors policy
+  //   .then(function (response) {
+  //     // handle success
+  //     // console.log(response);
+  //     setAllProteinData(response.data);
+  //     will need a variable for heatmap tool params, so that while waiting for the data of
+  //     new tool, we don't redraw heatmap, with the scores of the previous tool
+  //     setHeatmapPredictionToolParameters(currentPredictionToolParameters);
+  //   })
+  //   .catch(function (error) {
+  //     // handle error
+  //     console.log(error);
+  //   })
+  //   .then(function () {
+  //     console.log("api called for " + database_url + request_url);
+  //     // always executed
+  //   });
+  // },[currentPredictionToolParameters,md5sum] );
+
+  useEffect(() => {
+    // to fetch protein data
+    const findAvailablePredictionTools = (all_protein_data) => {
+      let temp_tools_list = [];
+      for(let i = 0; i< possible_prediction_tools_array.length; i++)
       {
-        const current_range_start_color = heatmapPredictionToolParameters.score_ranges[i].start_color;
-        const current_range_end_color = heatmapPredictionToolParameters.score_ranges[i].end_color;
-        // chroma.scale(['#fafa6e','#2A4858']).mode('lch').colors(6)
-        const temp_list = chroma.scale([current_range_start_color,current_range_end_color]).mode('lrgb').colors(number_of_colors); // 30 is the number of colors, if you change 30 here, you must change it in drawheatmap color determination based on tool's value
-        temp_color_lists_array.push(temp_list);
+        if (Object.hasOwn(all_protein_data, possible_prediction_tools_array[i].toolname_json )){
+          temp_tools_list.push(possible_prediction_tools_array[i]);
+        }
       }
-      return temp_color_lists_array;
-    }, [heatmapPredictionToolParameters] );
-
-    const sequence_length = useMemo ( () => { // calculate sequence length based on the return value of the api
-      if ( Object.hasOwn( proteinData, 'scores' ) === false ){
-        return 0;
-      }
-      let i = 1;
-      while( Object.hasOwn (proteinData.scores, i)  )
-      {
-        i += 1;
-      }
-      return i - 1 ;
-    }, [proteinData] )
-    useEffect( () => { // to fetch data
-      const request_url = currentPredictionToolParameters.toolname_api + "/" + md5sum
-      axios.get(database_url + request_url ) // cors policy
+      return temp_tools_list;
+    }
+    const request_url = "all_scores/" + md5sum;
+    axios
+      .get(database_url + request_url) // cors policy
       .then(function (response) {
-        // handle success
         // console.log(response);
-        setProteinData(response.data); 
-        setHeatmapPredictionToolParameters(currentPredictionToolParameters);
+        // add a function to calculate a data format for "tools combined", then add this to response.data;
+        // testing;
+        // delete response.data.Sift;
+        // delete response.data.Lists2;
+        const first_available_tool = findAvailablePredictionTools(response.data)[0];
+        setCurrentPredictionToolParameters(first_available_tool);
+        setAllProteinData(response.data);
+        console.log("pdata = ");
+        console.log(response.data);
       })
       .catch(function (error) {
         // handle error
@@ -119,785 +205,348 @@ const ProteinPage = () => {  // add ?q=1, to the url to get uniprot metadata
         console.log("api called for " + database_url + request_url);
         // always executed
       });
-    },[currentPredictionToolParameters,md5sum] );
+  }, [md5sum]);
 
-    useEffect( () => {
-      const drawColorRangesLegend = () => { // can become a component; input = toolparams , colorlist
-        console.log("ranges redraw");
-        const step_size = 8; // width of each color in the gradient;
-        const c = colorRangesLegendRef.current;
-        const ctx = c.getContext("2d");
-        const color_ranges_legend_rect = c.getBoundingClientRect();
-        // const w = color_ranges_legend_rect.width;
-        // const h = color_ranges_legend_rect.height;
-        
-        const w = (heatmapPredictionToolParameters.score_ranges.length * (number_of_colors + 1) * step_size) + 30  ; // changes based on currentTool
-        // *31, to account for black lines , + 15 to account for current_x starting from 15, and + 15 to make sure last number isn't cut short;
-        const h = color_ranges_legend_rect.height; // is always the same 
-        const ratio = window.devicePixelRatio;
-        c.width = w * ratio;
-        c.height = h * ratio;
-        c.style.width = w + "px";
-        c.style.height = h + "px";
-        ctx.scale(ratio,ratio);
-  
-  
-        // ctx.fillRect(0,h/4,w,h/2);
-        let current_x = 15;
-        ctx.fillStyle = 'black';
-        ctx.fillRect(current_x,h/4, step_size,h/2); //(x: number, y: number, w: number, h: number): void
-        ctx.textAlign = "center";
-        ctx.font = "16px Arial";
-        ctx.fillText(heatmapPredictionToolParameters.score_ranges[0].start.toFixed(2),current_x,15,40);
-        current_x += step_size;
-        
-        for(let i = 0; i< heatmapPredictionToolParameters.score_ranges.length; i++){ // i = 0,1 
-          for(let j = 0; j< color_lists_array[i].length; j++){
-            if(j === Math.floor(color_lists_array[i].length/2) ){ // middle element
-              ctx.fillText(heatmapPredictionToolParameters.score_ranges[i].risk_assessment, current_x, 15 , number_of_colors * step_size); // 30 = number of colors
-            }
-            // normal color line;
-            ctx.fillStyle = color_lists_array[i][j];
-            ctx.fillRect(current_x, h/4,  step_size ,h/2);
-            current_x += step_size;
+  useEffect(() => {
+    // draw color ranges legend
+    const drawColorRangesLegend = () => {
+      // can become a component; input = toolparams , colorlist
+      // console.log("ranges redraw");
+      const step_size = 8; // width of each color in the gradient;
+      const c = colorRangesLegendRef.current;
+      if (!c) {
+        return;
+      }
+      const ctx = c.getContext("2d");
+      const color_ranges_legend_rect = c.getBoundingClientRect();
+      // const w = color_ranges_legend_rect.width;
+      // const h = color_ranges_legend_rect.height;
+
+      const w =
+        currentPredictionToolParameters.score_ranges.length *
+          (number_of_colors + 1) *
+          step_size +
+        30; // changes based on currentTool
+      // *31, to account for black lines , + 15 to account for current_x starting from 15, and + 15 to make sure last number isn't cut short;
+      const h = color_ranges_legend_rect.height; // is always the same
+      const ratio = window.devicePixelRatio;
+      c.width = w * ratio;
+      c.height = h * ratio;
+      c.style.width = w + "px";
+      c.style.height = h + "px";
+      ctx.scale(ratio, ratio);
+
+      // ctx.fillRect(0,h/4,w,h/2);
+      let current_x = 15;
+      ctx.fillStyle = "black";
+      ctx.fillRect(current_x, h / 4, step_size, h / 2); //(x: number, y: number, w: number, h: number): void
+      ctx.textAlign = "center";
+      ctx.font = "16px Arial";
+      ctx.fillText(
+        currentPredictionToolParameters.score_ranges[0].start.toFixed(2),
+        current_x,
+        15,
+        40
+      );
+      current_x += step_size;
+
+      for (
+        let i = 0;
+        i < currentPredictionToolParameters.score_ranges.length;
+        i++
+      ) {
+        // i = 0,1
+        for (let j = 0; j < color_lists_array[i].length; j++) {
+          if (j === Math.floor(color_lists_array[i].length / 2)) {
+            // middle element
+            ctx.fillText(
+              currentPredictionToolParameters.score_ranges[i].risk_assessment,
+              current_x,
+              15,
+              number_of_colors * step_size
+            ); // 30 = number of colors
           }
-          // empty black line
-          ctx.fillStyle = 'black';
-          ctx.fillRect(current_x, h/4,   step_size, h/2);
-          ctx.fillText(heatmapPredictionToolParameters.score_ranges[i].end.toFixed(2),current_x,15,40);
+          // normal color line;
+          ctx.fillStyle = color_lists_array[i][j];
+          ctx.fillRect(current_x, h / 4, step_size, h / 2);
           current_x += step_size;
         }
-        
-        return;
-      };
-      drawColorRangesLegend();
-    },[heatmapPredictionToolParameters,color_lists_array])
-
-    useEffect( () => {
-
-      const findHumanIndex = (input_metadata) => {
-        let i = 0;
-        while(input_metadata[i]?.organism?.taxonomy !== 9606){
-          i += 1;
-          if (i > 2000){ // to make sure we don't get an infinite loop
-            console.log('Couldn\'t find the human protein in metadata')
-            return -1
-          }
-        }
-        return i;
+        // empty black line
+        ctx.fillStyle = "black";
+        ctx.fillRect(current_x, h / 4, step_size, h / 2);
+        ctx.fillText(
+          currentPredictionToolParameters.score_ranges[i].end.toFixed(2),
+          current_x,
+          15,
+          40
+        );
+        current_x += step_size;
       }
-      const fetchMetadata = () => {
-        axios.get("https://www.ebi.ac.uk/proteins/api/proteins?offset=0&size=100&md5=" + md5sum)
+
+      return;
+    };
+    drawColorRangesLegend();
+  }, [currentPredictionToolParameters, color_lists_array]);
+
+  useEffect(() => {
+    // fetch metadata
+
+    const findHumanIndex = (input_metadata) => {
+      let i = 0;
+      while (input_metadata[i]?.organism?.taxonomy !== 9606) {
+        i += 1;
+        if (i > 2000) {
+          // to make sure we don't get an infinite loop
+          console.log("Couldn't find the human protein in metadata");
+          return -1;
+        }
+      }
+      return i;
+    };
+    const fetchMetadata = () => {
+      axios
+        .get(
+          "https://www.ebi.ac.uk/proteins/api/proteins?offset=0&size=100&md5=" +
+            md5sum
+        )
         .then(function (response) {
           setMetadata(response.data);
-          console.log(response.data)
+          console.log(response.data);
           setMetadataHumanIndex(findHumanIndex(response.data));
         })
         .catch(function (error) {
           console.log(error);
         })
-        .then(function(){
+        .then(function () {
           console.log("api called to fetfch metadata");
-        })
+        });
+    };
+    fetchMetadata();
+  }, [md5sum]);
+
+  const switchTool = (e, prediction_tool_parameters) => {
+    // Probably no need to use prev => prediction_tool_parameters
+    setCurrentPredictionToolParameters((prev) => prediction_tool_parameters);
+    // drawColorRangesLegend();
+  };
+  // console.log("pdata = ");
+  // console.log(allProteinData[currentPredictionToolParameters.toolname_json]);
+  /* <p> {(metadata[metadataHumanIndex]?.protein?.recommendedName?.fullName?.value)}</p> */
+
+  // instead of parsing the metadata JSON in jsx code, I write the constant values here;
+  const uniprotId = metadata[metadataHumanIndex]?.accession;
+
+  
+  const featureCategories = metadata[metadataHumanIndex]?.features?.reduce( (curSet,ftr) => {
+      curSet.add(ftr.category);
+      return curSet;
+  }, new Set()) || new Set(); // return empty set if metadata doesn't exist instead of undefined;
+  console.log(featureCategories);
+
+  // const featureCategoriesJsx = Array.from(featureCategories).map( (category) => {
+  //   console.log(category);
+  //   return(
+  //     <h3>
+  //       {category}
+  //     </h3>
+  //   )
+  // });
+
+  const findMaximumOverlaps = (arr,cur_category) => { // for metadata features
+    // currently O(n^2), comparing each range with the others, and counting the maximum number of overlaps a range has;
+    let maximum_overlap_count = 1;
+    for(let i = 0; i< arr.length; i++){
+      if (arr[i].category !== cur_category){
+        continue;
       }
-      fetchMetadata();
-    },[md5sum] ) // fetch metadata and protein data on load
-
-    const switchTool = (e,prediction_tool_parameters) => {
-      e.preventDefault();
-      setCurrentPredictionToolParameters(prev => prediction_tool_parameters );
-      // drawColorRangesLegend();
-    }
-    
-    /* <p> {(metadata[metadataHumanIndex]?.protein?.recommendedName?.fullName?.value)}</p> */
-
-    // instead of parsing the metadata JSON in jsx code, I write the constant values here;
-    const uniprotId = metadata[metadataHumanIndex]?.accession;
-
-    const find_feature_keys = (input) => {
-      let temp_keys = new Set();
-      if (!input){
-        return 0;
-      }
-      else{
-        for (let i = 0; i< input.length; i++){
-          
-            temp_keys.add(input[i].category);
-        
-        }
-      }
-      return temp_keys;
-    }
-
-    let feature_keys = find_feature_keys(metadata[metadataHumanIndex]?.features); 
-    console.log(feature_keys);
-
-    const proteinKeywords = metadata[metadataHumanIndex]?.keywords.map( (keyword)  => {
-      return(
-        <li>
-          {keyword.value}
-        </li>
-      )
-    });
-
-    const features = metadata[metadataHumanIndex]?.features.map( (ftr,index) => { // loops over features of the JSON
-      return(
-        <p> {JSON.stringify(ftr)} </p>
-        // <p>{index}</p>
-      )
-    })
-
-    const gene_name = metadata[metadataHumanIndex]?.gene?.[0]?.name?.value;
-
-    // undefined if no synonyms exist
-    const synonyms_list = metadata[metadataHumanIndex]?.gene?.[0]?.synonyms?.map( (syn , idx) => {
-      return( // in first element add '(' to beggining in last element add ')' to the end instead of ','
-        <li> 
-          <h4>  
-            {idx === 0 && '('}
-            {syn?.value}
-            {(idx !== (metadata[metadataHumanIndex]?.gene?.[0]?.synonyms.length -1) ) ?  ',' :  ')' }
-          </h4>
-        </li>
-      )
-    }   )
-    return(
-      <>
-        <div style={{display:'flex', alignItems:'center'}}>
-            <h1>
-                Uniprot ID : {uniprotId} 
-            </h1>
-            <a href={"https://www.uniprot.org/uniprot/" + uniprotId }
-              style={{ textDecoration:'none'}} target="_blank" rel="noopener noreferrer"> <OpenInNewIcon/>
-            </a>
-
-        </div>
-            
-        <div > {/* style={{width:1400 , height:900,overflow:"scroll"  }}*/}
-            <div > 
-              
-              <button
-                onClick={(e) => switchTool(e, polyphen2_parameters)}
-              >
-                Polyphen2
-              </button>
-              <button
-                onClick={(e) => switchTool(e, sift_parameters)}
-              >
-                Sift
-              </button>
-              <div style={{display:'flex',gap:'30px', justifyContent:'flex-end', marginRight: '50px'}}>  
-                <h2 style={{marginLeft:'0px',marginRight:'auto'}}> Current tool : {currentPredictionToolParameters.toolname}</h2>
-                <canvas id="color_ranges_legend" ref={colorRangesLegendRef} height={"85"} 
-                width={currentPredictionToolParameters.score_ranges.length * number_of_colors * 6}  > </canvas>
-              </div>
-
-            
-            </div>
-            <Heatmap 
-              currentPredictionToolParameters={heatmapPredictionToolParameters} 
-              proteinData={proteinData}
-              color_lists_array={color_lists_array}
-              number_of_colors={number_of_colors}
-              sequence_length={sequence_length}
-            />
-        </div>
-        
-
-        <div style={{display:'', gap:'10px'}}>  
-          {features}
-        </div>
-
-        <div>
-          <h3>Sequence Keywords:</h3>
-          <ul style={{listStyleType: 'none'}}>{proteinKeywords} </ul>
-        </div>
-        <div style={{display: 'flex'}}>
-          <h3>Gene name:</h3>
-          <h4 style={{paddingLeft:'0.25rem'}}> {gene_name}</h4>
+      let temp_overlap_count = 0;
+      let temp_range_start = parseInt(arr[i].begin);
+      let temp_range_end = parseInt(arr[i].end);
+      for(let j = 0; j < arr.length; j++){ // count range overlaps for temp range;
+        let compare_range_start = parseInt(arr[j].begin);
+        let compare_range_end = parseInt(arr[j].end);
+        if ((compare_range_start <= temp_range_end && compare_range_end >= temp_range_start ) && cur_category === arr[j].category ) // overlaps with temp_range
+        {
+          if(temp_overlap_count > 0)
           {
-            synonyms_list && 
-            <ul style={{listStyleType: 'none', display: 'flex', marginTop:'0px',marginLeft:'0px',paddingLeft:'0.25rem'}}> {synonyms_list} </ul>
+            console.log("tr start = " + temp_range_start);
+            console.log("tr end = " + temp_range_end);
+            console.log("cr start = " + compare_range_start);
+            console.log("cr end = " + compare_range_end);
           }
           
-        </div>
-      </>
+          temp_overlap_count += 1;
+        }
+      }
+      if(temp_overlap_count > maximum_overlap_count){
+        maximum_overlap_count = temp_overlap_count;
+      }
+    }
+    return maximum_overlap_count;
+  }
 
-
+  const featureCategoriesAndColumnsJsx = Array.from(featureCategories).map( (category) => {
+    // const cur_ftr = metadata[metadataHumanIndex]?.features.map( (ftr) => {
+    //   return( <div> {ftr.begin}{" ==> "}{ftr.end}  </div>)
+    // });
+    const features_overlap_count = findMaximumOverlaps(metadata[metadataHumanIndex]?.features , category);
+    return(
+      <h3> {category}{" In category overlap Count = "}{features_overlap_count}</h3>
     )
+  });
 
-}
+  const proteinKeywordsJsx = metadata[metadataHumanIndex]?.keywords.map(
+    (keyword) => {
+      return <li>{keyword.value}</li>;
+    }
+  );
+
+  // const featuresJsx = metadata[metadataHumanIndex]?.features.map((ftr, index) => {
+  //   // loops over features of the JSON
+  //   return (
+  //     <p> {JSON.stringify(ftr)} </p>
+  //     // <p>{index}</p>
+  //   );
+  // });
+
+  const geneName = metadata[metadataHumanIndex]?.gene?.[0]?.name?.value;
+  
+  // undefined if no synonyms exist
+  const synonymsListJsx = metadata[metadataHumanIndex]?.gene?.[0]?.synonyms?.map(
+    (syn, idx) => {
+      return (
+        // in first element add '(' to beggining in last element add ')' to the end instead of ','
+        <li>
+          <h4>
+            {idx === 0 && "("}
+            {syn?.value}
+            {idx !==
+            metadata[metadataHumanIndex]?.gene?.[0]?.synonyms.length - 1
+              ? ","
+              : ")"}
+          </h4>
+        </li>
+      );
+    }
+  );
+  return (
+    <>
+      <div style={{ display: "flex", alignItems: "center" }}>
+        <h1>Uniprot ID : {uniprotId}</h1>
+        <a
+          href={"https://www.uniprot.org/uniprot/" + uniprotId}
+          style={{ textDecoration: "none" }}
+          target="_blank"
+          rel="noopener noreferrer"
+        >
+          <OpenInNewIcon />
+        </a>
+      </div>
+
+      <div>
+        {/* style={{width:1400 , height:900,overflow:"scroll"  }}*/}
+        <div>
+          {Object.hasOwn(
+            allProteinData,
+            polyphen2_parameters.toolname_json
+          ) && (
+            <button onClick={(e) => switchTool(e, polyphen2_parameters)}>
+              Polyphen2 {/*polyphen2_parameters.toolname */}
+            </button>
+          )}
+          {Object.hasOwn(allProteinData, sift_parameters.toolname_json) && (
+            <button onClick={(e) => switchTool(e, sift_parameters)}>
+              Sift {/* sift_parameters.toolname */}
+            </button>
+          )}
+          {Object.hasOwn(allProteinData, lists2_parameters.toolname_json) && (
+            <button onClick={(e) => switchTool(e, lists2_parameters)}>
+              LIST-S2 {/* lists2_parameters.toolname */}
+            </button>
+          )}
+          { currentPredictionToolParameters &&
+          <div
+            style={{
+              display: "flex",
+              gap: "30px",
+              justifyContent: "flex-end",
+              marginRight: "50px",
+            }}
+          >
+            <h2 style={{ marginLeft: "0px", marginRight: "auto" }}>
+              Current tool : {currentPredictionToolParameters.toolname}
+            </h2>
+            <canvas
+              id="color_ranges_legend"
+              ref={colorRangesLegendRef}
+              height={"85"}
+              width={
+                currentPredictionToolParameters.score_ranges.length *
+                number_of_colors *
+                6
+              }
+            ></canvas>
+          </div>
+          }
+        </div>
+        { currentPredictionToolParameters ?
+        <Heatmap
+          currentPredictionToolParameters={currentPredictionToolParameters}
+          // adding "|| {}" so that proteinData is never undefined, instead it is an empty object
+          proteinData={
+            allProteinData[currentPredictionToolParameters.toolname_json] || {}
+          }
+          // proteinData={proteinData} // if we want to fetch one by one;
+          color_lists_array={color_lists_array}
+          number_of_colors={number_of_colors}
+        />
+      : 
+      <div  style={{height:'400px',display:'flex',alignItems:'center', justifyContent:'center' }}> 
+        <h1> Fetching Protein Data</h1> 
+        
+      </div>
+       
+      }
+      </div>
+
+      <div>
+        <h3>Sequence Keywords:</h3>
+        <ul style={{ listStyleType: "none" }}>{proteinKeywordsJsx} </ul>
+      </div>
+
+      <div style={{ display: "flex" }}>
+        <h3>Gene name:</h3>
+        <h4 style={{ paddingLeft: "0.25rem" }}> {geneName}</h4>
+        {synonymsListJsx && (
+          <ul
+            style={{
+              listStyleType: "none",
+              display: "flex",
+              marginTop: "0px",
+              marginLeft: "0px",
+              paddingLeft: "0.25rem",
+            }}
+          >
+            {synonymsListJsx}
+          </ul>
+        )}
+      </div>
+      <div> {featureCategoriesAndColumnsJsx} </div>
+      {/* <div>{featuresJsx}</div> */}
+    </>
+  );
+};
 export default ProteinPage;
 
-
-// const helperConsoleLogger = () => {
-      
-//   // 
-//   return;
-//   /*
-//   console.log(typeof(protein_data_sift[0].data))
-//   console.log((Object.keys(protein_data_sift[0])))
-//   console.log(protein_data_sift[0].data[0].y)
-//   // for (let i = 0; i< 20; i++) {
-//   //   console.log(protein_data_sift[i].id);
-//   // }
-//   // console.log()
-//   console.log(protein_data_sift[12].id);
-//   console.log(protein_data_sift[12].data[0].y);
-//   console.log(Math.floor((protein_data_sift[12].data[0].y)*10));
-//   const c = heatmapRef.current;
-//   const ctx = c.getContext("2d");
-//   ctx.fillStyle = 'rgba(152, 30, 42)';
-//   ctx.fillRect(0,0,10,15);
-//   */
-//   // setDummyCounter(prev => prev+1);
-//   // console.log("dummy counter = " + dummyCounter);
-//   // console.log("Dummy ref = " + dummyRef.current);
-//   // console.log("dummy ref = " + dummyRef);
-//   // setTestObj( () => { 
-//   //   return(
-//   //     {asd:'q',qwe:'f'}
-//   //   )
-  
-//   // } )
-// // } 
-
-// useEffect(()=>{
-      
-//   if (heatmapRef && heatmapRef.current &&  sequence_length > 0) // Object.keys(proteinData).length !== 0 &&
-//   { 
-//     // we can remove drawheatmap2 parameters as they are from the state 
-//     drawHeatmap2();
-//     drawAminoAcidLegend();
-//     drawCurrentViewWindow();
-//   } 
-  
-//   // tooltipRef.current.addEventListener("wheel" , (e) => wheelZoom(e,topCanvasScalePrevRef)); // to cancel scrolling while on heatmap
-//   const zoomListener = (e) => wheelZoom2(e,canvasScaleAndOriginX2);
-//   let ttRefValue = null;
-//   if (tooltipRef.current ){
-//     tooltipRef.current.addEventListener("wheel", zoomListener);
-//     ttRefValue = tooltipRef.current; // to cancel scrolling while on heatmap
-//   }
-
-//   return () => {
-//     // console.log("cleanup runs");
-//     if (ttRefValue){
-//       ttRefValue.removeEventListener('wheel', zoomListener);
+// const find_feature_categories = (input) => {
+//   let temp_keys = new Set();
+//   if (!input) {
+//     return 0;
+//   } else {
+//     for (let i = 0; i < input.length; i++) {
+//       temp_keys.add(input[i].category);
 //     }
 //   }
-
-//   // return () => { //probably no need to cleanup, as heatmapref.current becomes null;
-//   //   console.log('cleanup runs');        
-//   //   console.log("heatmapref cur = " + heatmapRef.current);
-//   // };
-// },[canvasScaleAndOriginX2, sequence_length,drawHeatmap2,drawCurrentViewWindow,wheelZoom2]);
-
-// const drawCurrentViewWindow = useCallback ( () => {
-//   const c = currentviewWindowRef.current;
-//   const ctx = c.getContext("2d");
-//   const current_view_window_rect = c.getBoundingClientRect();
-  
-//   const w = current_view_window_rect.width; 
-//   const h = current_view_window_rect.height;
-  
-//   const ratio = window.devicePixelRatio;
-//   c.width = w * ratio;
-//   c.height = h * ratio;
-//   // c.style.width = w + "px";
-//   c.style.width = 'calc(100vw - 200px)';
-//   c.style.height = h + "px";
-//   ctx.scale(ratio,ratio);
-
-//   const cHeatmap = heatmapRef.current;
-//   // !! get boundaries of the heatmap instead of the tooltip canvas, for the "rect" variable;
-//   const heatmapRect = cHeatmap.getBoundingClientRect();  // !! get boundaries of the heatmap//console.log(rect);
-//   const heatmapRect_width = heatmapRect.width;
-
-//   // fillrect params = (x: number, y: number, w: number, h: number): void
-//   ctx.fillStyle = 'silver';
-//   ctx.fillRect(0,h/2,heatmapRect_width,h/2); // 1200 = width of heatmap
-//   ctx.fillStyle = 'hotpink';
-//   const canvas_originX = canvasScaleAndOriginX2.originX * heatmapRect_width; //!!QZY
-//   const canvas_scale = canvasScaleAndOriginX2.scale;
-//   ctx.fillRect(canvas_originX,h/2 , heatmapRect_width/canvas_scale , h/2)  // 1200 = width of the heatmap
-//   // canvas_originX = 0 = protein's 0 , canvas_originX = 1200 = proteins' last; canvas_originX / 1200 * sequence_length = leftmost
-//   // rightmost visible = left_most visible + 
-//   const leftmost_visible_index = String ( Math.floor((canvas_originX/heatmapRect_width * sequence_length) +1 ));
-//   const rightmost_visible_index = String(Math.floor((canvas_originX/heatmapRect_width * sequence_length) + (sequence_length/canvas_scale)));  
-  
-//   ctx.textBaseline = 'top';
-//   ctx.font = '12px Arial';
-//   if (((canvas_originX/heatmapRect_width * sequence_length) +1 ) > 10){ // if left most index is smaller than 20, textAlign to right;
-//     ctx.textAlign = 'right';
-//   }
-//   else{
-//     ctx.textAlign = 'left';
-//   }
-//   ctx.fillText( leftmost_visible_index , canvas_originX,  0 , 50) // leftmost visible of the window;
-//   ctx.textAlign = 'right';
-            
-//   ctx.fillText(rightmost_visible_index, canvas_originX  + heatmapRect_width/canvas_scale , 0 , 50   );  // rightmost visilbe of the window
-// },[canvasScaleAndOriginX2.originX,canvasScaleAndOriginX2.scale,sequence_length]);
-
-// const wheelZoom2 =  useCallback ((e,canvas_scale_and_originX) => {  // zoomig function
-
-//   const c = heatmapRef.current;
-//   const rect = c.getBoundingClientRect()
-//   const heatmap_width = rect.width;
-//   const mouse_xcor = e.clientX - rect.left;
-//   const mouse_ycor = e.clientY - rect.top;
-
-//   setIsDown(prev => false); // just to make sure, we are not panning while zooming
-
-//   if (mouse_xcor > heatmap_width || mouse_xcor < 0 || mouse_ycor > 200 || mouse_ycor < 0 )  // heatmap boundaries;
-//   {
-//     return;
-//   }
-//   e.preventDefault(); // so that it doesn't scroll while zooming
-//       // to limit the canvas re renderings to roughly 30 fps
-//       const cur_time = Date.now();
-//       // console.log(cur_time - prevTime);
-//       if (cur_time - prevTime < 50) // to limit fps;
-//       {
-//         return;
-//       }
-
-//       // setPrevTime(prev => cur_time); // moved this to here;
-//       // console.log("set time");
-//       // console.log(String(cur_time - prevTime));
-
-//       // console.log(cur_time - prevTime);
-//       // console.log("prev_tiem O= " + prevTime);
-//       // console.log("current time = " + cur_time);
-//       // console.log("diff = " + String(cur_time - prevTime));
-  
-//   //top_canvas_scale -= (e.deltaY/120); // zoom in if deltaY < 0 , zoom out if deltaY > 0
-//   // console.log("topCanvasScalePrev_in zoom = " + top_canvas_scale_prev_ref.current); //1
-//   //{scale:1,originX:0}
-//   // const canvas_scale_prev = canvas_scale_and_originX_ref.current.scale; // value of zoom before scroll event
-//   // const canvas_originX_prev = canvas_scale_and_originX_ref.current.originX;
-  
-//   const canvas_scale_prev = canvas_scale_and_originX.scale; // value of zoom before scroll event
-//   const canvas_originX_prev = canvas_scale_and_originX.originX * heatmap_width; // QZY
-//   //const canvas_originX_prev = canvas_scale_and_originX.originX;
-
-
-//   // console.log("originX prev = ")
-//   let canvas_scale_next = (1 - (e.deltaY/180)) * canvas_scale_prev; //new value of zoom after scroll
-//   canvas_scale_next = Math.min(Math.max(1, canvas_scale_next), 64);
-//   const scalechange = canvas_scale_next / canvas_scale_prev; // 
-
-//   let real_xcor = canvas_originX_prev + (mouse_xcor/canvas_scale_prev); // real x coordinate of the mouse pointer, this line is reused in tooltip function
-//     // real coordinate of current mouse point;
-//   // console.log("mouse_xcor in drawheatmap " + mouse_xcor);
-//   // console.log("real Xcord = " + real_xcor);
-//   // console.log("realxcor = + " + real_xcor + " scalechange = " + scalechange + " canvas_originX_prev =  " + canvas_originX_prev);
-//   let canvas_originX_next = Math.max( (real_xcor - ((real_xcor - canvas_originX_prev)/scalechange)), 0); // so that it doesn't become smaller than 0
-//   canvas_originX_next = Math.min(canvas_originX_next,(heatmap_width - heatmap_width/canvas_scale_next)) // so that heatmap new originX isn't too large, (start and end is constant)
-//   canvas_originX_next = canvas_originX_next/heatmap_width // !!QZY
-  
-//   setCanvasScaleAndOriginX2( {scale:canvas_scale_next, originX: canvas_originX_next} );
-//   setPrevTime(cur_time); // moved this to here;
-//   // console.log("setted time");
-//   // console.log(canvas_scale_prev);
-
-
-// },[prevTime]);
-
-
-// const drawHeatmap2 = useCallback (() => { // scale is given as parameter right now;
-//   //// be careful, cell_height and width must be the same in the tooltio, if you change this also change tooltip;
-//   // const c = ctxRef.current;
-//   // console.log("drawheatmap start originXprev = " + top_canvas_originX_prev);
-//   const tool_parameters = currentPredictionToolParameters;
-//   const c = heatmapRef.current;
-//   const ctx = c.getContext("2d");
-//   const rect = c.getBoundingClientRect(); //console.log(rect);
-//   const heatmap_width = rect.width;// must be the same as in canvas width html element
-//   const heatmap_height = rect.height;//must be the same as in canvas height html element
-//   const ratio = window.devicePixelRatio;
-//   c.width = heatmap_width * ratio;
-//   c.height = heatmap_height * ratio;
-//   c.style.width = 'calc(100vw - 200px)'; // !!! IMPORTANT for sizing MUST BE SAME IN THE HTML CODE
-//   c.style.height = heatmap_height + "px";
-//   // console.log(canvas_originX);
-
-//   //ctx.resetTransform(); same as setTransform(1,0,0,1,0,0);
-//   ctx.setTransform(1, 0, 0, 1, 0, 0);
-//   ctx.scale(ratio,ratio);
-
-//   ctx.imageSmoothingEnabled = false; // doesn't actually do anything as this command is for imported images
-  
-//   // ctx.clearRect(0,0,heatmap_width,heatmap_height); 
-//   const canvas_originX = canvasScaleAndOriginX2.originX * heatmap_width ; //!!QZY
-//   const canvas_scale = canvasScaleAndOriginX2.scale;
-//   ctx.scale(canvas_scale,1); 
-//   ctx.translate(-canvas_originX,0); 
-
-//   // console.log("orignx = " + canvas_originX);
-//   const cell_height = (heatmap_height - 70)/20; //!! must be same in drawtooltip //10, number 20 = aminoacids, also left 50 px space in the bottom;
-//   // const cell_width = Math.floor(c.width/563); // 1200/563 = 2 , number 563 is the protein sequence length;if we use floor, it will result in 0 cell width when protein length is larger than c.width;
-//   const cell_width = (heatmap_width/sequence_length); // !! must be same in draw tooltip !!!! THIS IS THE REASON OF BORDERS BETWEEN SQUARES !!!
-//   // cell width changes on resize, because heamtap_width also changes;
-//   for (let i = 0; i<sequence_length; i++) // for every aminoacid
-//   {
-//     for( let j = 0 ; j < 20 ; j++ )// for every position
-//     {// sift value = protein_data_sift[i].data[j].y 
-//       let current_score;
-//       if ( Object.hasOwn(proteinData.scores[i+1] , aminoacid_ordering[j]  )  ){
-//         current_score = proteinData.scores[i+1][aminoacid_ordering[j]];
-//       }
-//       else{
-//         current_score = tool_parameters.ref_value;
-//       }
-      
-//       let color_index;
-      
-//       let range_start;
-//       let range_end;
-//       let range_size;
-//       let color_lists_index;
-//       for (let k = 0; k< tool_parameters.score_ranges.length; k++){
-//         const current_loop_range_start = tool_parameters.score_ranges[k].start;
-//         const current_loop_range_end = tool_parameters.score_ranges[k].end;
-//         if(current_score >= current_loop_range_start && current_score <=current_loop_range_end ){
-//           // is between current ranges
-//           range_start = current_loop_range_start;
-//           range_end = current_loop_range_end;
-//           range_size = range_end - range_start
-//           color_lists_index = k;
-//         } 
-//       }
-//       // 30 is number of colors // 29 = number of //colors in range -1
-//       color_index = Math.min( Math.floor((current_score - range_start) * (1/ range_size) * number_of_colors ) ,number_of_colors - 1 ) 
-//       ctx.fillStyle = String(color_lists_array[color_lists_index][color_index]); // IMPORTANT this will be a generic color_lists array that will be generated based on the selected parameters;          
-//       // to map values between 0-1 to 10 values that are in my color_list
-//       // ctx.fillStyle = '#bfdf83';
-//       ctx.fillRect(i * cell_width ,j * cell_height ,cell_width ,cell_height )
-      
-      
-//     } 
-//   } 
-//   //drawing the aminoacid positions inside the protein;
-//   ctx.scale(1/canvas_scale,1); // need this so that numbers size stay same;
-//   ctx.fillStyle = 'black';
-//   ctx.font = "12px Arial";
-//     // i want 20 numbers at most,
-//     // at scale = 1; number visible = protein len; so I must multiply protein len by (20/protein len)
-//     // numbefr visible = sequence_length/scale
-//     // step_size = (num_visible/20)
-//   const num_visible = sequence_length/canvas_scale;
-//   const browser_resize_ratio = (window.innerWidth/window.screen.availWidth); // so that numbers don't get jumbled up
-//   // the constant 20 in step_size calculation will be included in config.js
-//   const step_size = Math.max(Math.floor(num_visible/ ( 20  *  browser_resize_ratio )),1); // so that step_size isn't smaller than 1; // if stepsize becomes 0 I get infinite loop;
-//   for (let i = 0; i< sequence_length; i+= step_size) 
-//   {
-//     // let number_text = String(i+1);
-//     ctx.fillText(String(i+1),cell_width * (i+0.5) * canvas_scale,cell_height*22);
-//   }
-//   ctx.scale(canvas_scale,1); // canvas scale returned back to state before we wrote positions;
-
-//   // !!! IMPORTANT, instead of this take the average of colors in all 20 slots 
-//   for ( let i = 0; i< sequence_length; i++) // alternative is to count greens/yellows, or take the average of their colors
-//   { // because in sift 0 to 0.05 is benign, not all ranges are equal; 
-//     // trying the median value now,;
-//     // let cur_pos_mean = 0;
-//     let cur_pos_array = [];
-//     for (let j = 0; j<20; j++)
-//     {
-//         let current_score;
-//         if ( Object.hasOwn(proteinData.scores[i+1] , aminoacid_ordering[j]  )  ){
-//           current_score = proteinData.scores[i+1][aminoacid_ordering[j]];
-//         }
-//         else{
-//           current_score = tool_parameters.ref_value;
-//         }
-//         // const current_score = proteinData.scores[i+1][aminoacid_ordering[j]] || tool_parameters.ref_value;
-//         // cur_pos_mean += (current_score)/20;
-//         cur_pos_array.push(current_score);
-//     }
-//     // median calculation
-//     cur_pos_array.sort( (a,b) => a-b )
-//     const cur_pos_median = (cur_pos_array[9] + cur_pos_array[10]) / 2 ; // position has 20 elements, average of 9 and 10 is median
-
-//     let color_index;
-      
-//     let range_start;
-//     let range_end;
-//     let range_size;
-//     let color_lists_index;
-
-   
-//     // for (let k = 0; k< tool_parameters.score_ranges.length; k++){
-//     //   const current_loop_range_start = tool_parameters.score_ranges[k].start;
-//     //   const current_loop_range_end = tool_parameters.score_ranges[k].end;
-//     //   if(cur_pos_mean >= current_loop_range_start && cur_pos_mean <=current_loop_range_end ){
-//     //     // is between current ranges
-//     //     range_start = current_loop_range_start;
-//     //     range_end = current_loop_range_end;
-//     //     range_size = range_end - range_start
-//     //     color_lists_index = k;
-//     //   } 
-//     // }
-//     // color_index = Math.min( Math.floor((cur_pos_mean - range_start) * (1/ range_size) * 30 ) ,29 ) 
-//     // ctx.fillStyle = String(color_lists_array[color_lists_index][color_index]);
-
-//     for (let k = 0; k< tool_parameters.score_ranges.length; k++){
-//         const current_loop_range_start = tool_parameters.score_ranges[k].start;
-//         const current_loop_range_end = tool_parameters.score_ranges[k].end;
-//         if(cur_pos_median >= current_loop_range_start && cur_pos_median <=current_loop_range_end ){
-//           // is between current ranges
-//           range_start = current_loop_range_start;
-//           range_end = current_loop_range_end;
-//           range_size = range_end - range_start
-//           color_lists_index = k;
-//         } 
-//       }
-//       color_index = Math.min( Math.floor((cur_pos_median - range_start) * (1/ range_size) * number_of_colors ) ,number_of_colors -1  ) 
-//       ctx.fillStyle = String(color_lists_array[color_lists_index][color_index]);
-//     // 30 is number of colors // 29 = number of colors in range -1
-     
-//     ctx.fillRect(i * cell_width ,22.8 * cell_height ,cell_width ,cell_height* 4.2 )
-    
-//   } 
-    
-// },[canvasScaleAndOriginX2.originX,canvasScaleAndOriginX2.scale,color_lists_array,currentPredictionToolParameters,proteinData.scores,sequence_length] );
-// const drawAminoAcidLegend  = () => {  // will only run once on startup of useEffect
-//   const c = aminoAcidLegendRef.current;
-//   const ctx = c.getContext("2d");
-//   const legend_rect = c.getBoundingClientRect();
-//   const w = legend_rect.width;
-//   const h = legend_rect.height;
-//   const ratio = window.devicePixelRatio;
-//   c.width = w * ratio;
-//   c.height = h * ratio;
-//   c.style.width = w + "px";
-//   c.style.height = h + "px";
-//   ctx.scale(ratio,ratio);
-  
-//   //{'A': 0, 'R': 1, 'N': 2, 'D': 3, 'C': 4, 'Q': 5, 'E': 6, 'G': 7, 'H': 8, 'I': 9, 'L': 10, 'K': 11, 'M': 12, 'F': 13, 'P': 14, 'S': 15, 'T': 16, 'W': 17, 'Y': 18, 'V': 19}    
-//   const cHeatmap = heatmapRef.current;
-//   const heatmapRect = cHeatmap.getBoundingClientRect();
-//   const cell_height = (heatmapRect.height - 70)/20; //!! must be same in drawtooltip and drwaheatmap //10, number 20 = aminoacids, also left 50 px space in the bottom;
-//   ctx.font = "12px Arial Narrow";
-  
-//   ctx.lineWidth = 1;
-  
-//   for (let i = 0; i<20; i++)
-//   {
-//     ctx.fillText(aminoacid_ordering[i] , 90 , (cell_height * (i+1)) );
-//     ctx.beginPath();       // Start a new path
-//     ctx.moveTo(105, cell_height * (i+0.5));    // Move the pen to (30, 50)
-//     ctx.lineTo(115, cell_height * (i+0.5));  // Draw a line to (150, 100)
-//     ctx.stroke();          // Render the path
-//   }
-
-//   ctx.fillText("Position" , 70 , cell_height*(24.5) );
-//   ctx.fillText("average" , 70 , cell_height* (26) );
-//   ctx.beginPath();
-//   ctx.moveTo(105,  cell_height * (25));
-//   ctx.lineTo(115, cell_height * (25));
-//   ctx.stroke();
-//   // ctx.fillText("Position average",20,(cell_height*(25+1)));
-//   // ctx.beginPath();
-//   // ctx.moveTo(105,  cell_height * (25+0.5) );
-//   // ctx.lineTo(115,  cell_height *  (25+0.5) );
-//   // ctx.stroke();
-
-// } ;
-
-// useEffect(() => {   // uselayouteffect didn't fix flickering
-//   const handleResize = () => { // reset canvasScaleOrigin reference and draw in roughly 30 fps
-//     // console.log("handleresize");
-//     const cur_time = Date.now();
-//     if (cur_time - prevTime < 32) // 1000/40 = 25 fps
-//     {
-//       return;
-//     }
-    
-//     // giving canvas scale a new reference so that drawing heatmap runs once again;
-//     setCanvasScaleAndOriginX2( prev => { return( {scale: prev.scale , originX: prev.originX } ) } )
-//     // drawHeatmap2();
-//     setPrevTime(prev => cur_time); // if removed, flickering will happen, no idea why
-//   }
-//   window.addEventListener("resize" , handleResize )
-
-//   return () => {window.removeEventListener("resize" , handleResize)}; // cleanup
-
-// },[prevTime]) // draw heatmap again on resize
-
-// const heatmapRef = useRef(null); // ref for the heatmap in top
-// const aminoAcidLegendRef = useRef(null);
-// const tooltipRef = useRef(null); // ref for the tooltip layer on top of the heatmap
-// const currentviewWindowRef = useRef(null);
-// const [isDown,setIsDown] = useState(false);
-// const [panningStartX,setPanningStartX] = useState(0); 
-// const [canvasScaleAndOriginX2,setCanvasScaleAndOriginX2] = useState({scale:1,originX:0}) // so that we update both of them at the smae time instead of seperately,;
-
-// const [prevTime, setPrevTime] = useState( () => Date.now() )
-
-
-    // const onMouseDownHelper = (e) =>{
-
-    //   const c = heatmapRef.current;
-    //   const rect = c.getBoundingClientRect()
-    //   const heatmap_width = rect.width;
-    //   const mouse_xcor = e.clientX - rect.left;
-    //   const mouse_ycor = e.clientY - rect.top;
-    //   //console.log("mouse xcor_point = " +mouse_xcor);
-    //   //console.log("mouse_ycor " + mouse_ycor);
-    //   console.log(heatmap_width);
-    //   if (mouse_xcor >= heatmap_width || mouse_xcor <= 0 || mouse_ycor >= 200 || mouse_ycor <= 0 )  // heatmap boundaries;
-    //   {
-    //     return;
-    //   }
-    //   else // only if mouse points inside correct the heatmap
-    //   {
-    //     setIsDown(true);
-    //     setPanningStartX(prev => mouse_xcor);
-    //   }
-    // }
-
-    // const onMouseUpHelper = (e) => {
-     
-
-    //   setIsDown(false);
-      
-    // }
-    
-
-    
-
-   
-
-    // function drawTooltipOrPan2(e) // scale comes from top_canvas_scale
-    // { // be careful, cell_height and width must be the same in the draw function, if you change this also change drawheatmap;
-    //   // if clause to check if xcor and ycor is inside the heatmapCanvas coordinates;
-    //   // !!!! DrawToolTip Part of the function; !!!
-    //   // console.log("tooltip start prevX  = " + topCanvasOriginXPrev);
-    //   const tool_parameters =  currentPredictionToolParameters;
-    //   if (sequence_length === 0 ){
-    //     return;
-    //   }
-      
-    //   const c = tooltipRef.current;
-    //   const ctx = c.getContext("2d");
-    //   const tooltipRect = c.getBoundingClientRect();
-    //   const tooltip_width = tooltipRect.width;// must be the same as in canvas width html element
-    //   const tooltip_height = tooltipRect.height;//must be the same as in canvas height html element
-    //   const ratio = window.devicePixelRatio;
-    //   c.width = tooltip_width * ratio;
-    //   c.height = tooltip_height * ratio;
-    //   c.style.width = "calc(100vw)";
-    //   c.style.height = tooltip_height + "px";
-    //   // console.log("width =   "  + c.width);
-    //   ctx.scale(ratio,ratio);
-    //   ctx.clearRect(0,0,tooltip_width,tooltip_height);
-     
-      
-    //   // const cHeatmap = ctxRef.current; // 
-    //   const cHeatmap = heatmapRef.current;
-    //   // !! get boundaries of the heatmap instead of the tooltip canvas, for the "rect" variable;
-    //   const heatmapRect = cHeatmap.getBoundingClientRect();  // !! get boundaries of the heatmap//console.log(rect);
-    //   const heatmapRect_height = heatmapRect.height;
-    //   const heatmapRect_width = heatmapRect.width;
-    //   const mouse_xcor = e.clientX - heatmapRect.left;//console.log("hover mouse_xcor = " + mouse_xcor); // console.log(heatmapRect.width);
-    //   const mouse_ycor = e.clientY - heatmapRect.top; // scale doen't affect this, so this is the real_ycoordinate //console.log("hover mouse_ycor = " + mouse_ycor);// console.log(heatmapRect.height-50); // -50 space for position indexes;
-      
-    //   if (mouse_xcor >= heatmapRect_width || mouse_xcor <= 0 || mouse_ycor <= 0 || mouse_ycor >= (heatmapRect_height - 70)) 
-    //   { // boundary check for heatmap, -50 is for the space left for position indices
-    //     // bigger or equal to, so that index finders don't go out of bounds, as maxwidth/cell_width = an index 1 bigger than the sequence length
-    //     setIsDown(prev => false);// so that panning point resets when mouse goes out of bounds;
-    //     return
-    //   }
-      
-    //   const cell_height = (heatmapRect_height-70)/20; //!! must be same in drawheatmap // 300/20 = 15 ,  number 20 is same for all 
-    //   const cell_width = (heatmapRect_width/sequence_length); //!! must be same in drawheatmap // if we use floor, it will result in 0 cell width when protein length is larger than c.width;
-    //   // const xcor = e.clientX;
-    //   // const ycor = e.clientY;
-
-    //   // using real_xcor to calculate which aminoacid the current pointed cell corresponds to
-    //   const canvas_scale = canvasScaleAndOriginX2.scale; // value of zoom before scroll event
-    //   const canvas_originX_prev = canvasScaleAndOriginX2.originX * heatmapRect_width; // QZY
-    //   //const canvas_originX_prev = canvasScaleAndOriginX2.originX;
-    //   let real_xcor =  canvas_originX_prev + (mouse_xcor/canvas_scale); // real x coordinate of the mouse pointer, this line and the if else block is reused in tooltip function
-    //   // console.log(canvas_originX_prev);
-    //   // real_xcor = topCanvasOriginXPrev + (mouse_xcor/topCanvasScalePrev); 
-
-
-    //   // got the context;    // console.log(e);
-      
-    //   const original_aminoacid_idx = Math.floor(real_xcor/cell_width) + 1 // real_xcor 0 to cell_wid = 0th aminoacid; realxcor cell_width to 2*cell_width = 1st aminoacid; // +1 because our scores start from 1;
-    //   const original_aminoacid = proteinData.scores[original_aminoacid_idx].ref;
-    //   const mutated_aminoacid_idx = Math.floor(mouse_ycor/cell_height);
-    //   const mutated_aminoacid = aminoacid_ordering[mutated_aminoacid_idx]; // the resulting aminoacid from SNP mutation
-    //   // console.log("original_aminoacid = " + original_aminoacid);
-    //   // console.log("mutated_aminoacid = " + mutated_aminoacid);
-      
-      
-
-    //   // !!! IMPORTANT HAVE TO THINK ABOUT WHAT TO DO WHEN COMBINING MULTIPLE TOOLS VALUES !!!
-    //   let mutation_risk_raw_value;
-    //   if ( Object.hasOwn(proteinData.scores[original_aminoacid_idx] , mutated_aminoacid)  ){
-    //     mutation_risk_raw_value = proteinData.scores[original_aminoacid_idx][mutated_aminoacid];
-    //   }
-    //   else{
-    //     mutation_risk_raw_value = tool_parameters.ref_value;
-    //   }
-    //     //console.log("mutation risk_raw_value = " + mutation_risk_raw_value);
-      
-    //   let mutation_risk_assesment // 'Neutral';  // change based on mutation_risk_raw value;
-    //     // score_ranges:[ {start:0.00, end:0.15, risk_assessment : ' benign' , start_color:"2C663C", end_color:"D3D3D3" } , 
-    //     //            {start:0.15, end:0.85, risk_assessment :'possibly damaging',start_color:"D3D3D3", end_color:"FFA500" }, 
-    //     //            {start:0.85, end: 1.00, risk_assessment:'confidently damaging',start_color:"FFA500", end_color:"981E2A" }, ]
-    //     for (let i = 0; i< tool_parameters.score_ranges.length; i++){
-    //       const current_loop_range_start = tool_parameters.score_ranges[i].start;
-    //       const current_loop_range_end = tool_parameters.score_ranges[i].end;
-    //       const current_loop_range_risk_assessment = tool_parameters.score_ranges[i].risk_assessment;
-    //       if(mutation_risk_raw_value >= current_loop_range_start && mutation_risk_raw_value <= current_loop_range_end ){
-    //         // is between current ranges
-    //         mutation_risk_assesment = current_loop_range_risk_assessment;
-    //       } 
-    //     }
-      
-    //   // String(original_aminoacid_idx) + ". " +
-    //   const text = String(original_aminoacid_idx) + ". " + String(original_aminoacid) + " --> " + String(mutated_aminoacid) + " " + String(mutation_risk_raw_value) + " " + String(mutation_risk_assesment); 
-
-      
-    //   ctx.fillStyle="black"
-    //   //ctx.fillRect(x,y,w,h);  // rect.left = 0 for now, rect.top = the offset of canvas element;
-    //   ctx.fillRect(mouse_xcor + 100 , mouse_ycor + 10  , 300,31 ); // cell_width*40,cell_height*5 250 for sift, 300 for polyphen2
-    //   // console.log("mouse_xcor = " + mouse_xcor);
-    //   // console.log("mouse_ycor = " + mouse_ycor);
-
-    //   // var text = "A to G 0.52 Neutral";
-    //   ctx.fillStyle = "white";
-    //   ctx.font = "15px Arial";
-    //   ctx.fillText(text, (mouse_xcor + 120) , mouse_ycor + 30 );
-    //   // console.log("text width = + " );
-    //   // console.log(ctx.measureText(text));
-    //   // console.log("text ending = " + (parseInt(mouse_xcor) + 120 + ctx.measureText(text).width) );
-    //   // ctx.resetTransform();
-      
-    //   if (isDown) // panning the canvas if mouse down is down;
-    //   {
-    //     console.log("isdonwnnnn2");
-    //     const dx_normalized = (panningStartX - mouse_xcor) / canvas_scale; // change in X direction
-
-    //     let canvas_originX_next = canvas_originX_prev + dx_normalized;
-    //     // console.log("temp_top_canvas_priginX_prev = " + temp_top_canvas_originX_prev);
-    //     // console.log("tooltip panStartX , mouse_xcor , topcanvasscaleprev =  " + panningStartX + " " + mouse_xcor + " " + topCanvasScalePrev);
-    //     // console.log("tooltip originXprev at start of Pan = " + topCanvasOriginXPrev);
-    //     canvas_originX_next = Math.max(canvas_originX_next,0); // origin not smaller than 0
-    //     canvas_originX_next = Math.min(canvas_originX_next, (heatmapRect_width - heatmapRect_width/canvas_scale)); // origin not larger than heatmap rightmost point;
-    //     canvas_originX_next = canvas_originX_next / heatmapRect_width; // QZY
-    //     setCanvasScaleAndOriginX2(prev => {
-    //       return (  
-    //         {scale: canvas_scale ,originX: canvas_originX_next }
-    //       )
-    //       } );
-    //     setPanningStartX(prev => mouse_xcor); 
-    //   }
-    //   //ctx.resetTransform(); no need
-    // }
+//   return temp_keys;
+// };
+// const feature_categories = find_feature_categories(metadata[metadataHumanIndex]?.features);
