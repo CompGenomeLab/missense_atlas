@@ -33,9 +33,9 @@ const database_url = "http://10.3.2.13:8080/database/";
 // }
 
 const lists2_parameters = {
-  toolname: "LIST-S2",
-  toolname_api: "lists2",
-  toolname_json: "Lists2",
+  toolname: "LIST-S2", // shown to the user
+  //toolname_api: "lists2", // api url, example: /database/lists2/{md5sum} // deprecated
+  toolname_json: "lists2", // field name in the api response json.
   score_ranges: [
     {
       start: 0.0,
@@ -56,11 +56,10 @@ const lists2_parameters = {
   ],
   ref_value: 0,
 };
-
-const polyphen2_parameters = {
-  toolname: "Polyphen-2",
-  toolname_api: "polyphen", // used in the api url
-  toolname_json: "Polyphen", // used in the return value of the all_scores api
+const polyphen2_parameters_humdiv = {
+  toolname: "Polyphen-2 (Humdiv)",
+ // toolname_api: "polyphen", // used in the api url
+  toolname_json: "pph_humdiv", // used in the return value of the all_scores api
   score_ranges: [
     {
       start: 0.0,
@@ -86,10 +85,61 @@ const polyphen2_parameters = {
   ],
   ref_value: 0,
 };
-const sift_parameters = {
-  toolname: "Sift",
-  toolname_api: "sift",
-  toolname_json: "Sift",
+const polyphen2_parameters_humvar = {
+  toolname: "Polyphen-2 (Humvar)",
+  //toolname_api: "polyphen", // used in the api url
+  toolname_json: "pph_humvar", // used in the return value of the all_scores api
+  score_ranges: [
+    {
+      start: 0.0,
+      end: 0.15,
+      risk_assessment: " benign",
+      start_color: "#2c663c",
+      end_color: "#d3d3d3",
+    },
+    {
+      start: 0.15,
+      end: 0.85,
+      risk_assessment: "possibly damaging",
+      start_color: "#d3d3d3",
+      end_color: "#ffa500",
+    },
+    {
+      start: 0.85,
+      end: 1.0,
+      risk_assessment: "confidently damaging",
+      start_color: "#ffa500",
+      end_color: "#981e2a",
+    },
+  ],
+  ref_value: 0,
+};
+const sift_parameters_swissprot = {
+  toolname: "Sift (Swissprot) ",
+  //toolname_api: "sift",
+  toolname_json: "sift4g_swissprot",
+  score_ranges: [
+    {
+      start: 0.0,
+      end: 0.05,
+      risk_assessment: "deleterious",
+      start_color: "#981e2a",
+      end_color: "#fcedaa",
+    },
+    {
+      start: 0.05,
+      end: 1.0,
+      risk_assessment: "benign",
+      start_color: "#fcedaa",
+      end_color: "#2c663c",
+    },
+  ],
+  ref_value: 1,
+};
+const sift_parameters_trembl = {
+  toolname: "Sift (Trembl)",
+  //toolname_api: "sift",
+  toolname_json: "sift4g_sp_trembl",
   score_ranges: [
     {
       start: 0.0,
@@ -109,7 +159,13 @@ const sift_parameters = {
   ref_value: 1,
 };
 
-const possible_prediction_tools_array = [lists2_parameters,polyphen2_parameters,sift_parameters];
+const possible_prediction_tools_array = [
+  lists2_parameters,
+  polyphen2_parameters_humdiv,
+  polyphen2_parameters_humvar,
+  sift_parameters_swissprot,
+  sift_parameters_trembl,
+];
 
 const number_of_colors = 30; // add to config.js
 
@@ -140,6 +196,7 @@ const ProteinPage = () => {
       const current_range_end_color =
         currentPredictionToolParameters.score_ranges[i].end_color;
       // chroma.scale(['#fafa6e','#2A4858']).mode('lch').colors(6)
+      // !!! IMPORTANT , CHECK MODE and GAMMA//
       const temp_list = chroma
         .scale([current_range_start_color, current_range_end_color])
         .mode("lrgb")
@@ -192,6 +249,7 @@ const ProteinPage = () => {
         // delete response.data.Sift;
         // delete response.data.Lists2;
         const first_available_tool = findAvailablePredictionTools(response.data)[0];
+        console.log("ftool" + first_available_tool);
         setCurrentPredictionToolParameters(first_available_tool);
         setAllProteinData(response.data);
         console.log("pdata = ");
@@ -352,6 +410,7 @@ const ProteinPage = () => {
   //   )
   // });
 
+  // FIX calculation bug;
   const findMaximumOverlaps = (arr,cur_category) => { // for metadata features
     // currently O(n^2), comparing each range with the others, and counting the maximum number of overlaps a range has;
     let maximum_overlap_count = 1;
@@ -367,13 +426,7 @@ const ProteinPage = () => {
         let compare_range_end = parseInt(arr[j].end);
         if ((compare_range_start <= temp_range_end && compare_range_end >= temp_range_start ) && cur_category === arr[j].category ) // overlaps with temp_range
         {
-          if(temp_overlap_count > 0)
-          {
-            console.log("tr start = " + temp_range_start);
-            console.log("tr end = " + temp_range_end);
-            console.log("cr start = " + compare_range_start);
-            console.log("cr end = " + compare_range_end);
-          }
+
           
           temp_overlap_count += 1;
         }
@@ -445,17 +498,17 @@ const ProteinPage = () => {
 
       <div>
         {/* style={{width:1400 , height:900,overflow:"scroll"  }}*/}
-        <div>
-          {Object.hasOwn(
+        <div> 
+          {Object.hasOwn( // make this into a list.map() function
             allProteinData,
-            polyphen2_parameters.toolname_json
+            polyphen2_parameters_humdiv.toolname_json
           ) && (
-            <button onClick={(e) => switchTool(e, polyphen2_parameters)}>
+            <button onClick={(e) => switchTool(e, polyphen2_parameters_humdiv)}>
               Polyphen2 {/*polyphen2_parameters.toolname */}
             </button>
           )}
-          {Object.hasOwn(allProteinData, sift_parameters.toolname_json) && (
-            <button onClick={(e) => switchTool(e, sift_parameters)}>
+          {Object.hasOwn(allProteinData, sift_parameters_swissprot.toolname_json) && (
+            <button onClick={(e) => switchTool(e, sift_parameters_swissprot)}>
               Sift {/* sift_parameters.toolname */}
             </button>
           )}

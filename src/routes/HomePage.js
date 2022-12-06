@@ -4,10 +4,6 @@ import { Link } from "react-router-dom";
 import SearchBox from "../components/SearchBox";
 
 const HomePage = () => {
-// copied form "https://stackoverflow.com/questions/997284/how-does-md5sum-algorithm-work"
-   
-   
-
     return(
         <>
             <h1>

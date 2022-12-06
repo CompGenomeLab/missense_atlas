@@ -14,11 +14,8 @@ function Heatmap( props ){
     // used use memo to not define a function and call it in the next line, because it is easier to read;
     // immediately invoked function expresssions can be used too, but there is no harm in useMemo I think
   const sequence_length = useMemo ( () => { // calculate sequence length based on the return value of the api
-    if ( Object.hasOwn( proteinData, 'scores' ) === false ){
-      return 0;
-    }
     let i = 1;
-    while( Object.hasOwn (proteinData.scores, i)  )
+    while( Object.hasOwn (proteinData, i)  )
     {
       i += 1;
     }
@@ -39,8 +36,8 @@ function Heatmap( props ){
     for (let j = 0; j<20; j++) // for each aminoacid
     {
         let current_score;
-        if (Object.hasOwn(proteinData.scores[i] , aminoacid_ordering[j]  )  ){
-          current_score = proteinData.scores[i][aminoacid_ordering[j]];
+        if (Object.hasOwn(proteinData[i] , aminoacid_ordering[j]  )  ){
+          current_score = proteinData[i][aminoacid_ordering[j]];
         }
         else{
           current_score = currentPredictionToolParameters.ref_value;
@@ -61,7 +58,7 @@ function Heatmap( props ){
       cur_pos_median = cur_pos_array[9]; 
     } // this will also work in the special case of visualizing all of the tools;
     return cur_pos_median;
-  },[proteinData.scores,currentPredictionToolParameters.ref_value])
+  },[proteinData,currentPredictionToolParameters.ref_value])
 
   const calculateRiskAssessment = (mutation_risk_raw_value) => {
     const tool_parameters = currentPredictionToolParameters;
@@ -91,8 +88,8 @@ function Heatmap( props ){
       for (let j = 0; j <20; j++) // aminoacid_ordering
       {
         let current_score;
-        if (Object.hasOwn(proteinData.scores[i+1] , aminoacid_ordering[j]  )  ){
-          current_score = proteinData.scores[i+1][aminoacid_ordering[j]];
+        if (Object.hasOwn(proteinData[i+1] , aminoacid_ordering[j]  )  ){
+          current_score = proteinData[i+1][aminoacid_ordering[j]];
         }
         else{
           current_score = currentPredictionToolParameters.ref_value;
@@ -484,13 +481,13 @@ function Heatmap( props ){
     let real_xcor =  canvas_originX_prev + (mouse_xcor/canvas_scale); // real x coordinate of the mouse pointer, this line and the if else block is reused in tooltip function
           
     const original_aminoacid_idx = Math.floor(real_xcor/cell_width) + 1 // real_xcor 0 to cell_wid = 0th aminoacid; realxcor cell_width to 2*cell_width = 1st aminoacid; // +1 because our scores start from 1;
-    const original_aminoacid = proteinData.scores[original_aminoacid_idx].ref;
+    const original_aminoacid = proteinData[original_aminoacid_idx].ref;
     const mutated_aminoacid_idx = Math.floor(mouse_ycor/cell_height);
     const mutated_aminoacid = aminoacid_ordering[mutated_aminoacid_idx]; // the resulting aminoacid from SNP mutation    
 
     let mutation_risk_raw_value;
-    if ( Object.hasOwn(proteinData.scores[original_aminoacid_idx] , mutated_aminoacid)  ){
-      mutation_risk_raw_value = proteinData.scores[original_aminoacid_idx][mutated_aminoacid];
+    if ( Object.hasOwn(proteinData[original_aminoacid_idx] , mutated_aminoacid)  ){
+      mutation_risk_raw_value = proteinData[original_aminoacid_idx][mutated_aminoacid];
     }
     else{
       mutation_risk_raw_value = tool_parameters.ref_value;
@@ -538,7 +535,7 @@ function Heatmap( props ){
     //const canvas_originX_prev = canvasScaleAndOriginX2.originX;
     let real_xcor =  canvas_originX_prev + (mouse_xcor/canvas_scale); // real x coordinate of the mouse pointer, this line and the if else block is reused in tooltip function
     const original_aminoacid_idx = Math.floor(real_xcor/cell_width) + 1 // real_xcor 0 to cell_wid = 0th aminoacid; realxcor cell_width to 2*cell_width = 1st aminoacid; // +1 because our scores start from 1;
-    const original_aminoacid = proteinData.scores[original_aminoacid_idx].ref;
+    const original_aminoacid = proteinData[original_aminoacid_idx].ref;
     const cur_pos_median = calculateMedianOfPosition(original_aminoacid_idx);
     // for every risk assessment, make a list of which aminoacids are deleterious, which of them are benign for that position;
     let risk_assessment_buckets = {};
@@ -550,8 +547,8 @@ function Heatmap( props ){
     {
       let mutation_risk_raw_value;
       const mutated_aminoacid = aminoacid_ordering[i];
-      if ( Object.hasOwn(proteinData.scores[original_aminoacid_idx] , mutated_aminoacid)  ){
-        mutation_risk_raw_value = proteinData.scores[original_aminoacid_idx][mutated_aminoacid];
+      if ( Object.hasOwn(proteinData[original_aminoacid_idx] , mutated_aminoacid)  ){
+        mutation_risk_raw_value = proteinData[original_aminoacid_idx][mutated_aminoacid];
       }
       else{
         mutation_risk_raw_value = tool_parameters.ref_value;
