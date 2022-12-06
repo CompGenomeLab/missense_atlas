@@ -639,7 +639,7 @@ function Heatmap( props ){
     const y_offset = heatmapRect.top - tooltipRect.top;
   
 
-    if (mouse_xcor >= heatmapRect_width || mouse_xcor <= 0 || mouse_ycor <= 0 || mouse_ycor >= (heatmapRect_height)) 
+    if (mouse_xcor > heatmapRect_width || mouse_xcor < 0 || mouse_ycor <= 0 || mouse_ycor >= (heatmapRect_height)) 
     { // boundary check for heatmap, -50 is for the space left for position indices
       // bigger or equal to, so that index finders don't go out of bounds, as maxwidth/cell_width = an index 1 bigger than the sequence length
       setIsDown(prev => false);// so that panning point resets when mouse goes out of bounds;
@@ -683,7 +683,7 @@ function Heatmap( props ){
       const mouse_ycor = e.clientY - rect.top;
       //console.log("mouse xcor_point = " +mouse_xcor);
       //console.log("mouse_ycor " + mouse_ycor);
-      if (mouse_xcor >= heatmap_width || mouse_xcor <= 0 || mouse_ycor >= heatmap_height || mouse_ycor <= 0 )  // heatmap boundaries;
+      if (mouse_xcor >= heatmap_width || mouse_xcor < 0 || mouse_ycor > heatmap_height || mouse_ycor <= 0 )  // heatmap boundaries;
       {
         return;
       }
