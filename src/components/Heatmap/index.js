@@ -242,6 +242,13 @@ function Heatmap( props ){
       for (let i = 0; i< rightmost_visible_index; i+= step_size) // without leftmost (let i = 0; i< sequence_length; i+= step_size) 
       {
         // let number_text = String(i+1);
+        if (i === 0){
+          ctx.textAlign = "left";
+        }
+        else{
+          ctx.textAlign = "right";
+        } 
+        // because of ctx.translate(-canvas_originX) after scaling, this looks confusing but it is corrrect;
         ctx.fillText(String(i+1),cell_width * (i+0.5) * canvas_scale,cell_height*22);
       }
       ctx.scale(canvas_scale,1); // canvas scale returned back to state before we wrote positions;
@@ -329,7 +336,7 @@ function Heatmap( props ){
     const mouse_xcor = e.clientX - rect.left;
     const mouse_ycor = e.clientY - rect.top;
 
-    if (mouse_xcor > heatmap_width || mouse_xcor < 0 || mouse_ycor < 0 || mouse_ycor >= heatmap_height)// heatmap boundaries
+    if (mouse_xcor > heatmap_width || mouse_xcor < 0 || mouse_ycor < 0 || mouse_ycor > heatmap_height)// heatmap boundaries
     { 
       return
     }
