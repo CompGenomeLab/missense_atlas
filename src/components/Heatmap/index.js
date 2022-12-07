@@ -739,7 +739,7 @@ function Heatmap( props ){
           <button onClick={fetchDataTest}> Metadata test</button> */}
           {/* Height of asds must be the same as max(amino_acid_legend,heatmap_canvas) */}
           {/* canvas width width ={window.innerwidth} is only for the initialization, then we change by reassigning the canvas width inside functions */}
-          <div id="asds" style={{ width:"calc(-200px + 100vw)", height:300, position:'relative'}}> 
+          <div id="asds" style={{ width:"calc(-200px + 100vw)", height:"300px", position:'relative'}}> 
                   <canvas  id="heatmap_canvas" ref={heatmapRef} style = {{position:"absolute",top:"40px", left: aminoAcidLegendWidth + "px"}} height={270} width={window.innerWidth - 200} 
                   // onClick={(e) => console.log("asfasfasfasfs")}
                   // onclick or other functions don't work here as the topmost layers is the canvas below
