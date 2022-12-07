@@ -389,10 +389,12 @@ function Heatmap( props ){
   useEffect( () => {
     if (heatmapRef && heatmapRef.current &&  sequence_length > 0) // Object.keys(proteinData).length !== 0 &&
       { 
-          // console.log("h list");
+          // let s_time = Date.now();
           drawHeatmap2();
           drawAminoAcidLegend();
-          drawCurrentViewWindow(); 
+          drawCurrentViewWindow();
+          // let end_time = Date.now();
+          // console.log("drawing hmap => " + String(end_time - s_time)); 
       } 
   }, [canvasScaleAndOriginX2,sequence_length,drawHeatmap2,drawCurrentViewWindow] );
 
@@ -480,9 +482,9 @@ function Heatmap( props ){
     //const canvas_originX_prev = canvasScaleAndOriginX2.originX;
     let real_xcor =  canvas_originX_prev + (mouse_xcor/canvas_scale); // real x coordinate of the mouse pointer, this line and the if else block is reused in tooltip function
           
-    const original_aminoacid_idx = Math.floor(real_xcor/cell_width) + 1 // real_xcor 0 to cell_wid = 0th aminoacid; realxcor cell_width to 2*cell_width = 1st aminoacid; // +1 because our scores start from 1;
+    const original_aminoacid_idx = Math.max(Math.ceil(real_xcor/cell_width),1);
     const original_aminoacid = proteinData[original_aminoacid_idx].ref;
-    const mutated_aminoacid_idx = Math.floor(mouse_ycor/cell_height);
+    const mutated_aminoacid_idx = Math.min(Math.floor(mouse_ycor/cell_height),19);
     const mutated_aminoacid = aminoacid_ordering[mutated_aminoacid_idx]; // the resulting aminoacid from SNP mutation    
 
     let mutation_risk_raw_value;
@@ -534,7 +536,7 @@ function Heatmap( props ){
     const canvas_originX_prev = canvasScaleAndOriginX2.originX * heatmapRect_width; // QZY
     //const canvas_originX_prev = canvasScaleAndOriginX2.originX;
     let real_xcor =  canvas_originX_prev + (mouse_xcor/canvas_scale); // real x coordinate of the mouse pointer, this line and the if else block is reused in tooltip function
-    const original_aminoacid_idx = Math.floor(real_xcor/cell_width) + 1 // real_xcor 0 to cell_wid = 0th aminoacid; realxcor cell_width to 2*cell_width = 1st aminoacid; // +1 because our scores start from 1;
+    const original_aminoacid_idx = Math.max(Math.ceil(real_xcor/cell_width),1) // real_xcor 0 to cell_wid = 0th aminoacid; realxcor cell_width to 2*cell_width = 1st aminoacid; // +1 because our scores start from 1;
     const original_aminoacid = proteinData[original_aminoacid_idx].ref;
     const cur_pos_median = calculateMedianOfPosition(original_aminoacid_idx);
     // for every risk assessment, make a list of which aminoacids are deleterious, which of them are benign for that position;

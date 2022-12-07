@@ -1,24 +1,21 @@
-
 import React from "react";
 import { Link } from "react-router-dom";
 import SearchBox from "../components/SearchBox";
 
 const HomePage = () => {
-    return(
-        <>
-            <h1>
-                Welcome
+  return (
+    <>
+      <h1>
+        Welcome
+        <Link to="/protein/8a8c1b6c6d5e7589f18afd6455086c82">
+          go to TSBP1
+        </Link>
+      </h1>
+      <div style={{ margin: "2rem" }}>
+        <SearchBox />
+      </div>
 
-               
-                    <Link to ='/protein/8a8c1b6c6d5e7589f18afd6455086c82'> go to TSBP1 </Link>
-                    
-        
-            </h1>
-            <div style={{margin:'2rem'}}> 
-                <SearchBox/>
-            </div>
-            
-            {/* <div> 
+      {/* <div> 
                 <label> input 1 :</label>
                 <input>
                 
@@ -28,14 +25,8 @@ const HomePage = () => {
 
                 </textarea>
             </div> */}
-        
-        
-        </>
-
-
-    )
-
-}
-
+    </>
+  );
+};
 
 export default HomePage;

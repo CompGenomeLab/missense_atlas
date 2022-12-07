@@ -4,6 +4,7 @@ import axios from "axios";
 import { useParams } from "react-router-dom";
 import OpenInNewIcon from "@mui/icons-material/OpenInNew";
 import Heatmap from "../components/Heatmap";
+import MetadataFeaturesTable from "../components/MetadataFeaturesTable";
 
 // http://10.3.2.13:8080/database/efin/8a8c1b6c6d5e7589f18afd6455086c82
 // http://10.3.2.13:8080/database/sift/8a8c1b6c6d5e7589f18afd6455086c82
@@ -56,7 +57,7 @@ const lists2_parameters = {
   ],
   ref_value: 0,
 };
-const polyphen2_parameters_humdiv = {
+const polyphen2_humdiv_parameters = {
   toolname: "Polyphen-2 (Humdiv)",
  // toolname_api: "polyphen", // used in the api url
   toolname_json: "pph_humdiv", // used in the return value of the all_scores api
@@ -85,7 +86,7 @@ const polyphen2_parameters_humdiv = {
   ],
   ref_value: 0,
 };
-const polyphen2_parameters_humvar = {
+const polyphen2_humvar_parameters = {
   toolname: "Polyphen-2 (Humvar)",
   //toolname_api: "polyphen", // used in the api url
   toolname_json: "pph_humvar", // used in the return value of the all_scores api
@@ -114,7 +115,7 @@ const polyphen2_parameters_humvar = {
   ],
   ref_value: 0,
 };
-const sift_parameters_swissprot = {
+const sift_swissprot_parameters = {
   toolname: "Sift (Swissprot) ",
   //toolname_api: "sift",
   toolname_json: "sift4g_swissprot",
@@ -136,7 +137,7 @@ const sift_parameters_swissprot = {
   ],
   ref_value: 1,
 };
-const sift_parameters_trembl = {
+const sift_trembl_parameters = {
   toolname: "Sift (Trembl)",
   //toolname_api: "sift",
   toolname_json: "sift4g_sp_trembl",
@@ -158,13 +159,58 @@ const sift_parameters_trembl = {
   ],
   ref_value: 1,
 };
-
+const efin_humdiv_parameters= {
+  toolname: "Efin (Humdiv)",
+  //toolname_api: "sift",
+  toolname_json: "efin_humdiv",
+  score_ranges: [
+    {
+      start: 0.0,
+      end: 0.28,
+      risk_assessment: "deleterious",
+      start_color: "#981e2a",
+      end_color: "#fcedaa",
+    },
+    {
+      start: 0.28,
+      end: 1.0,
+      risk_assessment: "neutral",
+      start_color: "#fcedaa",
+      end_color: "#2c663c",
+    },
+  ],
+  ref_value: 1,
+};
+const efin_swissprot_parameters = {
+  toolname: "Efin (Swissprot)",
+  //toolname_api: "sift",
+  toolname_json: "efin_swissprot",
+  score_ranges: [
+    {
+      start: 0.0,
+      end: 0.60,
+      risk_assessment: "deleterious",
+      start_color: "#981e2a",
+      end_color: "#fcedaa",
+    },
+    {
+      start: 0.60,
+      end: 1.0,
+      risk_assessment: "neutral",
+      start_color: "#fcedaa",
+      end_color: "#2c663c",
+    },
+  ],
+  ref_value: 1,
+};
 const possible_prediction_tools_array = [
   lists2_parameters,
-  polyphen2_parameters_humdiv,
-  polyphen2_parameters_humvar,
-  sift_parameters_swissprot,
-  sift_parameters_trembl,
+  polyphen2_humdiv_parameters,
+  polyphen2_humvar_parameters,
+  sift_swissprot_parameters,
+  sift_trembl_parameters,
+  efin_humdiv_parameters,
+  efin_swissprot_parameters,
 ];
 
 const number_of_colors = 30; // add to config.js
@@ -199,7 +245,7 @@ const ProteinPage = () => {
       // !!! IMPORTANT , CHECK MODE and GAMMA//
       const temp_list = chroma
         .scale([current_range_start_color, current_range_end_color])
-        .mode("lrgb")
+        .mode("lch")
         .colors(number_of_colors); // 30 is the number of colors, if you change 30 here, you must change it in drawheatmap color determination based on tool's value
       temp_color_lists_array.push(temp_list);
     }
@@ -229,6 +275,8 @@ const ProteinPage = () => {
 
   useEffect(() => {
     // to fetch protein data
+    let s_time = Date.now();
+
     const findAvailablePredictionTools = (all_protein_data) => {
       let temp_tools_list = [];
       for(let i = 0; i< possible_prediction_tools_array.length; i++)
@@ -249,11 +297,12 @@ const ProteinPage = () => {
         // delete response.data.Sift;
         // delete response.data.Lists2;
         const first_available_tool = findAvailablePredictionTools(response.data)[0];
-        console.log("ftool" + first_available_tool);
         setCurrentPredictionToolParameters(first_available_tool);
         setAllProteinData(response.data);
-        console.log("pdata = ");
-        console.log(response.data);
+        // console.log("pdata = ");
+        // console.log(response.data);
+        let e_time = Date.now();
+        console.log("time fe " + String(e_time - s_time));
       })
       .catch(function (error) {
         // handle error
@@ -263,6 +312,7 @@ const ProteinPage = () => {
         console.log("api called for " + database_url + request_url);
         // always executed
       });
+    
   }, [md5sum]);
 
   useEffect(() => {
@@ -340,7 +390,7 @@ const ProteinPage = () => {
         );
         current_x += step_size;
       }
-
+      
       return;
     };
     drawColorRangesLegend();
@@ -395,11 +445,6 @@ const ProteinPage = () => {
   const uniprotId = metadata[metadataHumanIndex]?.accession;
 
   
-  const featureCategories = metadata[metadataHumanIndex]?.features?.reduce( (curSet,ftr) => {
-      curSet.add(ftr.category);
-      return curSet;
-  }, new Set()) || new Set(); // return empty set if metadata doesn't exist instead of undefined;
-  console.log(featureCategories);
 
   // const featureCategoriesJsx = Array.from(featureCategories).map( (category) => {
   //   console.log(category);
@@ -411,65 +456,31 @@ const ProteinPage = () => {
   // });
 
   // FIX calculation bug;
-  const findMaximumOverlaps = (arr,cur_category) => { // for metadata features
-    // currently O(n^2), comparing each range with the others, and counting the maximum number of overlaps a range has;
-    let maximum_overlap_count = 1;
-    for(let i = 0; i< arr.length; i++){
-      if (arr[i].category !== cur_category){
-        continue;
-      }
-      let temp_overlap_count = 0;
-      let temp_range_start = parseInt(arr[i].begin);
-      let temp_range_end = parseInt(arr[i].end);
-      for(let j = 0; j < arr.length; j++){ // count range overlaps for temp range;
-        let compare_range_start = parseInt(arr[j].begin);
-        let compare_range_end = parseInt(arr[j].end);
-        if ((compare_range_start <= temp_range_end && compare_range_end >= temp_range_start ) && cur_category === arr[j].category ) // overlaps with temp_range
-        {
 
-          
-          temp_overlap_count += 1;
-        }
-      }
-      if(temp_overlap_count > maximum_overlap_count){
-        maximum_overlap_count = temp_overlap_count;
-      }
-    }
-    return maximum_overlap_count;
-  }
 
-  const featureCategoriesAndColumnsJsx = Array.from(featureCategories).map( (category) => {
-    // const cur_ftr = metadata[metadataHumanIndex]?.features.map( (ftr) => {
-    //   return( <div> {ftr.begin}{" ==> "}{ftr.end}  </div>)
-    // });
-    const features_overlap_count = findMaximumOverlaps(metadata[metadataHumanIndex]?.features , category);
-    return(
-      <h3> {category}{" In category overlap Count = "}{features_overlap_count}</h3>
-    )
-  });
-
-  const proteinKeywordsJsx = metadata[metadataHumanIndex]?.keywords.map(
+  const proteinKeywordsJsx = metadata[metadataHumanIndex]?.keywords?.map(
     (keyword) => {
-      return <li>{keyword.value}</li>;
+      return <li key={keyword.value}>{keyword.value}</li>;
     }
   );
-
-  // const featuresJsx = metadata[metadataHumanIndex]?.features.map((ftr, index) => {
-  //   // loops over features of the JSON
-  //   return (
-  //     <p> {JSON.stringify(ftr)} </p>
-  //     // <p>{index}</p>
-  //   );
-  // });
-
   const geneName = metadata[metadataHumanIndex]?.gene?.[0]?.name?.value;
   
+  const changePredictionToolButtons = possible_prediction_tools_array
+    .filter((tool) => Object.hasOwn(allProteinData, tool.toolname_json))
+    .map((tool) => {
+      return (
+        <li key={tool.toolname_json}>
+          <button onClick={(e) => switchTool(e, tool)}>{tool.toolname}</button>
+        </li>
+      );
+    });
+
   // undefined if no synonyms exist
   const synonymsListJsx = metadata[metadataHumanIndex]?.gene?.[0]?.synonyms?.map(
     (syn, idx) => {
       return (
         // in first element add '(' to beggining in last element add ')' to the end instead of ','
-        <li>
+        <li key = {syn?.value}>
           <h4>
             {idx === 0 && "("}
             {syn?.value}
@@ -484,6 +495,10 @@ const ProteinPage = () => {
   );
   return (
     <>
+     <MetadataFeaturesTable 
+        allFeaturesArray = {metadata[metadataHumanIndex]?.features}
+        sequenceLength={metadata[metadataHumanIndex]?.sequence.length} 
+      />
       <div style={{ display: "flex", alignItems: "center" }}>
         <h1>Uniprot ID : {uniprotId}</h1>
         <a
@@ -499,24 +514,7 @@ const ProteinPage = () => {
       <div>
         {/* style={{width:1400 , height:900,overflow:"scroll"  }}*/}
         <div> 
-          {Object.hasOwn( // make this into a list.map() function
-            allProteinData,
-            polyphen2_parameters_humdiv.toolname_json
-          ) && (
-            <button onClick={(e) => switchTool(e, polyphen2_parameters_humdiv)}>
-              Polyphen2 {/*polyphen2_parameters.toolname */}
-            </button>
-          )}
-          {Object.hasOwn(allProteinData, sift_parameters_swissprot.toolname_json) && (
-            <button onClick={(e) => switchTool(e, sift_parameters_swissprot)}>
-              Sift {/* sift_parameters.toolname */}
-            </button>
-          )}
-          {Object.hasOwn(allProteinData, lists2_parameters.toolname_json) && (
-            <button onClick={(e) => switchTool(e, lists2_parameters)}>
-              LIST-S2 {/* lists2_parameters.toolname */}
-            </button>
-          )}
+          <ul style={{listStyleType:'none', display: "flex", gap:'0.25rem'}}> {changePredictionToolButtons} </ul>
           { currentPredictionToolParameters &&
           <div
             style={{
@@ -561,11 +559,13 @@ const ProteinPage = () => {
        
       }
       </div>
-
+      {
+        proteinKeywordsJsx &&
       <div>
         <h3>Sequence Keywords:</h3>
         <ul style={{ listStyleType: "none" }}>{proteinKeywordsJsx} </ul>
       </div>
+       }
 
       <div style={{ display: "flex" }}>
         <h3>Gene name:</h3>
@@ -584,7 +584,11 @@ const ProteinPage = () => {
           </ul>
         )}
       </div>
-      <div> {featureCategoriesAndColumnsJsx} </div>
+      <MetadataFeaturesTable 
+        allFeaturesArray = {metadata[metadataHumanIndex]?.features}
+        sequenceLength={metadata[metadataHumanIndex]?.sequence.length} 
+      />
+      
       {/* <div>{featuresJsx}</div> */}
     </>
   );
@@ -603,3 +607,43 @@ export default ProteinPage;
 //   return temp_keys;
 // };
 // const feature_categories = find_feature_categories(metadata[metadataHumanIndex]?.features);
+// for(let i = 0; i< feature_arr.length; i++){ // is erroneous
+//   if (feature_arr[i].category !== cur_category){
+//     continue;
+//   }
+//   let temp_overlap_count = 0;
+//   let temp_range_start = parseInt(feature_arr[i].begin);
+//   let temp_range_end = parseInt(feature_arr[i].end);
+//   for(let j = 0; j < feature_arr.length; j++){ // count range overlaps for temp range;
+//     let compare_range_start = parseInt(feature_arr[j].begin);
+//     let compare_range_end = parseInt(feature_arr[j].end);
+//     if ((compare_range_start <= temp_range_end && compare_range_end >= temp_range_start ) && cur_category === feature_arr[j].category ) // overlaps with temp_range
+//     {
+
+      
+//       temp_overlap_count += 1;
+//     }
+//   }
+//   if(temp_overlap_count > maximum_overlap_count){
+//     maximum_overlap_count = temp_overlap_count;
+//   }
+// }
+// return maximum_overlap_count;
+// {Object.hasOwn( // make this into a list.map() function
+//             allProteinData,
+//             polyphen2_parameters_humdiv.toolname_json
+//           ) && (
+//             <button onClick={(e) => switchTool(e, polyphen2_parameters_humdiv)}>
+//               Polyphen2 {/*polyphen2_parameters.toolname */}
+//             </button>
+//           )}
+//           {Object.hasOwn(allProteinData, sift_parameters_swissprot.toolname_json) && (
+//             <button onClick={(e) => switchTool(e, sift_parameters_swissprot)}>
+//               Sift {/* sift_parameters.toolname */}
+//             </button>
+//           )}
+//           {Object.hasOwn(allProteinData, lists2_parameters.toolname_json) && (
+//             <button onClick={(e) => switchTool(e, lists2_parameters)}>
+//               LIST-S2 {/* lists2_parameters.toolname */}
+//             </button>
+//           )}
