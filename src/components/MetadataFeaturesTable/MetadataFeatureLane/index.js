@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useCallback, useState } from "react";
+import React, { useEffect, useRef, useCallback} from "react";
 
 function MetadataFeatureLane({ featureArray, sequenceLength, isLatest }) {
   const metadataFeatureLaneRef = useRef(null);
@@ -12,7 +12,7 @@ function MetadataFeatureLane({ featureArray, sequenceLength, isLatest }) {
     // console.log(featureArray);
     let temp_feature_array = JSON.parse(JSON.stringify(featureArray)); // to deep copy
     let lanes_needed = 1;
-    let lanes_last_endings = new Map();// keeping track of each lanes latest ending point;
+    let lanes_last_endings = new Map(); // keeping track of each lanes latest ending point;
     temp_feature_array[0].sub_lane = 1; // first in the list gets first sublane always
     lanes_last_endings.set(1, parseInt(temp_feature_array[0].end)); // add the value for the first of the array
     for (let i = 1; i < temp_feature_array.length; i++) {
@@ -36,41 +36,44 @@ function MetadataFeatureLane({ featureArray, sequenceLength, isLatest }) {
         lanes_needed = current_lane;
       }
     }
-    
-    return {extended_feature_arr: temp_feature_array, lane_count: lanes_needed};
+
+    return {
+      extended_feature_arr: temp_feature_array,
+      lane_count: lanes_needed,
+    };
   };
 
   const extendedFeatureArray = findSubLanesNeeded().extended_feature_arr;
   const subLaneCount = findSubLanesNeeded().lane_count;
-  const curCategory = extendedFeatureArray[0].category.replace("_"," ");
+  const curCategory = extendedFeatureArray[0];
   const canvasId = "Lane " + curCategory; // not really needed;
 
   const drawLane = useCallback(() => {
     // let s_time = Date.now();
     const c = metadataFeatureLaneRef.current;
     const ctx = c.getContext("2d");
-    c.style.width = "100%" ; //lane_width + "px"; //'calc(100vw - 200px)'; // !!! IMPORTANT for sizing MUST BE SAME IN THE HTML CODE
+    c.style.width = "100%"; //lane_width + "px"; //'calc(100vw - 200px)'; // !!! IMPORTANT for sizing MUST BE SAME IN THE HTML CODE
     c.style.height = "5vh";
     const rect = c.getBoundingClientRect(); //console.log(rect);
-    const laneWidth = rect.width;// must be the same as in canvas width html element
+    const laneWidth = rect.width; // must be the same as in canvas width html element
     const laneHeight = rect.height;
     const ratio = window.devicePixelRatio;
     c.width = laneWidth * ratio; // width is taken from 100%
     c.height = laneHeight * ratio; // height is predetermined;
-    // Probably not but calc syntax should be correct 100vw-200px wont work 
+    // Probably not but calc syntax should be correct 100vw-200px wont work
     // console.log(canvas_originX);
     //ctx.resetTransform(); same as setTransform(1,0,0,1,0,0);
     ctx.setTransform(1, 0, 0, 1, 0, 0);
-    ctx.scale(ratio,ratio);
+    ctx.scale(ratio, ratio);
     // ctx.fillRect(0,0,lane_width,lane_height/2);
-    const cell_width = laneWidth/sequenceLength;
+    const cell_width = laneWidth / sequenceLength;
     let sub_lane_height = 0;
     let lane_top_margin = 0;
     let sublane_divider_height = 0;
-    ctx.strokeStyle = 'green';
+    ctx.strokeStyle = "green";
     ctx.beginPath();
-    ctx.moveTo(0,1);
-    ctx.lineTo(laneWidth,1);
+    ctx.moveTo(0, 1);
+    ctx.lineTo(laneWidth, 1);
     ctx.stroke();
     console.log(isLatest);
     if (isLatest) {
@@ -79,48 +82,56 @@ function MetadataFeatureLane({ featureArray, sequenceLength, isLatest }) {
       ctx.stroke();
     }
     if (subLaneCount === 1) {
-      lane_top_margin = laneHeight/4;
+      lane_top_margin = laneHeight / 4;
       sublane_divider_height = 0;
-      sub_lane_height = (laneHeight - (lane_top_margin *2)) / subLaneCount ;
+      sub_lane_height = (laneHeight - lane_top_margin * 2) / subLaneCount;
+    } else {
+      lane_top_margin = laneHeight / 4;
+      sublane_divider_height = lane_top_margin / 2;
+      sub_lane_height =(laneHeight - lane_top_margin * 2 - (sublane_divider_height * (subLaneCount - 1)) / subLaneCount);
     }
-    else{
-      lane_top_margin = laneHeight/4;
-      sublane_divider_height = lane_top_margin/2;
-      sub_lane_height = (laneHeight - (lane_top_margin *2) - sublane_divider_height*(subLaneCount-1) ) / subLaneCount ;
-      
-    }
-    for(let i = 0; i< extendedFeatureArray.length; i++)
-    {
-      const cur_begin_x = parseInt(extendedFeatureArray[i].begin) * cell_width ;
-      const cur_end_x = (parseInt(extendedFeatureArray[i].end) + 1) * cell_width ;
+    for (let i = 0; i < extendedFeatureArray.length; i++) {
+      const cur_begin_x = parseInt(extendedFeatureArray[i].begin) * cell_width;
+      const cur_end_x =
+        (parseInt(extendedFeatureArray[i].end) + 1) * cell_width;
       const cur_sub_lane = parseInt(extendedFeatureArray[i].sub_lane);
       const fill_width = cur_end_x - cur_begin_x;
-      const start_height = lane_top_margin + ((cur_sub_lane-1) * (sub_lane_height + sublane_divider_height) );
+      const start_height =
+        lane_top_margin +
+        (cur_sub_lane - 1) * (sub_lane_height + sublane_divider_height);
       ctx.fillStyle = "black";
-      ctx.fillRect(cur_begin_x, start_height ,fill_width,sub_lane_height);
-      if(curCategory === "TOPOLOGY"){
-        const topology_text = extendedFeatureArray[i].type; 
+      ctx.fillRect(cur_begin_x, start_height, fill_width, sub_lane_height);
+      if (curCategory === "TOPOLOGY") {
+        const topology_text = extendedFeatureArray[i].type;
         ctx.textAlign = "center";
-        ctx.fillStyle = 'red';
+        ctx.fillStyle = "red";
         ctx.textBaseline = "middle";
-        ctx.fillText(topology_text, (cur_begin_x + fill_width/2) , start_height + sub_lane_height/2 ,fill_width - 2);
+        ctx.fillText(
+          topology_text,
+          cur_begin_x + fill_width / 2,
+          start_height + sub_lane_height / 2,
+          fill_width - 2
+        );
       }
       // ctx.fillRect(0,0,999,999);
     }
     // let e_time = Date.now();
     // console.log("drawing => " + String(e_time - s_time));
-  },[extendedFeatureArray,sequenceLength,curCategory,subLaneCount,isLatest]);
+  }, [
+    extendedFeatureArray,
+    sequenceLength,
+    curCategory,
+    subLaneCount,
+    isLatest,
+  ]);
 
-  useEffect( () => {
+  useEffect(() => {
     drawLane();
-  },[drawLane] );
- 
+  }, [drawLane]);
+
   return (
     // using canvas because we want to be able to zoom and pan, similar to heatmap, and I have already implemented it in canvas
-    <canvas
-      id={canvasId}
-      ref={metadataFeatureLaneRef}
-    ></canvas>
+    <canvas id={canvasId} ref={metadataFeatureLaneRef}></canvas>
   );
 }
 

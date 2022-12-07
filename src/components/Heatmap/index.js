@@ -168,6 +168,7 @@ function Heatmap( props ){
       const ratio = window.devicePixelRatio;
       c.width = heatmap_width * ratio;
       c.height = heatmap_height * ratio;
+      console.log(heatmap_width);
       c.style.width = 'calc(100vw - 200px)'; // !!! IMPORTANT for sizing MUST BE SAME IN THE HTML CODE
       // Probably not but calc syntax should be correct 100vw-200px wont work 
       c.style.height = heatmap_height + "px";
@@ -616,7 +617,7 @@ function Heatmap( props ){
     const ratio = window.devicePixelRatio;
     c.width = tooltip_width * ratio;
     c.height = tooltip_height * ratio;
-    c.style.width = "calc(100vw)"; // will override the value in html, We have overflow-x: hidden in App.css;
+    c.style.width = "calc(100vw - 20px)"; // will override the value in html, We have overflow-x: hidden in App.css;
     c.style.height = tooltip_height + "px";
     c.style.top = "-40px"; // safari weird bug; canvas blurry text;
     // console.log("width =   "  + c.width);
@@ -704,25 +705,26 @@ function Heatmap( props ){
       <>
           {/* <button onClick={fetchDataTest2}> Fetch all protein data</button>
           <button onClick={fetchDataTest}> Metadata test</button> */}
-          <div id="asds" style={{ width:1200, height:300 , position: "relative"}}> 
+          {/* Height of asds must be the same as max(amino_acid_legend,heatmap_canvas) */}
+          {/* canvas width width ={window.innerwidth} is only for the initialization, then we change by reassigning the canvas width inside functions */}
+          <div id="asds" style={{ width:"calc(-200px + 100vw)", height:300, position:'relative'}}> 
                   <canvas  id="heatmap_canvas" ref={heatmapRef} style = {{position:"absolute",top:"40px", left:"120px"}} height={"270"} width={window.innerWidth - 200} 
                   // onClick={(e) => console.log("asfasfasfasfs")}
                   // onclick or other functions don't work here as the topmost layers is the canvas below
                   >
                   </canvas>
                   
-                  <canvas ref={aminoAcidLegendRef} style={{position:"absolute",top:"40px", left:"0px"}} height = {"300"} width={"120"}>
+                  <canvas id="amino_acid_legend" ref={aminoAcidLegendRef} style={{position:"absolute",top:"40px", left:"0px"}} height = {"300"} width={"120"}>
                   </canvas>
 
-                  <canvas  id="heatmap_tooltip_canvas" ref={tooltipRef}  style = {{position:"absolute",top:"0px", left:"0px"}} height={"390"} width={window.innerWidth }
+                  <canvas  id="heatmap_tooltip_canvas" ref={tooltipRef}  style = {{position:"absolute",top:"0px", left:"0px"}} height={"390"} width={window.innerWidth - 20 }
                       // onClick = {clickLogger} 
                       // onWheel={wheelZoom} added event listener in UseEffect, because "Unable to preventDefault inside passive event listener invocation."
                       onMouseMove = {(e) => drawTooltipOrPan2(e)}
                       onMouseDown = {(e) => onMouseDownHelper(e)}
                       onMouseUp= {(e) => onMouseUpHelper(e)}
                       onDoubleClick= {(e) => setCanvasScaleAndOriginX2({scale:1, originX:0})}>
-                  </canvas>
-                          
+                  </canvas>              
           </div>
           <h5 style={{textAlign:'center', marginBottom:'2px'}}> current visible window: </h5>
           <canvas id="current_view_window" ref={currentviewWindowRef} height={"30"} width={window.innerWidth -  200}

@@ -252,26 +252,7 @@ const ProteinPage = () => {
     return temp_color_lists_array;
   }, [currentPredictionToolParameters]);
 
-  // useEffect( () => { // to fetch for tools data one by one;
-  //   const request_url = currentPredictionToolParameters.toolname_api + "/" + md5sum
-  //   axios.get(database_url + request_url ) // cors policy
-  //   .then(function (response) {
-  //     // handle success
-  //     // console.log(response);
-  //     setAllProteinData(response.data);
-  //     will need a variable for heatmap tool params, so that while waiting for the data of
-  //     new tool, we don't redraw heatmap, with the scores of the previous tool
-  //     setHeatmapPredictionToolParameters(currentPredictionToolParameters);
-  //   })
-  //   .catch(function (error) {
-  //     // handle error
-  //     console.log(error);
-  //   })
-  //   .then(function () {
-  //     console.log("api called for " + database_url + request_url);
-  //     // always executed
-  //   });
-  // },[currentPredictionToolParameters,md5sum] );
+
 
   useEffect(() => {
     // to fetch protein data
@@ -494,11 +475,13 @@ const ProteinPage = () => {
     }
   );
   return (
+    
     <>
-     <MetadataFeaturesTable 
+      {/* <MetadataFeaturesTable 
         allFeaturesArray = {metadata[metadataHumanIndex]?.features}
         sequenceLength={metadata[metadataHumanIndex]?.sequence.length} 
-      />
+      /> */}
+      
       <div style={{ display: "flex", alignItems: "center" }}>
         <h1>Uniprot ID : {uniprotId}</h1>
         <a
@@ -647,3 +630,23 @@ export default ProteinPage;
 //               LIST-S2 {/* lists2_parameters.toolname */}
 //             </button>
 //           )}
+  // useEffect( () => { // to fetch for tools data one by one;
+  //   const request_url = currentPredictionToolParameters.toolname_api + "/" + md5sum
+  //   axios.get(database_url + request_url ) // cors policy
+  //   .then(function (response) {
+  //     // handle success
+  //     // console.log(response);
+  //     setAllProteinData(response.data);
+  //     will need a variable for heatmap tool params, so that while waiting for the data of
+  //     new tool, we don't redraw heatmap, with the scores of the previous tool
+  //     setHeatmapPredictionToolParameters(currentPredictionToolParameters);
+  //   })
+  //   .catch(function (error) {
+  //     // handle error
+  //     console.log(error);
+  //   })
+  //   .then(function () {
+  //     console.log("api called for " + database_url + request_url);
+  //     // always executed
+  //   });
+  // },[currentPredictionToolParameters,md5sum] );
