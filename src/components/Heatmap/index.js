@@ -3,7 +3,7 @@ import React, { useCallback, useEffect, useRef, useState,useMemo } from "react";
 
 //  22.8 is the magic number for starting position of the heatmap summary, it starts at cell_height * 22.8;
 const aminoacid_ordering = ['A','R','N','D','C','Q','E','G','H','I','L','K','M','F','P','S','T','W','Y','V'];
-
+const aminoAcidLegendWidth = 120;
 // const number_of_colors = 30;
 // heatmap offset from config.js
 // yukleme ekranı
@@ -38,6 +38,10 @@ function Heatmap( props ){
         let current_score;
         if (Object.hasOwn(proteinData[i] , aminoacid_ordering[j]  )  ){
           current_score = proteinData[i][aminoacid_ordering[j]];
+          if(typeof(current_score) !== 'number' ){
+            // NaN value reached Nan nan
+            return 1;
+          }
         }
         else{
           current_score = currentPredictionToolParameters.ref_value;
@@ -61,6 +65,10 @@ function Heatmap( props ){
   },[proteinData,currentPredictionToolParameters.ref_value])
 
   const calculateRiskAssessment = (mutation_risk_raw_value) => {
+    if (typeof(mutation_risk_raw_value) !== 'number'){
+      //NaN
+      return "Nan_value_in_data";
+    }
     const tool_parameters = currentPredictionToolParameters;
     let mutation_risk_assessment // 'Neutral';  // change based on mutation_risk_raw value;
       // score_ranges:[ {start:0.00, end:0.15, risk_assessment : ' benign' , start_color:"2C663C", end_color:"D3D3D3" } , 
@@ -90,6 +98,12 @@ function Heatmap( props ){
         let current_score;
         if (Object.hasOwn(proteinData[i+1] , aminoacid_ordering[j]  )  ){
           current_score = proteinData[i+1][aminoacid_ordering[j]];
+          if (typeof(current_score) !== 'number')
+          {
+            // NaN Value reached
+            temp_heatmapColorsMatrix[i][j] = "#000000";
+            continue;
+          }
         }
         else{
           current_score = currentPredictionToolParameters.ref_value;
@@ -168,7 +182,7 @@ function Heatmap( props ){
       const ratio = window.devicePixelRatio;
       c.width = heatmap_width * ratio;
       c.height = heatmap_height * ratio;
-      console.log(heatmap_width);
+      // console.log(heatmap_width);
       c.style.width = 'calc(100vw - 200px)'; // !!! IMPORTANT for sizing MUST BE SAME IN THE HTML CODE
       // Probably not but calc syntax should be correct 100vw-200px wont work 
       c.style.height = heatmap_height + "px";
@@ -508,13 +522,13 @@ function Heatmap( props ){
     (ctx.measureText(risk_string).actualBoundingBoxAscent + ctx.measureText(risk_string).actualBoundingBoxDescent) );
 
     ctx.fillStyle="black"
-    ctx.fillRect(mouse_xcor + x_offset - 120 , mouse_ycor + y_offset - (4 * strings_max_height) -2  , strings_max_width + 10  , strings_max_height * 2 + 10 );
+    ctx.fillRect(mouse_xcor + x_offset - aminoAcidLegendWidth , mouse_ycor + y_offset - (4 * strings_max_height) -2  , strings_max_width + 10  , strings_max_height * 2 + 10 );
 
     ctx.fillStyle = "white";
     ctx.textAlign = "center"; 
-    ctx.fillText(position_string, mouse_xcor + x_offset - 120 + ((strings_max_width )/2) + 5 , mouse_ycor + y_offset -  (4 * strings_max_height) + 2 )
+    ctx.fillText(position_string, mouse_xcor + x_offset - aminoAcidLegendWidth + ((strings_max_width )/2) + 5 , mouse_ycor + y_offset -  (4 * strings_max_height) + 2 )
     ctx.fillStyle = heatmapColors[original_aminoacid_idx -1 ][mutated_aminoacid_idx]; // -1 because of heatmapColors is 0 indexed;
-    ctx.fillText(risk_string ,mouse_xcor + x_offset - 120  + ((strings_max_width )/2) + 5 , mouse_ycor + y_offset - (4 * strings_max_height) + strings_max_height + 4 );
+    ctx.fillText(risk_string ,mouse_xcor + x_offset - aminoAcidLegendWidth  + ((strings_max_width )/2) + 5 , mouse_ycor + y_offset - (4 * strings_max_height) + strings_max_height + 4 );
 
     // console.log(ctx.measureText(text).width); // 260; 
 
@@ -545,6 +559,7 @@ function Heatmap( props ){
     for (let i = 0; i < tool_parameters.score_ranges.length; i++) 
     {
       risk_assessment_buckets[tool_parameters.score_ranges[i].risk_assessment] = new Set();
+      risk_assessment_buckets.Nan_value_in_data = new Set();
     }
     for(let i = 0; i < 20; i++) // for each aminoacid determine their risk assessment;
     {
@@ -587,16 +602,16 @@ function Heatmap( props ){
     // risk_strings.push(median_value_string)
 
     ctx.fillStyle="black"
-    ctx.fillRect((mouse_xcor + x_offset ),( mouse_ycor + y_offset - 85) , (risk_strings_max_width + 10) , (risk_strings_max_height * (risk_strings.length + 1) + 10 ) ); // cell_width*40,cell_height*5 250 for sift, 300 for polyphen
+    ctx.fillRect((mouse_xcor + x_offset - aminoAcidLegendWidth ),( mouse_ycor + y_offset - 85) , (risk_strings_max_width + 10) , (risk_strings_max_height * (risk_strings.length + 1) + 10 ) ); // cell_width*40,cell_height*5 250 for sift, 300 for polyphen
     // ctx.fillRect(mouse_xcor + x_offset , mouse_ycor + y_offset ,100 , 100); // cell_width*40,cell_height*5 250 for sift, 300 for polyphen
     ctx.fillStyle = "white";
     ctx.textAlign = "center";
     const position_string = String(original_aminoacid_idx) + ". " + String(original_aminoacid); 
-    ctx.fillText(position_string, mouse_xcor + x_offset + ((risk_strings_max_width + 10)/2) , mouse_ycor + y_offset -80 )
+    ctx.fillText(position_string, mouse_xcor + x_offset - aminoAcidLegendWidth + ((risk_strings_max_width + 10)/2) , mouse_ycor + y_offset -80 )
     for(let i = 0; i < risk_strings.length; i++)
     {
       ctx.fillStyle = risk_strings_colors[i];
-      ctx.fillText( risk_strings[i] , (mouse_xcor + x_offset + ((risk_strings_max_width + 10)/2) ) , mouse_ycor + y_offset - 80 + risk_strings_max_height  + (i * risk_strings_max_height) );
+      ctx.fillText( risk_strings[i] , (mouse_xcor + x_offset - aminoAcidLegendWidth + ((risk_strings_max_width + 10)/2) ) , mouse_ycor + y_offset - 80 + risk_strings_max_height  + (i * risk_strings_max_height) );
     }
   }
 
@@ -708,13 +723,13 @@ function Heatmap( props ){
           {/* Height of asds must be the same as max(amino_acid_legend,heatmap_canvas) */}
           {/* canvas width width ={window.innerwidth} is only for the initialization, then we change by reassigning the canvas width inside functions */}
           <div id="asds" style={{ width:"calc(-200px + 100vw)", height:300, position:'relative'}}> 
-                  <canvas  id="heatmap_canvas" ref={heatmapRef} style = {{position:"absolute",top:"40px", left:"120px"}} height={"270"} width={window.innerWidth - 200} 
+                  <canvas  id="heatmap_canvas" ref={heatmapRef} style = {{position:"absolute",top:"40px", left: aminoAcidLegendWidth + "px"}} height={270} width={window.innerWidth - 200} 
                   // onClick={(e) => console.log("asfasfasfasfs")}
                   // onclick or other functions don't work here as the topmost layers is the canvas below
                   >
                   </canvas>
                   
-                  <canvas id="amino_acid_legend" ref={aminoAcidLegendRef} style={{position:"absolute",top:"40px", left:"0px"}} height = {"300"} width={"120"}>
+                  <canvas id="amino_acid_legend" ref={aminoAcidLegendRef} style={{position:"absolute",top:"40px", left:"0px"}} height = {"300"} width={aminoAcidLegendWidth}>
                   </canvas>
 
                   <canvas  id="heatmap_tooltip_canvas" ref={tooltipRef}  style = {{position:"absolute",top:"0px", left:"0px"}} height={"390"} width={window.innerWidth - 20 }
@@ -728,7 +743,7 @@ function Heatmap( props ){
           </div>
           <h5 style={{textAlign:'center', marginBottom:'2px'}}> current visible window: </h5>
           <canvas id="current_view_window" ref={currentviewWindowRef} height={"30"} width={window.innerWidth -  200}
-                      style= {{marginLeft:'120px'}}  > 
+                      style= {{marginLeft: aminoAcidLegendWidth + 'px'}}  > 
           </canvas>
       </>
       

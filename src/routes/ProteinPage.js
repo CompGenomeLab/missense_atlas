@@ -219,11 +219,12 @@ const ProteinPage = () => {
   // add ?q=1, to the url to get uniprot metadata
   const { md5sum } = useParams();
   const [allProteinData, setAllProteinData] = useState({});
+  const [proteinDataLoadingStatus, setProteinDataLoadingStatus] = useState("Fetching protein data");
   const [metadata, setMetadata] = useState({});
   // in case metadata, has more than 1 element, because if the protein exists in other animals;  example: 3d3f7f772cf34ea5db1998fc0eae9f72
   const [metadataHumanIndex, setMetadataHumanIndex] = useState(-1);
-  const [currentPredictionToolParameters, setCurrentPredictionToolParameters] =
-    useState();
+  const [currentPredictionToolParameters, setCurrentPredictionToolParameters] = useState();
+
   const colorRangesLegendRef = useRef(null);
 
   // , {headers:{'Access-Control-Allow-Origin' : '*',}}
@@ -256,7 +257,6 @@ const ProteinPage = () => {
 
   useEffect(() => {
     // to fetch protein data
-    let s_time = Date.now();
 
     const findAvailablePredictionTools = (all_protein_data) => {
       let temp_tools_list = [];
@@ -280,14 +280,14 @@ const ProteinPage = () => {
         const first_available_tool = findAvailablePredictionTools(response.data)[0];
         setCurrentPredictionToolParameters(first_available_tool);
         setAllProteinData(response.data);
+        setProteinDataLoadingStatus("Protein data loaded successfully");
         // console.log("pdata = ");
         // console.log(response.data);
-        let e_time = Date.now();
-        console.log("time fe " + String(e_time - s_time));
       })
       .catch(function (error) {
         // handle error
         console.log(error);
+        setProteinDataLoadingStatus("Error loading protein data");
       })
       .then(function () {
         console.log("api called for " + database_url + request_url);
@@ -481,7 +481,7 @@ const ProteinPage = () => {
         allFeaturesArray = {metadata[metadataHumanIndex]?.features}
         sequenceLength={metadata[metadataHumanIndex]?.sequence.length} 
       /> */}
-      
+
       <div style={{ display: "flex", alignItems: "center" }}>
         <h1>Uniprot ID : {uniprotId}</h1>
         <a
@@ -536,7 +536,7 @@ const ProteinPage = () => {
         />
       : 
       <div  style={{height:'400px',display:'flex',alignItems:'center', justifyContent:'center' }}> 
-        <h1> Fetching Protein Data</h1> 
+        <h1> {proteinDataLoadingStatus}</h1> 
         
       </div>
        

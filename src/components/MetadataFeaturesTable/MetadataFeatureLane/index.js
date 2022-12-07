@@ -75,7 +75,6 @@ function MetadataFeatureLane({ featureArray, sequenceLength, isLatest }) {
     ctx.moveTo(0, 1);
     ctx.lineTo(laneWidth, 1);
     ctx.stroke();
-    console.log(isLatest);
     if (isLatest) {
       ctx.moveTo(0, laneHeight - 1);
       ctx.lineTo(laneWidth, laneHeight - 1);
