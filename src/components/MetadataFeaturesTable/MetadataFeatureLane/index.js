@@ -228,7 +228,7 @@ function MetadataFeatureLane({
   }, [drawLane]);
 
   
-  const drawTooltip = (e) => {
+  const drawTooltipOrPan = (e) => {
     const c = metadataTooltipRef.current;
     const ctx = c.getContext("2d");
     const tooltipRect = c.getBoundingClientRect();
@@ -335,7 +335,7 @@ function MetadataFeatureLane({
             onDoubleClick={() => setLaneScaleAndOriginX({ scale: 1, originX: 0 })}
             onMouseDown={(e) => onMouseDownHelper(e)}
             onMouseUp={(e) => onMouseUpHelper(e)}
-            onMouseMove={(e) => drawTooltip(e)}
+            onMouseMove={(e) => drawTooltipOrPan(e)}
           ></canvas>
     </div>
   );
