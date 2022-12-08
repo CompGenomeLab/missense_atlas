@@ -24,6 +24,7 @@ function MetadataFeaturesTable({ allFeaturesArray, sequenceLength }) {
       return [
         // 10 vh to config.js boxSizing:'border-box',height:'10vh', backgroundColor:'lightBlue'
         <div
+          key={category}
           style={{
             display: "flex",
             flexWrap: "wrap",
@@ -34,11 +35,10 @@ function MetadataFeaturesTable({ allFeaturesArray, sequenceLength }) {
           }}
         >
           <h3 style={{ fontSize: "1.5vh", textAlign: "center" }}>
-            {" "}
             {category.split("_").join(" ")}
           </h3>
         </div>,
-        <div style={{ height: "5vh" }}>
+        <div key={category + "metadataFeatureLane"} style={{ height: "5vh" }}>
           <MetadataFeatureLane
             featureArray={cur_category_features}
             sequenceLength={sequenceLength}

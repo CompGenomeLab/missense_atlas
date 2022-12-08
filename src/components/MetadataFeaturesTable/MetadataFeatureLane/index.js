@@ -45,10 +45,11 @@ function MetadataFeatureLane({ featureArray, sequenceLength, isLatest }) {
 
   const extendedFeatureArray = findSubLanesNeeded().extended_feature_arr;
   const subLaneCount = findSubLanesNeeded().lane_count;
-  const curCategory = extendedFeatureArray[0];
+  const curCategory = extendedFeatureArray[0].category;
   const canvasId = "Lane " + curCategory; // not really needed;
 
   const drawLane = useCallback(() => {
+    console.log("Dlane");
     // let s_time = Date.now();
     const c = metadataFeatureLaneRef.current;
     const ctx = c.getContext("2d");
