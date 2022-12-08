@@ -27,7 +27,7 @@ function Heatmap( props ){
   const currentviewWindowRef = useRef(null);
   const [isDown,setIsDown] = useState(false);
   const [panningStartX,setPanningStartX] = useState(0); 
-  const [canvasScaleAndOriginX2,setCanvasScaleAndOriginX2] = useState({scale:1,originX:0}) // so that we update both of them at the smae time instead of seperately,;
+  const [canvasScaleAndOriginX2,setCanvasScaleAndOriginX2] = useState({scale:1,originX:0}); // so that we update both of them at the smae time instead of seperately,;
 
   const [prevTime, setPrevTime] = useState( () => Date.now() ); // limit number of drawings per second, must have for resizing window
 
@@ -392,7 +392,8 @@ function Heatmap( props ){
     
   },[prevTime]);
 
-  useEffect(()=>{
+  // wheelzoom event registeration
+  useEffect(()=>{ 
       // console.log("zlistener");
       
       // tooltipRef.current.addEventListener("wheel" , (e) => wheelZoom(e,topCanvasScalePrevRef)); // to cancel scrolling while on heatmap
@@ -416,6 +417,7 @@ function Heatmap( props ){
       // };
     },[wheelZoom2,canvasScaleAndOriginX2]);
   
+  // redraw on scale or origin change (zoom or pan)
   useEffect( () => {
     if (heatmapRef && heatmapRef.current &&  sequence_length > 0) // Object.keys(proteinData).length !== 0 &&
       { 
@@ -762,7 +764,10 @@ function Heatmap( props ){
                       onMouseMove = {(e) => drawTooltipOrPan2(e)}
                       onMouseDown = {(e) => onMouseDownHelper(e)}
                       onMouseUp= {(e) => onMouseUpHelper(e)}
-                      onDoubleClick= {(e) => setCanvasScaleAndOriginX2({scale:1, originX:0})}>
+                      onDoubleClick= {(e) => setCanvasScaleAndOriginX2({scale:1, originX:0})}
+                      onMouseLeave= {() => setIsDown(false)} // a bit redundant, but nevertheless here just to make sure;
+                      >
+                      
                   </canvas>              
           </div>
           <h5 style={{textAlign:'center', marginBottom:'2px'}}> current visible window: </h5>

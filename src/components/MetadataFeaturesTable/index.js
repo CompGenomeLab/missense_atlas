@@ -3,10 +3,11 @@ import MetadataFeatureLane from "./MetadataFeatureLane";
 
 function MetadataFeaturesTable({ allFeaturesArray, sequenceLength }) {
   
-  
+  // these 3 are shared by all lanes
   const [laneScaleAndOriginX,setLaneScaleAndOriginX] = useState({scale:1,originX:0});
-  
-  
+  const [isDown,setIsDown] = useState(false);
+  const [panningStartX,setPanningStartX] = useState(0);
+
   const featureCategories =
     allFeaturesArray?.reduce((curSet, ftr) => {
       curSet.add(ftr.category);
@@ -47,9 +48,14 @@ function MetadataFeaturesTable({ allFeaturesArray, sequenceLength }) {
           <MetadataFeatureLane
             featureArray={cur_category_features}
             sequenceLength={sequenceLength}
-            isLatestLane={idx === featureCategories.size - 1} // index starts from 0, size starts from 1
+            isLastLane={idx === featureCategories.size - 1} // index starts from 0, size starts from 1
+            isFirstLane ={idx === 0}
             laneScaleAndOriginX = {laneScaleAndOriginX}
             setLaneScaleAndOriginX = {setLaneScaleAndOriginX}
+            isDown = {isDown}
+            setIsDown = {setIsDown}
+            panningStartX = {panningStartX}
+            setPanningStartX = {setPanningStartX}
           />
         </div>,
       ];
