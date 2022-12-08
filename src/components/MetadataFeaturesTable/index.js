@@ -1,7 +1,12 @@
-import React from "react";
+import React, {useState} from "react";
 import MetadataFeatureLane from "./MetadataFeatureLane";
 
 function MetadataFeaturesTable({ allFeaturesArray, sequenceLength }) {
+  
+  
+  const [laneScaleAndOriginX,setLaneScaleAndOriginX] = useState({scale:1,originX:0});
+  
+  
   const featureCategories =
     allFeaturesArray?.reduce((curSet, ftr) => {
       curSet.add(ftr.category);
@@ -42,7 +47,9 @@ function MetadataFeaturesTable({ allFeaturesArray, sequenceLength }) {
           <MetadataFeatureLane
             featureArray={cur_category_features}
             sequenceLength={sequenceLength}
-            isLatest={idx === featureCategories.size - 1} // index starts from 0, size starts from 1
+            isLatestLane={idx === featureCategories.size - 1} // index starts from 0, size starts from 1
+            laneScaleAndOriginX = {laneScaleAndOriginX}
+            setLaneScaleAndOriginX = {setLaneScaleAndOriginX}
           />
         </div>,
       ];

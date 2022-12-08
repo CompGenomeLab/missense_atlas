@@ -571,6 +571,7 @@ const ProteinPage = () => {
         allFeaturesArray = {metadata[metadataHumanIndex]?.features}
         sequenceLength={metadata[metadataHumanIndex]?.sequence.length} 
       />
+      <br/>
       
       {/* <div>{featuresJsx}</div> */}
     </>
