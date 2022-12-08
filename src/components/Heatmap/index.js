@@ -263,7 +263,7 @@ function Heatmap( props ){
     // console.log("draw time = " + String(end_time - start_time));
   },[canvasScaleAndOriginX2.originX,canvasScaleAndOriginX2.scale,sequence_length,color_lists_array,currentPredictionToolParameters,heatmapColors,heatmapMeanColors] );
   // callback because it is in useEffect dependency array;
-  const drawCurrentViewWindow = useCallback ( () => {
+  const drawCurrentViewWindow = useCallback ( () => { // 50 px both left and right for the index number to display
     // const start_time = Date.now();      // takes 13 miliseconds for 1610 aa protein
     // return;
     const c = currentviewWindowRef.current;
@@ -277,11 +277,12 @@ function Heatmap( props ){
     c.width = w * ratio;
     c.height = h * ratio;
     // c.style.width = w + "px";
-    c.style.width = 'calc(100vw - 200px)';
+    c.style.width = 'calc(100vw - 100px)';
     c.style.height = h + "px";
     ctx.scale(ratio,ratio);
-
-    const heatmapRect_width =  w; // actually the same as current_view_window_rect.width
+    ctx.translate(50,0); // shift by the amount of buffer on the left (for the number index to render)
+    // - 100 is IMPORTANT, THE OFFSET FROM LEFT AND RIGHT
+    const heatmapRect_width =  w - 100; // actually the same as current_view_window_rect.width
 
     // fillrect params = (x: number, y: number, w: number, h: number): void
     // draw similar to position averages, but change alpha value,;
@@ -306,18 +307,18 @@ function Heatmap( props ){
     // drawing indices;
     const leftmost_visible_index = String(Math.floor((canvas_originX/heatmapRect_width * sequence_length) +1 ));
     const rightmost_visible_index = String(Math.floor((canvas_originX/heatmapRect_width * sequence_length) + (sequence_length/canvas_scale)));  
-    ctx.fillStyle = 'hotpink';
+    ctx.fillStyle = 'black';
     ctx.textBaseline = 'top';
     ctx.font = '12px Arial';
-    if (((canvas_originX/heatmapRect_width * sequence_length) +1 ) > 10){ // if left most index is smaller than 20, textAlign to right;
-        ctx.textAlign = 'right';
-    }
-    else{
-        ctx.textAlign = 'left';
-    }
-    ctx.fillText( leftmost_visible_index , canvas_originX,  0 , 50) // leftmost visible of the window;
+    // if (((canvas_originX/heatmapRect_width * sequence_length) +1 ) > 10){ // if left most index is smaller than 20, textAlign to right;
+    //     ctx.textAlign = 'right';
+    // }
+    // else{
+    //     ctx.textAlign = 'left';
+    // }
     ctx.textAlign = 'right';
-                
+    ctx.fillText( leftmost_visible_index , canvas_originX,  0 , 50) // leftmost visible of the window;
+    ctx.textAlign = 'left';
     ctx.fillText(rightmost_visible_index, canvas_originX  + heatmapRect_width/canvas_scale , 0 , 50   );  // rightmost visilbe of the window
     // const end_time = Date.now();
     // console.log("cur view widnow time = " + String(end_time - start_time));
@@ -748,14 +749,15 @@ function Heatmap( props ){
           <button onClick={fetchDataTest}> Metadata test</button> */}
           {/* Height of asds must be the same as max(amino_acid_legend,heatmap_canvas) */}
           {/* canvas width width ={window.innerwidth} is only for the initialization, then we change by reassigning the canvas width inside functions */}
-          <div id="asds" style={{ width:"calc(-200px + 100vw)", height:"300px", position:'relative'}}> 
+          {/* asds is only there because canvas positions are absolute, So it acts as a filler, so that subsequent elements and canvases don't overlap */}
+          <div id="asds" style={{ width:"calc(-200px + 100vw)", height:"310px", position:'relative'}}> 
                   <canvas  id="heatmap_canvas" ref={heatmapRef} style = {{position:"absolute",top:"40px", left: aminoAcidLegendWidth + "px"}} height={270} width={window.innerWidth - 200} 
                   // onClick={(e) => console.log("asfasfasfasfs")}
                   // onclick or other functions don't work here as the topmost layers is the canvas below
                   >
                   </canvas>
                   
-                  <canvas id="amino_acid_legend" ref={aminoAcidLegendRef} style={{position:"absolute",top:"40px", left:"0px"}} height = {"300"} width={aminoAcidLegendWidth}>
+                  <canvas id="amino_acid_legend" ref={aminoAcidLegendRef} style={{position:"absolute",top:"40px", left:"0px"}} height = {270} width={aminoAcidLegendWidth}>
                   </canvas>
 
                   <canvas  id="heatmap_tooltip_canvas" ref={tooltipRef}  style = {{position:"absolute",top:"0px", left:"0px"}} height={"390"} width={window.innerWidth - 20 }
@@ -770,9 +772,9 @@ function Heatmap( props ){
                       
                   </canvas>              
           </div>
-          <h5 style={{textAlign:'center', marginBottom:'2px'}}> current visible window: </h5>
+          <h5 style={{textAlign:'center', marginBottom:'0.125rem', marginTop:'0.125rem'}}> current visible window: </h5>
           <canvas id="current_view_window" ref={currentviewWindowRef} height={"30"} width={window.innerWidth -  200}
-                      style= {{marginLeft: aminoAcidLegendWidth + 'px'}}  > 
+                      style= {{marginLeft: aminoAcidLegendWidth - 50 + 'px', width:'calc(100vw - 100px)'}}  > 
           </canvas>
       </>
       
