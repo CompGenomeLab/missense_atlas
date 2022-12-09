@@ -8,7 +8,7 @@ const aminoAcidLegendWidth = 120;
 // heatmap offset from config.js
 // yukleme ekranı
 function Heatmap( props ){
-  const {currentPredictionToolParameters,proteinData,color_lists_array,number_of_colors} = props;
+  const {currentPredictionToolParameters,proteinData,color_lists_array,number_of_colors, scaleAndOriginX, setScaleAndOriginX } = props;
 
     // maybe looping over the whole proteinData makes a differnece but probably not much
     // used use memo to not define a function and call it in the next line, because it is easier to read;
@@ -27,7 +27,7 @@ function Heatmap( props ){
   const currentviewWindowRef = useRef(null);
   const [isDown,setIsDown] = useState(false);
   const [panningStartX,setPanningStartX] = useState(0); 
-  const [canvasScaleAndOriginX2,setCanvasScaleAndOriginX2] = useState({scale:1,originX:0}); // so that we update both of them at the smae time instead of seperately,;
+  // const [scaleAndOriginX,setScaleAndOriginX] = useState({scale:1,originX:0}); // so that we update both of them at the smae time instead of seperately,;
 
   const [prevTime, setPrevTime] = useState( () => Date.now() ); // limit number of drawings per second, must have for resizing window
 
@@ -203,8 +203,8 @@ function Heatmap( props ){
       ctx.imageSmoothingEnabled = false; // doesn't actually do anything as this command is for imported images
       
       // ctx.clearRect(0,0,heatmap_width,heatmap_height); 
-      const canvas_originX = canvasScaleAndOriginX2.originX * heatmap_width ; //!!QZY
-      const canvas_scale = canvasScaleAndOriginX2.scale;
+      const canvas_originX = scaleAndOriginX.originX * heatmap_width ; //!!QZY
+      const canvas_scale = scaleAndOriginX.scale;
       ctx.scale(canvas_scale,1); 
       ctx.translate(-canvas_originX,0); 
 
@@ -261,7 +261,7 @@ function Heatmap( props ){
       } 
     // const end_time = Date.now();
     // console.log("draw time = " + String(end_time - start_time));
-  },[canvasScaleAndOriginX2.originX,canvasScaleAndOriginX2.scale,sequence_length,color_lists_array,currentPredictionToolParameters,heatmapColors,heatmapMeanColors] );
+  },[scaleAndOriginX.originX,scaleAndOriginX.scale,sequence_length,color_lists_array,currentPredictionToolParameters,heatmapColors,heatmapMeanColors] );
   // callback because it is in useEffect dependency array;
   const drawCurrentViewWindow = useCallback ( () => { // 50 px both left and right for the index number to display
     // const start_time = Date.now();      // takes 13 miliseconds for 1610 aa protein
@@ -289,8 +289,8 @@ function Heatmap( props ){
     // copied form drawheatmap2
     // const tool_parameters = currentPredictionToolParameters;
     const cell_width = (heatmapRect_width/sequence_length)
-    const canvas_originX = canvasScaleAndOriginX2.originX * heatmapRect_width; //!!QZY
-    const canvas_scale = canvasScaleAndOriginX2.scale;
+    const canvas_originX = scaleAndOriginX.originX * heatmapRect_width; //!!QZY
+    const canvas_scale = scaleAndOriginX.scale;
     for ( let i = 0; i< sequence_length; i++) // alternative is to count greens/yellows, or take the average of their colors
     {
       if (i*cell_width >= canvas_originX && (i*cell_width <= (canvas_originX + heatmapRect_width/canvas_scale) ) ){ // currently viewing
@@ -322,7 +322,7 @@ function Heatmap( props ){
     ctx.fillText(rightmost_visible_index, canvas_originX  + heatmapRect_width/canvas_scale , 0 , 50   );  // rightmost visilbe of the window
     // const end_time = Date.now();
     // console.log("cur view widnow time = " + String(end_time - start_time));
-  },[canvasScaleAndOriginX2.originX,canvasScaleAndOriginX2.scale,sequence_length,heatmapMeanColors]);
+  },[scaleAndOriginX.originX,scaleAndOriginX.scale,sequence_length,heatmapMeanColors]);
 
   const wheelZoom2 =  useCallback ((e,canvas_scale_and_originX) =>{  // zoomig function
     // to limit the canvas re renderings to roughly 30 fps
@@ -384,21 +384,21 @@ function Heatmap( props ){
     canvas_originX_next = Math.min(canvas_originX_next,(heatmap_width - heatmap_width/canvas_scale_next)) // so that heatmap new originX isn't too large, (start and end is constant)
     canvas_originX_next = canvas_originX_next/heatmap_width // !!QZY
     if (canvas_scale_next !== canvas_scale_prev){       
-      setCanvasScaleAndOriginX2( {scale:canvas_scale_next, originX: canvas_originX_next} );
+      setScaleAndOriginX( {scale:canvas_scale_next, originX: canvas_originX_next} );
     }
     // setPrevTime(cur_time); // moved this to here;
     // console.log("setted time");
     // console.log(canvas_scale_prev);
     // console.log("zoom end = " + String(cur_time - prevTime));
     
-  },[prevTime]);
+  },[prevTime,setScaleAndOriginX]);
 
   // wheelzoom event registeration
   useEffect(()=>{ 
       // console.log("zlistener");
       
       // tooltipRef.current.addEventListener("wheel" , (e) => wheelZoom(e,topCanvasScalePrevRef)); // to cancel scrolling while on heatmap
-      const zoomListener = (e) => wheelZoom2(e,canvasScaleAndOriginX2);
+      const zoomListener = (e) => wheelZoom2(e,scaleAndOriginX);
       let ttRefValue = null;
       if (tooltipRef.current ){
         tooltipRef.current.addEventListener("wheel", zoomListener);
@@ -416,7 +416,7 @@ function Heatmap( props ){
       //   console.log('cleanup runs');        
       //   console.log("heatmapref cur = " + heatmapRef.current);
       // };
-    },[wheelZoom2,canvasScaleAndOriginX2]);
+    },[wheelZoom2,scaleAndOriginX]);
   
   // redraw on scale or origin change (zoom or pan)
   useEffect( () => {
@@ -429,7 +429,7 @@ function Heatmap( props ){
           // let end_time = Date.now();
           // console.log("drawing hmap => " + String(end_time - s_time)); 
       } 
-  }, [canvasScaleAndOriginX2,sequence_length,drawHeatmap2,drawCurrentViewWindow] );
+  }, [scaleAndOriginX,sequence_length,drawHeatmap2,drawCurrentViewWindow] );
 
   useEffect(() => { // redraw on resize
       const handleResize = () => { // reset canvasScaleOrigin reference and draw in roughly 30 fps
@@ -441,7 +441,7 @@ function Heatmap( props ){
           }
           
           // giving canvas scale a new reference so that drawing heatmap runs once again;
-          setCanvasScaleAndOriginX2( prev => { return( {scale: prev.scale , originX: prev.originX } ) } )
+          setScaleAndOriginX( prev => { return( {scale: prev.scale , originX: prev.originX } ) } )
           // drawHeatmap2(); // causes flickering , no idea why; instead I need to use setCanvasScaleAndOrigin and setPrevtime
           setPrevTime(prev => cur_time); // if removed, flickering will happen, no idea why?? May not be the case anymore
       }
@@ -449,7 +449,7 @@ function Heatmap( props ){
 
       return () => {window.removeEventListener("resize" , handleResize)}; // cleanup
 
-  },[prevTime]) // draw heatmap again on resize //drawHeatmap2
+  },[prevTime,setScaleAndOriginX]) // draw heatmap again on resize //drawHeatmap2
   
   const drawAminoAcidLegend  = () => {  // will only run once on startup of useEffect
       const c = aminoAcidLegendRef.current;
@@ -510,9 +510,9 @@ function Heatmap( props ){
     const cell_height = (heatmapRect_height-70)/20; //!! must be same in drawheatmap // 300/20 = 15 ,  number 20 is same for all 
     const cell_width = (heatmapRect_width/sequence_length); //!! must be same in drawheatmap // if we use floor, it will result in 0 cell width when protein length is larger than c.width;
     
-    const canvas_scale = canvasScaleAndOriginX2.scale; // value of zoom before scroll event
-    const canvas_originX_prev = canvasScaleAndOriginX2.originX * heatmapRect_width; // QZY
-    //const canvas_originX_prev = canvasScaleAndOriginX2.originX;
+    const canvas_scale = scaleAndOriginX.scale; // value of zoom before scroll event
+    const canvas_originX_prev = scaleAndOriginX.originX * heatmapRect_width; // QZY
+    //const canvas_originX_prev = scaleAndOriginX.originX;
     let real_xcor =  canvas_originX_prev + (mouse_xcor/canvas_scale); // real x coordinate of the mouse pointer, this line and the if else block is reused in tooltip function
           
     const original_aminoacid_idx = Math.max(Math.ceil(real_xcor/cell_width),1);
@@ -568,9 +568,9 @@ function Heatmap( props ){
     const mouse_xcor = e.clientX - heatmapRect.left;//console.log("hover mouse_xcor = " + mouse_xcor); // console.log(heatmapRect.width);
     const mouse_ycor = e.clientY - heatmapRect.top;
     const cell_width = (heatmapRect_width/sequence_length); //!! must be same in drawheatmap // if we use floor, it will result in 0 cell width when protein length is larger than c.width;
-    const canvas_scale = canvasScaleAndOriginX2.scale; // value of zoom before scroll event
-    const canvas_originX_prev = canvasScaleAndOriginX2.originX * heatmapRect_width; // QZY
-    //const canvas_originX_prev = canvasScaleAndOriginX2.originX;
+    const canvas_scale = scaleAndOriginX.scale; // value of zoom before scroll event
+    const canvas_originX_prev = scaleAndOriginX.originX * heatmapRect_width; // QZY
+    //const canvas_originX_prev = scaleAndOriginX.originX;
     let real_xcor =  canvas_originX_prev + (mouse_xcor/canvas_scale); // real x coordinate of the mouse pointer, this line and the if else block is reused in tooltip function
     const original_aminoacid_idx = Math.max(Math.ceil(real_xcor/cell_width),1) // real_xcor 0 to cell_wid = 0th aminoacid; realxcor cell_width to 2*cell_width = 1st aminoacid; // +1 because our scores start from 1;
     const original_aminoacid = proteinData[original_aminoacid_idx].ref;
@@ -677,8 +677,8 @@ function Heatmap( props ){
     const mouse_xcor = e.clientX - heatmapRect.left;//console.log("hover mouse_xcor = " + mouse_xcor); // console.log(heatmapRect.width);
     const mouse_ycor = e.clientY - heatmapRect.top; // scale doen't affect this, so this is the real_ycoordinate //console.log("hover mouse_ycor = " + mouse_ycor);// console.log(heatmapRect.height-50); // -50 space for position indexes;
     
-    const canvas_scale = canvasScaleAndOriginX2.scale; // value of zoom before scroll event
-    const canvas_originX_prev = canvasScaleAndOriginX2.originX * heatmapRect_width; // QZY
+    const canvas_scale = scaleAndOriginX.scale; // value of zoom before scroll event
+    const canvas_originX_prev = scaleAndOriginX.originX * heatmapRect_width; // QZY
 
     const x_offset = heatmapRect.left - tooltipRect.left;
     const y_offset = heatmapRect.top - tooltipRect.top;
@@ -709,7 +709,7 @@ function Heatmap( props ){
       canvas_originX_next = Math.max(canvas_originX_next,0); // origin not smaller than 0
       canvas_originX_next = Math.min(canvas_originX_next, (heatmapRect_width - heatmapRect_width/canvas_scale)); // origin not larger than heatmap rightmost point;
       canvas_originX_next = canvas_originX_next / heatmapRect_width; // QZY
-      setCanvasScaleAndOriginX2(prev => {
+      setScaleAndOriginX(prev => {
         return (  
           {scale: canvas_scale ,originX: canvas_originX_next }
         )
@@ -766,7 +766,7 @@ function Heatmap( props ){
                       onMouseMove = {(e) => drawTooltipOrPan2(e)}
                       onMouseDown = {(e) => onMouseDownHelper(e)}
                       onMouseUp= {(e) => onMouseUpHelper(e)}
-                      onDoubleClick= {(e) => setCanvasScaleAndOriginX2({scale:1, originX:0})}
+                      onDoubleClick= {(e) => setScaleAndOriginX({scale:1, originX:0})}
                       onMouseLeave= {() => setIsDown(false)} // a bit redundant, but nevertheless here just to make sure;
                       >
                       

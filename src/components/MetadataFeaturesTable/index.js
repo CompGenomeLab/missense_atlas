@@ -1,10 +1,10 @@
 import React, {useState} from "react";
 import MetadataFeatureLane from "./MetadataFeatureLane";
 
-function MetadataFeaturesTable({ allFeaturesArray, sequenceLength }) {
+function MetadataFeaturesTable({ allFeaturesArray, sequenceLength, scaleAndOriginX, setScaleAndOriginX }) {
   
   // these 3 are shared by all lanes
-  const [laneScaleAndOriginX,setLaneScaleAndOriginX] = useState({scale:1,originX:0});
+  // const [scaleAndOriginX,setScaleAndOriginX] = useState({scale:1,originX:0});
   const [isDown,setIsDown] = useState(false);
   const [panningStartX,setPanningStartX] = useState(0);
 
@@ -50,8 +50,8 @@ function MetadataFeaturesTable({ allFeaturesArray, sequenceLength }) {
             sequenceLength={sequenceLength}
             isLastLane={idx === featureCategories.size - 1} // index starts from 0, size starts from 1
             isFirstLane ={idx === 0}
-            laneScaleAndOriginX = {laneScaleAndOriginX}
-            setLaneScaleAndOriginX = {setLaneScaleAndOriginX}
+            scaleAndOriginX = {scaleAndOriginX}
+            setScaleAndOriginX = {setScaleAndOriginX}
             isDown = {isDown}
             setIsDown = {setIsDown}
             panningStartX = {panningStartX}

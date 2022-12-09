@@ -224,7 +224,8 @@ const ProteinPage = () => {
   // in case metadata, has more than 1 element, because if the protein exists in other animals;  example: 3d3f7f772cf34ea5db1998fc0eae9f72
   const [metadataHumanIndex, setMetadataHumanIndex] = useState(-1);
   const [currentPredictionToolParameters, setCurrentPredictionToolParameters] = useState();
-
+  // shared between heatmap and metadataFeatureTable
+  const [scaleAndOriginX, setScaleAndOriginX] = useState({scale:1, originX:0});
   const colorRangesLegendRef = useRef(null);
 
   // , {headers:{'Access-Control-Allow-Origin' : '*',}}
@@ -533,13 +534,14 @@ const ProteinPage = () => {
           // proteinData={proteinData} // if we want to fetch one by one;
           color_lists_array={color_lists_array}
           number_of_colors={number_of_colors}
+          scaleAndOriginX = {scaleAndOriginX}
+          setScaleAndOriginX = {setScaleAndOriginX} 
         />
       : 
       <div  style={{height:'400px',display:'flex',alignItems:'center', justifyContent:'center' }}> 
         <h1> {proteinDataLoadingStatus}</h1> 
         
       </div>
-       
       }
       </div>
       {
@@ -569,7 +571,9 @@ const ProteinPage = () => {
       </div>
       <MetadataFeaturesTable 
         allFeaturesArray = {metadata[metadataHumanIndex]?.features}
-        sequenceLength={metadata[metadataHumanIndex]?.sequence.length} 
+        sequenceLength={metadata[metadataHumanIndex]?.sequence.length}
+        scaleAndOriginX = {scaleAndOriginX}
+        setScaleAndOriginX = {setScaleAndOriginX} 
       />
       <br/>
       

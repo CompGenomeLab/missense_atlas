@@ -5,8 +5,8 @@ function MetadataFeatureLane({
   sequenceLength,
   isLastLane,
   isFirstLane,
-  laneScaleAndOriginX,
-  setLaneScaleAndOriginX,
+  scaleAndOriginX,
+  setScaleAndOriginX,
   isDown,
   setIsDown,
   panningStartX,
@@ -79,8 +79,8 @@ function MetadataFeatureLane({
     ctx.setTransform(1, 0, 0, 1, 0, 0);
     ctx.scale(ratio, ratio);
 
-    const lane_originX = laneScaleAndOriginX.originX * laneWidth; //!!QZY
-    const lane_scale = laneScaleAndOriginX.scale;
+    const lane_originX = scaleAndOriginX.originX * laneWidth; //!!QZY
+    const lane_scale = scaleAndOriginX.scale;
     ctx.scale(lane_scale, 1);
     ctx.translate(-lane_originX, 0);
 
@@ -149,7 +149,7 @@ function MetadataFeatureLane({
     curCategory,
     subLaneCount,
     isLastLane,
-    laneScaleAndOriginX,
+    scaleAndOriginX,
   ]);
 
   const wheelZoomLane = useCallback(
@@ -199,13 +199,13 @@ function MetadataFeatureLane({
       ); // so that heatmap new originX isn't too large, (start and end is constant)
       lane_originX_next = lane_originX_next / lane_width; // !!QZY
       if (lane_scale_next !== lane_scale_prev) {
-        setLaneScaleAndOriginX({
+        setScaleAndOriginX({
           scale: lane_scale_next,
           originX: lane_originX_next,
         });
       }
     },
-    [prevTime, setLaneScaleAndOriginX,setIsDown]
+    [prevTime, setScaleAndOriginX,setIsDown]
   );
   
   // zoom listener registration
@@ -213,7 +213,7 @@ function MetadataFeatureLane({
     // console.log("zlistener");
 
     // tooltipRef.current.addEventListener("wheel" , (e) => wheelZoom(e,topCanvasScalePrevRef)); // to cancel scrolling while on heatmap
-    const zoomListener = (e) => wheelZoomLane(e, laneScaleAndOriginX);
+    const zoomListener = (e) => wheelZoomLane(e, scaleAndOriginX);
     let ttRefValue = null;
     if (metadataTooltipRef.current) {
       metadataTooltipRef.current.addEventListener("wheel", zoomListener);
@@ -226,7 +226,7 @@ function MetadataFeatureLane({
         ttRefValue.removeEventListener("wheel", zoomListener);
       }
     };
-  }, [wheelZoomLane, laneScaleAndOriginX]);
+  }, [wheelZoomLane, scaleAndOriginX]);
 
   // redraw, drawLane already depends on"Scale and Origin"
   useEffect(() => {
@@ -253,8 +253,8 @@ function MetadataFeatureLane({
     const laneRect = cLane.getBoundingClientRect();  // !! get boundaries of the heatmap//console.log(rect);
     const lane_width = laneRect.width;
     const mouse_xcor = e.clientX - laneRect.left;//console.log("hover mouse_xcor = " + mouse_xcor); // console.log(laneRect.width);
-    const lane_scale = laneScaleAndOriginX.scale; // value of zoom before scroll event
-    const lane_originX_prev = laneScaleAndOriginX.originX * lane_width; // QZY  
+    const lane_scale = scaleAndOriginX.scale; // value of zoom before scroll event
+    const lane_originX_prev = scaleAndOriginX.originX * lane_width; // QZY  
     if (isDown) // panning the canvas if mouse down is down;
     {
       // console.log("isdonwnnnn2");
@@ -265,7 +265,7 @@ function MetadataFeatureLane({
       lane_originX_next = Math.max(lane_originX_next,0); // origin not smaller than 0
       lane_originX_next = Math.min(lane_originX_next, (lane_width - lane_width/lane_scale)); // origin not larger than heatmap rightmost point;
       lane_originX_next = lane_originX_next / lane_width; // QZY
-      setLaneScaleAndOriginX(prev => {
+      setScaleAndOriginX(prev => {
         return (  
           {scale: lane_scale ,originX: lane_originX_next }
         )
@@ -336,7 +336,7 @@ function MetadataFeatureLane({
             style={{ position: "absolute", top: "0px", left: "0px", height:'5vh', width:'95%' }}
             height={window.innerHeight/20} // doesn't matter, as we are giving height and width in style part;
             width={window.innerWidth} // doesn't matter as well, Also, after the initial run styles are overriden by the drawToolTipOrPan function
-            onDoubleClick={() => setLaneScaleAndOriginX({ scale: 1, originX: 0 })}
+            onDoubleClick={() => setScaleAndOriginX({ scale: 1, originX: 0 })}
             onMouseDown={(e) => onMouseDownHelper(e)}
             onMouseUp={(e) => onMouseUpHelper(e)}
             onMouseMove={(e) => drawTooltipOrPan(e)}
