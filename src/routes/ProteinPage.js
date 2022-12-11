@@ -44,6 +44,7 @@ const lists2_parameters = {
       risk_assessment: "benign",
       start_color: "#2c663c",
       end_color: "#ffa500",
+      gamma:1
       // end_color: "#fcedaa",
     },
     {
@@ -53,6 +54,8 @@ const lists2_parameters = {
       start_color: "#ffa500",
       // start_color: "#fcedaa",
       end_color: "#981e2a",
+      gamma:1
+
     },
   ],
   ref_value: 0,
@@ -68,6 +71,8 @@ const polyphen2_humdiv_parameters = {
       risk_assessment: " benign",
       start_color: "#2c663c",
       end_color: "#d3d3d3",
+      gamma:1
+
     },
     {
       start: 0.15,
@@ -75,6 +80,7 @@ const polyphen2_humdiv_parameters = {
       risk_assessment: "possibly damaging",
       start_color: "#d3d3d3",
       end_color: "#ffa500",
+      gamma:1
     },
     {
       start: 0.85,
@@ -82,6 +88,7 @@ const polyphen2_humdiv_parameters = {
       risk_assessment: "confidently damaging",
       start_color: "#ffa500",
       end_color: "#981e2a",
+      gamma:1
     },
   ],
   ref_value: 0,
@@ -97,6 +104,8 @@ const polyphen2_humvar_parameters = {
       risk_assessment: " benign",
       start_color: "#2c663c",
       end_color: "#d3d3d3",
+      gamma:1
+
     },
     {
       start: 0.15,
@@ -104,6 +113,8 @@ const polyphen2_humvar_parameters = {
       risk_assessment: "possibly damaging",
       start_color: "#d3d3d3",
       end_color: "#ffa500",
+      gamma:1
+
     },
     {
       start: 0.85,
@@ -111,6 +122,8 @@ const polyphen2_humvar_parameters = {
       risk_assessment: "confidently damaging",
       start_color: "#ffa500",
       end_color: "#981e2a",
+      gamma:1
+
     },
   ],
   ref_value: 0,
@@ -126,6 +139,8 @@ const sift_swissprot_parameters = {
       risk_assessment: "deleterious",
       start_color: "#981e2a",
       end_color: "#fcedaa",
+      gamma:1
+
     },
     {
       start: 0.05,
@@ -133,6 +148,8 @@ const sift_swissprot_parameters = {
       risk_assessment: "benign",
       start_color: "#fcedaa",
       end_color: "#2c663c",
+      gamma:1
+
     },
   ],
   ref_value: 1,
@@ -148,6 +165,8 @@ const sift_trembl_parameters = {
       risk_assessment: "deleterious",
       start_color: "#981e2a",
       end_color: "#fcedaa",
+      gamma:1
+
     },
     {
       start: 0.05,
@@ -155,6 +174,8 @@ const sift_trembl_parameters = {
       risk_assessment: "benign",
       start_color: "#fcedaa",
       end_color: "#2c663c",
+      gamma:1
+
     },
   ],
   ref_value: 1,
@@ -170,6 +191,8 @@ const efin_humdiv_parameters= {
       risk_assessment: "deleterious",
       start_color: "#981e2a",
       end_color: "#fcedaa",
+      gamma:1
+
     },
     {
       start: 0.28,
@@ -177,6 +200,8 @@ const efin_humdiv_parameters= {
       risk_assessment: "neutral",
       start_color: "#fcedaa",
       end_color: "#2c663c",
+      gamma:1
+
     },
   ],
   ref_value: 1,
@@ -192,6 +217,8 @@ const efin_swissprot_parameters = {
       risk_assessment: "deleterious",
       start_color: "#981e2a",
       end_color: "#fcedaa",
+      gamma:1
+
     },
     {
       start: 0.60,
@@ -199,10 +226,37 @@ const efin_swissprot_parameters = {
       risk_assessment: "neutral",
       start_color: "#fcedaa",
       end_color: "#2c663c",
+      gamma:1
+
     },
   ],
   ref_value: 1,
 };
+//????
+const provean_parameters = {
+  toolname: "Provean",
+  toolname_json: "provean",
+  score_ranges: [
+    {
+      start: -40.00,
+      end: -2.50,
+      risk_assessment: "deleterious",
+      start_color: "#981e2a",
+      end_color: "#fcedaa",
+      gamma:8
+    },
+    {
+      start: -2.50,
+      end: 15,
+      risk_assessment: "neutral",
+      start_color: "#fcedaa",
+      end_color: "#2c663c",
+      gamma:1/3
+    },
+  ],
+  ref_value : 0
+}
+
 const possible_prediction_tools_array = [
   lists2_parameters,
   polyphen2_humdiv_parameters,
@@ -211,9 +265,11 @@ const possible_prediction_tools_array = [
   sift_trembl_parameters,
   efin_humdiv_parameters,
   efin_swissprot_parameters,
+  provean_parameters
 ];
 
-const number_of_colors = 30; // add to config.js
+
+const number_of_colors = 60; // add to config.js
 
 const ProteinPage = () => {
   // add ?q=1, to the url to get uniprot metadata
@@ -245,9 +301,11 @@ const ProteinPage = () => {
         currentPredictionToolParameters.score_ranges[i].end_color;
       // chroma.scale(['#fafa6e','#2A4858']).mode('lch').colors(6)
       // !!! IMPORTANT , CHECK MODE and GAMMA//
+      const g = currentPredictionToolParameters.score_ranges[i].gamma;
       const temp_list = chroma
         .scale([current_range_start_color, current_range_end_color])
         .mode("lch")
+        .gamma(g)
         .colors(number_of_colors); // 30 is the number of colors, if you change 30 here, you must change it in drawheatmap color determination based on tool's value
       temp_color_lists_array.push(temp_list);
     }
@@ -302,75 +360,81 @@ const ProteinPage = () => {
     const drawColorRangesLegend = () => {
       // can become a component; input = toolparams , colorlist
       // console.log("ranges redraw");
-      const step_size = 8; // width of each color in the gradient;
+       // width of each color in the gradient;
       const c = colorRangesLegendRef.current;
       if (!c) {
         return;
       }
       const ctx = c.getContext("2d");
+      const width_vw = currentPredictionToolParameters.score_ranges.length * 15;
+      const vw_string = String(width_vw) + "vw";
+      c.style.width = "calc("+ vw_string + " + 50px)";
+      // width is dynamic; based on predicion tool
+
       const color_ranges_legend_rect = c.getBoundingClientRect();
+      const h = color_ranges_legend_rect.height; // is always the same
+      c.style.height = h + "px";
       // const w = color_ranges_legend_rect.width;
       // const h = color_ranges_legend_rect.height;
-
-      const w =
-        currentPredictionToolParameters.score_ranges.length *
-          (number_of_colors + 1) *
-          step_size +
-        30; // changes based on currentTool
+      const w = color_ranges_legend_rect.width;
+      console.log("w= " + w );
+      // const w =
+      //   currentPredictionToolParameters.score_ranges.length *
+      //     (number_of_colors + 1) *
+      //     step_size +
+      //   50; // 25 from beggining and end to make sure last number isn't cut short
       // *31, to account for black lines , + 15 to account for current_x starting from 15, and + 15 to make sure last number isn't cut short;
-      const h = color_ranges_legend_rect.height; // is always the same
       const ratio = window.devicePixelRatio;
       c.width = w * ratio;
       c.height = h * ratio;
-      c.style.width = w + "px";
-      c.style.height = h + "px";
       ctx.scale(ratio, ratio);
-
+      // buffer for 50, and number_of_rectangles (including black divider ones);
+      const step_size = (w-50)/(((number_of_colors + 1) * currentPredictionToolParameters.score_ranges.length) + 1 ) ;
+      // w = 500; 450/(30*3) = 5, 
       // ctx.fillRect(0,h/4,w,h/2);
-      let current_x = 15;
+      let current_x = 25;
       ctx.fillStyle = "black";
-      ctx.fillRect(current_x, h / 4, step_size, h / 2); //(x: number, y: number, w: number, h: number): void
+      ctx.fillRect(current_x, h / 4, Math.ceil(step_size) + 1, h / 2); //(x: number, y: number, w: number, h: number): void
       ctx.textAlign = "center";
       ctx.font = "16px Arial";
       ctx.fillText(
         currentPredictionToolParameters.score_ranges[0].start.toFixed(2),
         current_x,
         15,
-        40
+        50
       );
       current_x += step_size;
 
-      for (
-        let i = 0;
-        i < currentPredictionToolParameters.score_ranges.length;
-        i++
-      ) {
+      for (let i = 0; i < currentPredictionToolParameters.score_ranges.length; i++) {
         // i = 0,1
         for (let j = 0; j < color_lists_array[i].length; j++) {
+          ctx.fillStyle = color_lists_array[i][j];
+          ctx.fillRect(current_x, h / 4, Math.ceil(step_size) + 1  , h / 2);
+          current_x += step_size;
           if (j === Math.floor(color_lists_array[i].length / 2)) {
             // middle element
             ctx.fillText(
               currentPredictionToolParameters.score_ranges[i].risk_assessment,
               current_x,
               15,
-              number_of_colors * step_size
+              (number_of_colors * step_size - 50)
             ); // 30 = number of colors
           }
+         
           // normal color line;
-          ctx.fillStyle = color_lists_array[i][j];
-          ctx.fillRect(current_x, h / 4, step_size, h / 2);
-          current_x += step_size;
+         
         }
         // empty black line
         ctx.fillStyle = "black";
-        ctx.fillRect(current_x, h / 4, step_size, h / 2);
+        ctx.fillRect(current_x, h / 4, step_size, h / 2); // last rect, won't use Math.ceil()
+        // in previous rects we deliberately draw a bit more than enough to make sure there aren't any gaps between them;
+        current_x += step_size;
         ctx.fillText(
           currentPredictionToolParameters.score_ranges[i].end.toFixed(2),
           current_x,
           15,
-          40
+          50
         );
-        current_x += step_size;
       }
       
       return;
@@ -515,11 +579,7 @@ const ProteinPage = () => {
               id="color_ranges_legend"
               ref={colorRangesLegendRef}
               height={"85"}
-              width={
-                currentPredictionToolParameters.score_ranges.length *
-                number_of_colors *
-                6
-              }
+              style={{width:'calc(30vw + 50px)', height:"85px"}}
             ></canvas>
           </div>
           }
@@ -544,6 +604,12 @@ const ProteinPage = () => {
       </div>
       }
       </div>
+      <MetadataFeaturesTable 
+        allFeaturesArray = {metadata[metadataHumanIndex]?.features}
+        sequenceLength={metadata[metadataHumanIndex]?.sequence.length}
+        scaleAndOriginX = {scaleAndOriginX}
+        setScaleAndOriginX = {setScaleAndOriginX} 
+      />
       {
         proteinKeywordsJsx &&
       <div>
@@ -569,12 +635,7 @@ const ProteinPage = () => {
           </ul>
         )}
       </div>
-      <MetadataFeaturesTable 
-        allFeaturesArray = {metadata[metadataHumanIndex]?.features}
-        sequenceLength={metadata[metadataHumanIndex]?.sequence.length}
-        scaleAndOriginX = {scaleAndOriginX}
-        setScaleAndOriginX = {setScaleAndOriginX} 
-      />
+      
       <br/>
       
       {/* <div>{featuresJsx}</div> */}

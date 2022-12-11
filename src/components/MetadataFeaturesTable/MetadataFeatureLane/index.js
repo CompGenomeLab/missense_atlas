@@ -111,10 +111,10 @@ function MetadataFeatureLane({
         lane_top_margin * 2 -
         (sublane_divider_height * (subLaneCount - 1)) / subLaneCount;
     }
-    for (let i = 0; i < extendedFeatureArray.length; i++) {
-      const cur_begin_x = parseInt(extendedFeatureArray[i].begin) * cell_width;
+    for (let i = 0; i < extendedFeatureArray.length; i++) { // -1, because begin is indexed from 1, not 0;
+      const cur_begin_x = parseInt(extendedFeatureArray[i].begin -1) * cell_width;
       const cur_end_x =
-        (parseInt(extendedFeatureArray[i].end) + 1) * cell_width;
+        (parseInt(extendedFeatureArray[i].end)) * cell_width;
       const cur_sub_lane = parseInt(extendedFeatureArray[i].sub_lane);
       const fill_width = cur_end_x - cur_begin_x;
       const start_height =

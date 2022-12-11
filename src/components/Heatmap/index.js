@@ -38,7 +38,7 @@ function Heatmap( props ){
     {
         let current_score;
         if (Object.hasOwn(proteinData[i] , aminoacid_ordering[j]  )  ){
-          current_score = proteinData[i][aminoacid_ordering[j]];
+          current_score = parseFloat(proteinData[i][aminoacid_ordering[j]]);
           if(typeof(current_score) !== 'number' ){
             // NaN value reached Nan nan
             return 1;
@@ -99,7 +99,7 @@ function Heatmap( props ){
       {
         let current_score;
         if (Object.hasOwn(proteinData[i+1] , aminoacid_ordering[j]  )  ){
-          current_score = proteinData[i+1][aminoacid_ordering[j]];
+          current_score = parseFloat(proteinData[i+1][aminoacid_ordering[j]]);
           if (typeof(current_score) !== 'number')
           {
             // NaN Value reached
@@ -522,7 +522,7 @@ function Heatmap( props ){
 
     let mutation_risk_raw_value;
     if ( Object.hasOwn(proteinData[original_aminoacid_idx] , mutated_aminoacid)  ){
-      mutation_risk_raw_value = proteinData[original_aminoacid_idx][mutated_aminoacid];
+      mutation_risk_raw_value = parseFloat(proteinData[original_aminoacid_idx][mutated_aminoacid]);
     }
     else if (proteinData[original_aminoacid_idx].ref === mutated_aminoacid){// if field doesn't exist but is the refernce aminoacid, working as intended no bug, or NaN situation
         mutation_risk_raw_value = tool_parameters.ref_value;
@@ -587,7 +587,7 @@ function Heatmap( props ){
       let mutation_risk_raw_value;
       const mutated_aminoacid = aminoacid_ordering[i];
       if ( Object.hasOwn(proteinData[original_aminoacid_idx] , mutated_aminoacid)  ){
-        mutation_risk_raw_value = proteinData[original_aminoacid_idx][mutated_aminoacid];
+        mutation_risk_raw_value = parseFloat(proteinData[original_aminoacid_idx][mutated_aminoacid]);
         // if Nan, calculate risk assessment will handle this case;
       }
       else if (proteinData[original_aminoacid_idx].ref === mutated_aminoacid)
