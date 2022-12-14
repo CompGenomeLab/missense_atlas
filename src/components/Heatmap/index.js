@@ -40,9 +40,9 @@ function Heatmap( props ){
         let current_score;
         if (Object.hasOwn(proteinData[i] , aminoacid_ordering[j]  )  ){
           current_score = parseFloat(proteinData[i][aminoacid_ordering[j]]);
-          if(typeof(current_score) !== 'number' ){
+          if(isNaN(current_score) ){ // typeof(current_score) !== 'number'
             // NaN value reached Nan nan
-            return 1;
+            return 999; // used in heatmap median colors
           }
         }
         else{
@@ -68,7 +68,7 @@ function Heatmap( props ){
 
   // handles NaN;
   const calculateRiskAssessment = (mutation_risk_raw_value) => {
-    if (typeof(mutation_risk_raw_value) !== 'number'){
+    if (isNaN(mutation_risk_raw_value)){ // typeof(mutation_risk_raw_value) !== 'number'
       //NaN
       return "Nan_value_in_data";
     }
@@ -101,9 +101,8 @@ function Heatmap( props ){
         let current_score;
         if (Object.hasOwn(proteinData[i+1] , aminoacid_ordering[j]  )  ){
           current_score = parseFloat(proteinData[i+1][aminoacid_ordering[j]]);
-          if (typeof(current_score) !== 'number')
+          if (isNaN(current_score))
           {
-            // NaN Value reached
             temp_heatmapColorsMatrix[i][j] = "#0000FF";
             continue;
           }
@@ -151,24 +150,29 @@ function Heatmap( props ){
     for ( let i = 0; i < sequence_length; i++) // alternative is to count greens/yellows, or take the average of their colors
     {
       const cur_pos_median = calculateMedianOfPosition(i+1); // i+1, because proteinData.scores' index starts from 1;
-      let color_index;  
-      let range_start;
-      let range_end;
-      let range_size;
-      let color_lists_index;  
-      for (let k = 0; k< currentPredictionToolParameters.score_ranges.length; k++){
-        const current_loop_range_start = currentPredictionToolParameters.score_ranges[k].start;
-        const current_loop_range_end = currentPredictionToolParameters.score_ranges[k].end;
-        if(cur_pos_median >= current_loop_range_start && cur_pos_median <=current_loop_range_end ){
-          // is between current ranges
-          range_start = current_loop_range_start;
-          range_end = current_loop_range_end;
-          range_size = range_end - range_start
-          color_lists_index = k;
-        } 
+      if (cur_pos_median === 999){ // NaN value checking
+        temp_heatmapMeanColors[i] = "#0000FF";
       }
-      color_index = Math.min( Math.floor((cur_pos_median - range_start) * (1/ range_size) * number_of_colors ) ,number_of_colors -1  ) 
-      temp_heatmapMeanColors[i] = String(color_lists_array[color_lists_index][color_index]);
+      else{        
+        let color_index;  
+        let range_start;
+        let range_end;
+        let range_size;
+        let color_lists_index;  
+        for (let k = 0; k< currentPredictionToolParameters.score_ranges.length; k++){
+          const current_loop_range_start = currentPredictionToolParameters.score_ranges[k].start;
+          const current_loop_range_end = currentPredictionToolParameters.score_ranges[k].end;
+          if(cur_pos_median >= current_loop_range_start && cur_pos_median <=current_loop_range_end ){
+            // is between current ranges
+            range_start = current_loop_range_start;
+            range_end = current_loop_range_end;
+            range_size = range_end - range_start
+            color_lists_index = k;
+          } 
+        }
+        color_index = Math.min( Math.floor((cur_pos_median - range_start) * (1/ range_size) * number_of_colors ) ,number_of_colors -1  ) 
+        temp_heatmapMeanColors[i] = String(color_lists_array[color_lists_index][color_index]);
+      }
     } 
     return temp_heatmapMeanColors;
 

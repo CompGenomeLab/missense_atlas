@@ -243,7 +243,7 @@ const provean_parameters = {
       risk_assessment: "deleterious",
       start_color: "#981e2a",
       end_color: "#fcedaa",
-      gamma:8
+      gamma:100
     },
     {
       start: -2.50,
