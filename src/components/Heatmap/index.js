@@ -3,7 +3,8 @@ import React, { useCallback, useEffect, useRef, useState,useMemo } from "react";
 
 //  22.8 is the magic number for starting position of the heatmap summary, it starts at cell_height * 22.8;
 const aminoacid_ordering = ['A','R','N','D','C','Q','E','G','H','I','L','K','M','F','P','S','T','W','Y','V'];
-const aminoAcidLegendWidth = 120;
+// const aminoAcidLegendWidth = 120;
+const aminoAcidLegendWidth = "10vw";
 // const number_of_colors = 30;
 // heatmap offset from config.js
 // yukleme ekranı
@@ -184,6 +185,7 @@ function Heatmap( props ){
       // const tool_parameters = currentPredictionToolParameters;
       const c = heatmapRef.current;
       const ctx = c.getContext("2d");
+      c.style.width = '80vw' ; // !!! IMPORTANT for sizing MUST BE SAME IN THE HTML CODE
       const rect = c.getBoundingClientRect(); //console.log(rect);
       const heatmap_width = rect.width;// must be the same as in canvas width html element
       const heatmap_height = rect.height;//must be the same as in canvas height html element
@@ -191,7 +193,6 @@ function Heatmap( props ){
       c.width = heatmap_width * ratio;
       c.height = heatmap_height * ratio;
       // console.log(heatmap_width);
-      c.style.width = 'calc(100vw - 200px)'; // !!! IMPORTANT for sizing MUST BE SAME IN THE HTML CODE
       // Probably not but calc syntax should be correct 100vw-200px wont work 
       c.style.height = heatmap_height + "px";
       // console.log(canvas_originX);
@@ -268,8 +269,9 @@ function Heatmap( props ){
     // return;
     const c = currentviewWindowRef.current;
     const ctx = c.getContext("2d");
+    c.style.width = 'calc(80vw + 100px)';
+
     const current_view_window_rect = c.getBoundingClientRect();
-    
     const w = current_view_window_rect.width; 
     const h = current_view_window_rect.height;
     
@@ -277,7 +279,6 @@ function Heatmap( props ){
     c.width = w * ratio;
     c.height = h * ratio;
     // c.style.width = w + "px";
-    c.style.width = 'calc(100vw - 100px)';
     c.style.height = h + "px";
     ctx.scale(ratio,ratio);
     ctx.translate(50,0); // shift by the amount of buffer on the left (for the number index to render)
@@ -460,7 +461,7 @@ function Heatmap( props ){
       const ratio = window.devicePixelRatio;
       c.width = w * ratio;
       c.height = h * ratio;
-      c.style.width = w + "px";
+      c.style.width = aminoAcidLegendWidth;
       c.style.height = h + "px";
       ctx.scale(ratio,ratio);
       
@@ -471,21 +472,21 @@ function Heatmap( props ){
       ctx.font = "12px Arial Narrow";
       
       ctx.lineWidth = 1;
-      
+      ctx.textAlign = 'right';
       for (let i = 0; i<20; i++)
       {
-          ctx.fillText(aminoacid_ordering[i] , 90 , (cell_height * (i+1)) );
-          ctx.beginPath();       // Start a new path
-          ctx.moveTo(105, cell_height * (i+0.5));    // Move the pen to (30, 50)
-          ctx.lineTo(115, cell_height * (i+0.5));  // Draw a line to (150, 100)
-          ctx.stroke();          // Render the path
+        ctx.fillText(aminoacid_ordering[i] , w -30  , (cell_height * (i+1)) );
+        ctx.beginPath();       // Start a new path
+        ctx.moveTo(w - 20 , cell_height * (i+0.5));    // Move the pen to (30, 50)
+        ctx.lineTo(w - 10 , cell_height * (i+0.5));  // Draw a line to (150, 100)
+        ctx.stroke();          // Render the path
       }
 
-      ctx.fillText("Position" , 70 , cell_height*(24.5) );
-      ctx.fillText("average" , 70 , cell_height* (26) );
+      ctx.fillText("Position" , w - 30 , cell_height*(24.5) );
+      ctx.fillText("average" , w - 30 , cell_height* (26) );
       ctx.beginPath();
-      ctx.moveTo(105,  cell_height * (25));
-      ctx.lineTo(115, cell_height * (25));
+      ctx.moveTo(w - 20 ,  cell_height * (25));
+      ctx.lineTo(w - 10, cell_height * (25));
       ctx.stroke();
       // ctx.fillText("Position average",20,(cell_height*(25+1)));
       // ctx.beginPath();
@@ -505,7 +506,6 @@ function Heatmap( props ){
     const heatmapRect_width = heatmapRect.width;
     const mouse_xcor = e.clientX - heatmapRect.left;//console.log("hover mouse_xcor = " + mouse_xcor); // console.log(heatmapRect.width);
     const mouse_ycor = e.clientY - heatmapRect.top; // scale doen't affect this, so this is the real_ycoordinate //console.log("hover mouse_ycor = " + mouse_ycor);// console.log(heatmapRect.height-50); // -50 space for position indexes;
-    
 
     const cell_height = (heatmapRect_height-70)/20; //!! must be same in drawheatmap // 300/20 = 15 ,  number 20 is same for all 
     const cell_width = (heatmapRect_width/sequence_length); //!! must be same in drawheatmap // if we use floor, it will result in 0 cell width when protein length is larger than c.width;
@@ -543,14 +543,13 @@ function Heatmap( props ){
     (ctx.measureText(risk_string).actualBoundingBoxAscent + ctx.measureText(risk_string).actualBoundingBoxDescent) );
 
     ctx.fillStyle="black"
-    ctx.fillRect(mouse_xcor + x_offset - aminoAcidLegendWidth , mouse_ycor + y_offset - (4 * strings_max_height) -2  , strings_max_width + 10  , strings_max_height * 2 + 10 );
+    ctx.fillRect(mouse_xcor, mouse_ycor + y_offset - (4 * strings_max_height) -2  , strings_max_width + 10  , strings_max_height * 2 + 10 );
 
     ctx.fillStyle = "white";
     ctx.textAlign = "center"; 
-    ctx.fillText(position_string, mouse_xcor + x_offset - aminoAcidLegendWidth + ((strings_max_width )/2) + 5 , mouse_ycor + y_offset -  (4 * strings_max_height) + 2 )
+    ctx.fillText(position_string, mouse_xcor + ((strings_max_width )/2) + 5 , mouse_ycor + y_offset -  (4 * strings_max_height) + 2 )
     ctx.fillStyle = heatmapColors[original_aminoacid_idx -1 ][mutated_aminoacid_idx]; // -1 because of heatmapColors is 0 indexed;
-    ctx.fillText(risk_string ,mouse_xcor + x_offset - aminoAcidLegendWidth  + ((strings_max_width )/2) + 5 , mouse_ycor + y_offset - (4 * strings_max_height) + strings_max_height + 4 );
-
+    ctx.fillText(risk_string ,mouse_xcor + ((strings_max_width )/2) + 5 , mouse_ycor + y_offset - (4 * strings_max_height) + strings_max_height + 4 );
     // console.log(ctx.measureText(text).width); // 260; 
 
     // rect size = text size + 30,
@@ -629,16 +628,16 @@ function Heatmap( props ){
     // risk_strings.push(median_value_string)
 
     ctx.fillStyle="black"
-    ctx.fillRect((mouse_xcor + x_offset - aminoAcidLegendWidth ),( mouse_ycor + y_offset - 85) , (risk_strings_max_width + 10) , (risk_strings_max_height * (risk_strings.length + 1) + 10 ) ); // cell_width*40,cell_height*5 250 for sift, 300 for polyphen
+    ctx.fillRect((mouse_xcor),( mouse_ycor + y_offset - 85) , (risk_strings_max_width + 10) , (risk_strings_max_height * (risk_strings.length + 1) + 10 ) ); // cell_width*40,cell_height*5 250 for sift, 300 for polyphen
     // ctx.fillRect(mouse_xcor + x_offset , mouse_ycor + y_offset ,100 , 100); // cell_width*40,cell_height*5 250 for sift, 300 for polyphen
     ctx.fillStyle = "white";
     ctx.textAlign = "center";
     const position_string = String(original_aminoacid_idx) + ". " + String(original_aminoacid); 
-    ctx.fillText(position_string, mouse_xcor + x_offset - aminoAcidLegendWidth + ((risk_strings_max_width + 10)/2) , mouse_ycor + y_offset -80 )
+    ctx.fillText(position_string, mouse_xcor + ((risk_strings_max_width + 10)/2) , mouse_ycor + y_offset -80 )
     for(let i = 0; i < risk_strings.length; i++)
     {
       ctx.fillStyle = risk_strings_colors[i];
-      ctx.fillText( risk_strings[i] , (mouse_xcor + x_offset - aminoAcidLegendWidth + ((risk_strings_max_width + 10)/2) ) , mouse_ycor + y_offset - 80 + risk_strings_max_height  + (i * risk_strings_max_height) );
+      ctx.fillText( risk_strings[i] , (mouse_xcor + ((risk_strings_max_width + 10)/2) ) , mouse_ycor + y_offset - 80 + risk_strings_max_height  + (i * risk_strings_max_height) );
     }
   }
 
@@ -650,7 +649,6 @@ function Heatmap( props ){
     if (sequence_length === 0 ){
       return;
     }
-    
     const c = tooltipRef.current;
     const ctx = c.getContext("2d");
     const tooltipRect = c.getBoundingClientRect();
@@ -661,7 +659,7 @@ function Heatmap( props ){
     c.height = tooltip_height * ratio;
     c.style.width = "calc(100vw - 20px)"; // will override the value in html, We have overflow-x: hidden in App.css;
     c.style.height = tooltip_height + "px";
-    c.style.top = "-40px"; // safari weird bug; canvas blurry text;
+    c.style.top = "-80px"; // safari weird bug; canvas blurry text;
     // console.log("width =   "  + c.width);
     ctx.scale(ratio,ratio);
     ctx.clearRect(0,0,tooltip_width,tooltip_height);
@@ -679,7 +677,8 @@ function Heatmap( props ){
     
     const canvas_scale = scaleAndOriginX.scale; // value of zoom before scroll event
     const canvas_originX_prev = scaleAndOriginX.originX * heatmapRect_width; // QZY
-
+    
+    // const aminoacid_legend_width = aminoAcidLegendRef.current.getBoundingClientRect().width;
     const x_offset = heatmapRect.left - tooltipRect.left;
     const y_offset = heatmapRect.top - tooltipRect.top;
   
@@ -747,20 +746,28 @@ function Heatmap( props ){
       <>
           {/* <button onClick={fetchDataTest2}> Fetch all protein data</button>
           <button onClick={fetchDataTest}> Metadata test</button> */}
+          {/* current_view_window left = aminoacidlegendwidht + 10px -50px (50 is the buffer for position number drawing)
+           10px is the gap property in metadataFeatureTable grid */}
+          <div style={{marginBottom:'2rem'}}>  
+            <h5 style={{textAlign:'center', marginBottom:'0.25rem', marginTop:'0rem'}}> current visible window: </h5>
+            <canvas id="current_view_window" ref={currentviewWindowRef} height={"30"} width={window.innerWidth -  200}
+                        style= {{marginLeft:"calc(" + aminoAcidLegendWidth + " - 40px" , width:'calc(100vw - 100px)'}}  > 
+            </canvas>
+          </div>
           {/* Height of asds must be the same as max(amino_acid_legend,heatmap_canvas) */}
           {/* canvas width width ={window.innerwidth} is only for the initialization, then we change by reassigning the canvas width inside functions */}
           {/* asds is only there because canvas positions are absolute, So it acts as a filler, so that subsequent elements and canvases don't overlap */}
-          <div id="asds" style={{ width:"calc(-200px + 100vw)", height:"310px", position:'relative'}}> 
-                  <canvas  id="heatmap_canvas" ref={heatmapRef} style = {{position:"absolute",top:"40px", left: aminoAcidLegendWidth + "px"}} height={270} width={window.innerWidth - 200} 
+          <div id="asds" style={{ width:"calc(-200px + 100vw)", height:"270px", position:'relative'}}> 
+                  <canvas  id="heatmap_canvas" ref={heatmapRef} style = {{position:"absolute",top:"0px", left:"calc("+ aminoAcidLegendWidth +  " + 10px)" , zIndex:1, width:'80vw', height:'270px'}}
                   // onClick={(e) => console.log("asfasfasfasfs")}
                   // onclick or other functions don't work here as the topmost layers is the canvas below
                   >
                   </canvas>
                   
-                  <canvas id="amino_acid_legend" ref={aminoAcidLegendRef} style={{position:"absolute",top:"40px", left:"0px"}} height = {270} width={aminoAcidLegendWidth}>
+                  <canvas id="amino_acid_legend" ref={aminoAcidLegendRef} style={{position:"absolute",top:"0px", left:"10px",width:aminoAcidLegendWidth, height:'270px',zIndex:1 }}>
                   </canvas>
 
-                  <canvas  id="heatmap_tooltip_canvas" ref={tooltipRef}  style = {{position:"absolute",top:"0px", left:"0px"}} height={"390"} width={window.innerWidth - 20 }
+                  <canvas  id="heatmap_tooltip_canvas" ref={tooltipRef}  style = {{position:"absolute",top:"-80px", left:"0px" , zIndex:50}} height={"350"} width={window.innerWidth - 20 }
                       // onClick = {clickLogger} 
                       // onWheel={wheelZoom} added event listener in UseEffect, because "Unable to preventDefault inside passive event listener invocation."
                       onMouseMove = {(e) => drawTooltipOrPan2(e)}
@@ -772,10 +779,7 @@ function Heatmap( props ){
                       
                   </canvas>              
           </div>
-          <h5 style={{textAlign:'center', marginBottom:'0.125rem', marginTop:'0.125rem'}}> current visible window: </h5>
-          <canvas id="current_view_window" ref={currentviewWindowRef} height={"30"} width={window.innerWidth -  200}
-                      style= {{marginLeft: aminoAcidLegendWidth - 50 + 'px', width:'calc(100vw - 100px)'}}  > 
-          </canvas>
+          
       </>
       
   )

@@ -65,7 +65,7 @@ function MetadataFeatureLane({
     // let s_time = Date.now();
     const c = metadataFeatureLaneRef.current;
     const ctx = c.getContext("2d");
-    c.style.width = "95%"; //lane_width + "px"; //'calc(100vw - 200px)'; // !!! IMPORTANT for sizing MUST BE SAME IN THE HTML CODE
+    c.style.width = "100%"; //lane_width + "px"; //'calc(100vw - 200px)'; // !!! IMPORTANT for sizing MUST BE SAME IN THE HTML CODE
     c.style.height = "5vh";
     const rect = c.getBoundingClientRect(); //console.log(rect);
     const laneWidth = rect.width; // must be the same as in canvas width html element
@@ -241,7 +241,7 @@ function MetadataFeatureLane({
     const tooltip_width = tooltipRect.width;// must be the same as in canvas width html element
     const tooltip_height = tooltipRect.height;//must be the same as in canvas height html element
     const ratio = window.devicePixelRatio;
-    c.style.width = "95%"; //lane_width + "px"; //'calc(100vw - 200px)'; // !!! IMPORTANT for sizing MUST BE SAME IN THE HTML CODE
+    c.style.width = "100%"; //lane_width + "px"; //'calc(100vw - 200px)'; // !!! IMPORTANT for sizing MUST BE SAME IN THE HTML CODE
     c.style.height = "5vh";
     c.width = tooltip_width * ratio;
     c.height = tooltip_height * ratio;
@@ -320,9 +320,11 @@ function MetadataFeatureLane({
     // using canvas because we want to be able to zoom and pan, similar to heatmap, and I have already implemented it in canvas
     // parent div width = 100%, height = 5vh;
     // children canvases have width 95%, Not to be confused with parents 100%
+    // %10 on the left, so we are left with 90% of the whole document, 
+    // to get %10 + 80% => 8/9 => 0.8888 => 88.888 percent
     <div
       id={"Lane Div " + curCategory}
-      style={{ width: "100%", height: "5vh", position: "relative" }}
+      style={{ width: "80vw", height: "5vh", position: "relative" }}
     >
           <canvas
             id={"Lane " + curCategory}
@@ -333,7 +335,7 @@ function MetadataFeatureLane({
           <canvas
             id={"Lane " + curCategory + "Ttip"}
             ref={metadataTooltipRef}
-            style={{ position: "absolute", top: "0px", left: "0px", height:'5vh', width:'95%' }}
+            style={{ position: "absolute", top: "0px", left: "0px", height:'5vh', width:'100%', zIndex:100 }}
             height={window.innerHeight/20} // doesn't matter, as we are giving height and width in style part;
             width={window.innerWidth} // doesn't matter as well, Also, after the initial run styles are overriden by the drawToolTipOrPan function
             onDoubleClick={() => setScaleAndOriginX({ scale: 1, originX: 0 })}

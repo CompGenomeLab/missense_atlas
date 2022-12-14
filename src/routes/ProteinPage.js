@@ -569,7 +569,7 @@ const ProteinPage = () => {
               display: "flex",
               gap: "30px",
               justifyContent: "flex-end",
-              marginRight: "50px",
+              marginRight: "0px",
             }}
           >
             <h2 style={{ marginLeft: "0px", marginRight: "auto" }}>
@@ -584,25 +584,27 @@ const ProteinPage = () => {
           </div>
           }
         </div>
-        { currentPredictionToolParameters ?
-        <Heatmap
-          currentPredictionToolParameters={currentPredictionToolParameters}
-          // adding "|| {}" so that proteinData is never undefined, instead it is an empty object
-          proteinData={
-            allProteinData[currentPredictionToolParameters.toolname_json] || {}
-          }
-          // proteinData={proteinData} // if we want to fetch one by one;
-          color_lists_array={color_lists_array}
-          number_of_colors={number_of_colors}
-          scaleAndOriginX = {scaleAndOriginX}
-          setScaleAndOriginX = {setScaleAndOriginX} 
-        />
-      : 
-      <div  style={{height:'400px',display:'flex',alignItems:'center', justifyContent:'center' }}> 
-        <h1> {proteinDataLoadingStatus}</h1> 
-        
-      </div>
-      }
+        <div style={{marginBottom:'1rem'}}>
+          { currentPredictionToolParameters ?
+          <Heatmap
+            currentPredictionToolParameters={currentPredictionToolParameters}
+            // adding "|| {}" so that proteinData is never undefined, instead it is an empty object
+            proteinData={
+              allProteinData[currentPredictionToolParameters.toolname_json] || {}
+            }
+            // proteinData={proteinData} // if we want to fetch one by one;
+            color_lists_array={color_lists_array}
+            number_of_colors={number_of_colors}
+            scaleAndOriginX = {scaleAndOriginX}
+            setScaleAndOriginX = {setScaleAndOriginX} 
+          />
+        : 
+        <div  style={{height:'400px',display:'flex',alignItems:'center', justifyContent:'center' }}> 
+          <h1> {proteinDataLoadingStatus}</h1> 
+          
+        </div>
+        }
+       </div>
       </div>
       <MetadataFeaturesTable 
         allFeaturesArray = {metadata[metadataHumanIndex]?.features}

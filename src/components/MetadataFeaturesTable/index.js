@@ -7,6 +7,9 @@ function MetadataFeaturesTable({ allFeaturesArray, sequenceLength, scaleAndOrigi
   // const [scaleAndOriginX,setScaleAndOriginX] = useState({scale:1,originX:0});
   const [isDown,setIsDown] = useState(false);
   const [panningStartX,setPanningStartX] = useState(0);
+  const [tooltipVisible, setTooltipVisible] = useState(true);
+  const [mousePosX, setMousePosX] = useState(0);
+  const [mousePosY, setMousePosY] = useState(0);
 
   const featureCategories =
     allFeaturesArray?.reduce((curSet, ftr) => {
@@ -64,15 +67,28 @@ function MetadataFeaturesTable({ allFeaturesArray, sequenceLength, scaleAndOrigi
 
   return (
     // can't give rowgap, because then the canvasses won't touch, and there will be dead zones for zoom, instead make canvas larger, and then not draw the figures to those areas
+    <> 
     <div
       style={{
         display: "grid",
         columnGap: "10px",
-        gridTemplateColumns: "auto 1fr",
+        // marginLeft:'20px', // 
+        gridTemplateColumns: "10vw auto",
       }}
     >
       {featureCategoriesAndColumnsJsx}
     </div>
+    {
+      tooltipVisible &&
+    <div style={{position:'absolute', left: (String(mousePosX) + 'px') ,top: (String(mousePosY) + 'px'), zIndex:1000, pointerEvents:'none'}}> 
+      <p> {JSON.stringify(allFeaturesArray?.[0])} </p>
+    </div>
+    }
+    <button onClick={(e) => {setTooltipVisible(prev => !prev); setMousePosX(e.clientX); setMousePosY(e.clientY); console.log(e.clientX + " " + e.clientY) }}>
+      Test Tooltip toggle 
+    </button>
+
+    </>
     // <ul style={{ listStyleType: "none", marginTop: "0px", marginLeft: "0px", paddingInlineStart:'0px' }}>
     //   {featureCategoriesAndColumnsJsx}
     // </ul>
