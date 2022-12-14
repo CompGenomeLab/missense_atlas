@@ -42,7 +42,7 @@ function Heatmap( props ){
           current_score = parseFloat(proteinData[i][aminoacid_ordering[j]]);
           if(isNaN(current_score) ){ // typeof(current_score) !== 'number'
             // NaN value reached Nan nan
-            return 999; // used in heatmap median colors
+            return "NaN"; // used in heatmap median colors
           }
         }
         else{
@@ -68,10 +68,14 @@ function Heatmap( props ){
 
   // handles NaN;
   const calculateRiskAssessment = (mutation_risk_raw_value) => {
+    if (mutation_risk_raw_value === "Missing value"){
+      return "Missing value";
+    }
     if (isNaN(mutation_risk_raw_value)){ // typeof(mutation_risk_raw_value) !== 'number'
       //NaN
-      return "Nan_value_in_data";
+      return "NaN value in data";
     }
+    
     const tool_parameters = currentPredictionToolParameters;
     let mutation_risk_assessment // 'Neutral';  // change based on mutation_risk_raw value;
       // score_ranges:[ {start:0.00, end:0.15, risk_assessment : ' benign' , start_color:"2C663C", end_color:"D3D3D3" } , 
@@ -150,7 +154,7 @@ function Heatmap( props ){
     for ( let i = 0; i < sequence_length; i++) // alternative is to count greens/yellows, or take the average of their colors
     {
       const cur_pos_median = calculateMedianOfPosition(i+1); // i+1, because proteinData.scores' index starts from 1;
-      if (cur_pos_median === 999){ // NaN value checking
+      if (cur_pos_median === "NaN"){ // NaN value checking
         temp_heatmapMeanColors[i] = "#0000FF";
       }
       else{        
@@ -532,7 +536,7 @@ function Heatmap( props ){
         mutation_risk_raw_value = tool_parameters.ref_value;
       }
     else{
-      mutation_risk_raw_value = "Missing value, bug";
+      mutation_risk_raw_value = "Missing value";
     }      
     const mutation_risk_assessment = calculateRiskAssessment(mutation_risk_raw_value); // handles NaN
     // console.log(mutation_risk_assessment);
@@ -583,8 +587,9 @@ function Heatmap( props ){
     for (let i = 0; i < tool_parameters.score_ranges.length; i++) 
     {
       risk_assessment_buckets[tool_parameters.score_ranges[i].risk_assessment] = new Set();
-      risk_assessment_buckets.Nan_value_in_data = new Set();
     }
+    risk_assessment_buckets["NaN value in data"]= new Set();
+
     for(let i = 0; i < 20; i++) // for each aminoacid determine their risk assessment;
     {
       let mutation_risk_raw_value;
@@ -599,7 +604,7 @@ function Heatmap( props ){
       }
       else{ 
         // Missing field for aminoacid, instead of value being NaN, This bug isn't as obvious, harder to find;
-        mutation_risk_raw_value = "Nan_value_in_data";
+        mutation_risk_raw_value = "NaN value in data";
       }
       const mutation_risk_assessment = calculateRiskAssessment(mutation_risk_raw_value);
       risk_assessment_buckets[mutation_risk_assessment].add(mutated_aminoacid);
@@ -629,6 +634,8 @@ function Heatmap( props ){
         risk_strings_max_height = cur_string_height;
       }
     }
+    risk_strings.push(median_value_string);
+    risk_strings_colors.push(heatmapMeanColors[original_aminoacid_idx -1 ]); // because original_aminoacid_idx starts from 1 and heatmapMeancolors start from 0; 
     // risk_strings.push(median_value_string)
 
     ctx.fillStyle="black"
