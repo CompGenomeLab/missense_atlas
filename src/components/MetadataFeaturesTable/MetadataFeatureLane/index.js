@@ -10,7 +10,8 @@ function MetadataFeatureLane({
   isDown,
   setIsDown,
   panningStartX,
-  setPanningStartX
+  setPanningStartX,
+  changeTooltipFeature
 }) {
   const metadataFeatureLaneRef = useRef(null);
   const metadataTooltipRef = useRef(null);
@@ -112,7 +113,7 @@ function MetadataFeatureLane({
         (sublane_divider_height * (subLaneCount - 1)) / subLaneCount;
     }
     for (let i = 0; i < extendedFeatureArray.length; i++) { // -1, because begin is indexed from 1, not 0;
-      const cur_begin_x = parseInt(extendedFeatureArray[i].begin -1) * cell_width;
+      const cur_begin_x = (parseInt(extendedFeatureArray[i].begin) -1 )  * cell_width;
       const cur_end_x =
         (parseInt(extendedFeatureArray[i].end)) * cell_width;
       const cur_sub_lane = parseInt(extendedFeatureArray[i].sub_lane);
@@ -258,6 +259,7 @@ function MetadataFeatureLane({
     if (isDown) // panning the canvas if mouse down is down;
     {
       // console.log("isdonwnnnn2");
+      changeTooltipFeature("invisible",e.pageX,e.pageY);
       const dx_normalized = (panningStartX - mouse_xcor) / lane_scale; // change in X direction
 
       let lane_originX_next = lane_originX_prev + dx_normalized;
@@ -274,6 +276,17 @@ function MetadataFeatureLane({
     }
   };
 
+
+  const helper_find_feature = (position) =>  {
+    for(let i = 0; i< featureArray.length; i++){
+      if (position >= featureArray[i].begin && position <= featureArray[i].end){
+        return featureArray[i];
+      }
+    }
+    console.log("Not a Feature");
+    return 'invisible';
+  }
+
   const onMouseDownHelper = (e) => {
     const c = metadataFeatureLaneRef.current; // if goes out of feature lanes bounds
     const rect = c.getBoundingClientRect()
@@ -281,6 +294,7 @@ function MetadataFeatureLane({
     const lane_height = rect.height;
     const mouse_xcor = e.clientX - rect.left;
     const mouse_ycor = e.clientY - rect.top;
+   
     //console.log("mouse xcor_point = " +mouse_xcor);
     //console.log("mouse_ycor " + mouse_ycor);
     if (mouse_xcor > lane_width || mouse_xcor < 0 || mouse_ycor > lane_height || mouse_ycor < 0 )  // lane boundaries;
@@ -289,6 +303,16 @@ function MetadataFeatureLane({
     }
     else // only if mouse points inside correct the heatmap
     {
+      //find the currently pointed position in the sequence
+      const cell_width = lane_width/sequenceLength;
+      const lane_scale = scaleAndOriginX.scale; 
+      const lane_originX_prev = scaleAndOriginX.originX * lane_width; // QZY
+      //const canvas_originX_prev = scaleAndOriginX.originX;
+      let real_xcor =  lane_originX_prev + (mouse_xcor/lane_scale);
+      const current_aminoacid_position = Math.max(Math.ceil(real_xcor/cell_width),1) 
+      // find the feature that corresponds to that position
+      const feature = helper_find_feature(current_aminoacid_position);
+      changeTooltipFeature(feature,e.pageX, e.pageY);
       setIsDown(true);
       setPanningStartX(prev => mouse_xcor);
     }

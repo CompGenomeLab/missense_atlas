@@ -7,9 +7,17 @@ function MetadataFeaturesTable({ allFeaturesArray, sequenceLength, scaleAndOrigi
   // const [scaleAndOriginX,setScaleAndOriginX] = useState({scale:1,originX:0});
   const [isDown,setIsDown] = useState(false);
   const [panningStartX,setPanningStartX] = useState(0);
-  const [tooltipVisible, setTooltipVisible] = useState(true);
-  const [mousePosX, setMousePosX] = useState(0);
-  const [mousePosY, setMousePosY] = useState(0);
+  const [currentTooltipFeature, setCurrentTooltipFeature] = useState('invisible'); // will be either invisible (won't dispaly)
+  // or it will be an element of the "features" array in the metadata
+  const [mousePosXY, setMousePosXY] = useState({x:0, y:0})
+  // const [mousePosX, setMousePosX] = useState(0);
+  // const [mousePosY, setMousePosY] = useState(0);
+
+  const changeTooltipFeature = (new_feature,new_mouse_posX,new_mouse_posY) => {
+    setCurrentTooltipFeature(new_feature);
+    setMousePosXY({x:new_mouse_posX, y:new_mouse_posY});
+  }
+
 
   const featureCategories =
     allFeaturesArray?.reduce((curSet, ftr) => {
@@ -59,6 +67,7 @@ function MetadataFeaturesTable({ allFeaturesArray, sequenceLength, scaleAndOrigi
             setIsDown = {setIsDown}
             panningStartX = {panningStartX}
             setPanningStartX = {setPanningStartX}
+            changeTooltipFeature = {changeTooltipFeature}
           />
         </div>,
       ];
@@ -79,14 +88,12 @@ function MetadataFeaturesTable({ allFeaturesArray, sequenceLength, scaleAndOrigi
       {featureCategoriesAndColumnsJsx}
     </div>
     {
-      tooltipVisible &&
-    <div style={{position:'absolute', left: (String(mousePosX) + 'px') ,top: (String(mousePosY) + 'px'), zIndex:1000, pointerEvents:'none'}}> 
-      <p> {JSON.stringify(allFeaturesArray?.[0])} </p>
+      currentTooltipFeature !== 'invisible' && // if Panning starts currentToolTipFeature will turn into 'invisible'
+    <div style={{position:'absolute', left: (String(mousePosXY.x) + 'px') ,top: (String(mousePosXY.y) + 'px'), zIndex:1000, pointerEvents:'none'}}> 
+      <p> {JSON.stringify(currentTooltipFeature)} </p>
     </div>
     }
-    <button onClick={(e) => {setTooltipVisible(prev => !prev); setMousePosX(e.clientX); setMousePosY(e.clientY); console.log(e.clientX + " " + e.clientY) }}>
-      Test Tooltip toggle 
-    </button>
+    
 
     </>
     // <ul style={{ listStyleType: "none", marginTop: "0px", marginLeft: "0px", paddingInlineStart:'0px' }}>
