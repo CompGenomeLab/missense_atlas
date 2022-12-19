@@ -35,9 +35,10 @@ function Heatmap( props ){
   // handles NaN
   const calculateMedianOfPosition = useCallback ( (i) => {
     let cur_pos_array = [];
+    let ref_flag = true;
     for (let j = 0; j<20; j++) // for each aminoacid
     {
-        let current_score;
+        let current_score = "Missing";
         if (Object.hasOwn(proteinData[i] , aminoacid_ordering[j]  )  ){
           current_score = parseFloat(proteinData[i][aminoacid_ordering[j]]);
           if(isNaN(current_score) ){ // typeof(current_score) !== 'number'
@@ -45,19 +46,23 @@ function Heatmap( props ){
             return "NaN"; // used in heatmap median colors
           }
         }
-        else{
+        else if (ref_flag){ // NEED TO ACCOUNT FOR MISSING VALUES !!!!
           current_score = currentPredictionToolParameters.ref_value;
+          ref_flag = false;
         }
-        // const current_score = proteinData.scores[i+1][aminoacid_ordering[j]] || tool_parameters.ref_value;
-        // cur_pos_mean += (current_score)/20;
-        cur_pos_array.push(current_score);
+        if (current_score !== "Missing"){
+          cur_pos_array.push(current_score);
+        }
     }
     // median calculation
     cur_pos_array.sort( (a,b) => a-b ) // ascending order;
     
     let cur_pos_median // changed to 10, because 0th is the reference,
     // if 0 is benign, then first index is reference, so elements from indices 1 to 19 are considered
-    if (currentPredictionToolParameters.ref_value === 0){// biger or equal to, for the case of all tools prediction;
+    if (cur_pos_array.length !== 20){
+      cur_pos_median = "There are missing values";
+    }
+    else if (currentPredictionToolParameters.ref_value === 0){// biger or equal to, for the case of all tools prediction;
       cur_pos_median = cur_pos_array[10]; 
     }
     else{ // 1 is benign, so final element isn't considered in median calculation, 
@@ -68,6 +73,7 @@ function Heatmap( props ){
 
   // handles NaN;
   const calculateRiskAssessment = (mutation_risk_raw_value) => {
+
     if (mutation_risk_raw_value === "Missing value"){
       return "Missing value";
     }
@@ -107,7 +113,7 @@ function Heatmap( props ){
           current_score = parseFloat(proteinData[i+1][aminoacid_ordering[j]]);
           if (isNaN(current_score))
           {
-            temp_heatmapColorsMatrix[i][j] = "#0000FF";
+            temp_heatmapColorsMatrix[i][j] = "#FFFFFF";
             continue;
           }
         }
@@ -117,7 +123,7 @@ function Heatmap( props ){
         }
         else{
           // doesn't exist and is not reference, similar to NaN value but harder to find, isn't as obvious, more insidious;
-          temp_heatmapColorsMatrix[i][j] = "#0000FF";
+          temp_heatmapColorsMatrix[i][j] = "#FFFFFF";
           continue;
         }
         let color_index;
@@ -154,8 +160,8 @@ function Heatmap( props ){
     for ( let i = 0; i < sequence_length; i++) // alternative is to count greens/yellows, or take the average of their colors
     {
       const cur_pos_median = calculateMedianOfPosition(i+1); // i+1, because proteinData.scores' index starts from 1;
-      if (cur_pos_median === "NaN"){ // NaN value checking
-        temp_heatmapMeanColors[i] = "#0000FF";
+      if (isNaN(cur_pos_median)){ // NaN value checking, it will be NaN if something went wrong (missing values or NaN values)
+        temp_heatmapMeanColors[i] = "#FFFFFF";
       }
       else{        
         let color_index;  
@@ -463,13 +469,13 @@ function Heatmap( props ){
   const drawAminoAcidLegend  = () => {  // will only run once on startup of useEffect
       const c = aminoAcidLegendRef.current;
       const ctx = c.getContext("2d");
+      c.style.width = aminoAcidLegendWidth; 
       const legend_rect = c.getBoundingClientRect();
       const w = legend_rect.width;
       const h = legend_rect.height;
       const ratio = window.devicePixelRatio;
       c.width = w * ratio;
       c.height = h * ratio;
-      c.style.width = aminoAcidLegendWidth;
       c.style.height = h + "px";
       ctx.scale(ratio,ratio);
       

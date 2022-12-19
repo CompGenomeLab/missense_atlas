@@ -1,10 +1,11 @@
-import React, { useState, useRef, useEffect, useMemo } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import chroma from "chroma-js";
 import axios from "axios";
 import { useParams } from "react-router-dom";
 import OpenInNewIcon from "@mui/icons-material/OpenInNew";
 import Heatmap from "../components/Heatmap";
 import MetadataFeaturesTable from "../components/MetadataFeaturesTable";
+import ColorRangesLegend from "../components/ColorRangesLegend";
 
 // http://10.3.2.13:8080/database/efin/8a8c1b6c6d5e7589f18afd6455086c82
 // http://10.3.2.13:8080/database/sift/8a8c1b6c6d5e7589f18afd6455086c82
@@ -13,25 +14,12 @@ import MetadataFeaturesTable from "../components/MetadataFeaturesTable";
 
 // const md5sum = "8a8c1b6c6d5e7589f18afd6455086c82"; // for our current protein; // will be passed as a prop ?
 // const protein_name = "Q5SRN2"; // can also be passed as a prop or taken from metadata?
-// const aminoacid_ordering = ['A','R','N','D','C','Q','E','G','H','I','L','K','M','F','P','S','T','W','Y','V'];
+
+const aminoacid_ordering = ['A','R','N','D','C','Q','E','G','H','I','L','K','M','F','P','S','T','W','Y','V'];
 
 const database_url = "http://10.3.2.13:8080/database/";
 
-// List-s2 threshold values:
 
-// Generic threshold: 0.85
-
-// Equal to 0.85 or higher: deleterious
-
-// lower than 0.85: benign
-
-// Do another check to choose which one;
-// const efin_swissprot_parameters = { // to be completed
-
-// };
-// const efin_humdiv_parameters = { // to be completed
-
-// }
 
 const lists2_parameters = {
   toolname: "LIST-S2", // shown to the user
@@ -233,25 +221,25 @@ const efin_swissprot_parameters = {
   ref_value: 1,
 };
 //????
-const provean_parameters = {
+const provean_parameters = { // change based on array;
   toolname: "Provean",
   toolname_json: "provean",
   score_ranges: [
     {
-      start: -40.00,
+      start: -40.00, // minimum value of the scores will be used instead
       end: -2.50,
       risk_assessment: "deleterious",
       start_color: "#981e2a",
       end_color: "#fcedaa",
-      gamma:100
+      gamma:1
     },
     {
       start: -2.50,
-      end: 15,
+      end: 15, // maximum value of the scores will be used instead
       risk_assessment: "neutral",
       start_color: "#fcedaa",
       end_color: "#2c663c",
-      gamma:1/3
+      gamma:1
     },
   ],
   ref_value : 0
@@ -282,7 +270,7 @@ const ProteinPage = () => {
   const [currentPredictionToolParameters, setCurrentPredictionToolParameters] = useState();
   // shared between heatmap and metadataFeatureTable
   const [scaleAndOriginX, setScaleAndOriginX] = useState({scale:1, originX:0});
-  const colorRangesLegendRef = useRef(null);
+  // const colorRangesLegendRef = useRef(null);
 
   // , {headers:{'Access-Control-Allow-Origin' : '*',}}
   // const request_url = "polyphen/8a8c1b6c6d5e7589f18afd6455086c82"
@@ -295,6 +283,7 @@ const ProteinPage = () => {
       i < currentPredictionToolParameters?.score_ranges.length;
       i++
     ) {
+      
       const current_range_start_color =
         currentPredictionToolParameters.score_ranges[i].start_color;
       const current_range_end_color =
@@ -311,8 +300,6 @@ const ProteinPage = () => {
     }
     return temp_color_lists_array;
   }, [currentPredictionToolParameters]);
-
-
 
   useEffect(() => {
     // to fetch protein data
@@ -355,92 +342,92 @@ const ProteinPage = () => {
     
   }, [md5sum]);
 
-  useEffect(() => {
-    // draw color ranges legend
-    const drawColorRangesLegend = () => {
-      // can become a component; input = toolparams , colorlist
-      // console.log("ranges redraw");
-       // width of each color in the gradient;
-      const c = colorRangesLegendRef.current;
-      if (!c) {
-        return;
-      }
-      const ctx = c.getContext("2d");
-      const width_vw = currentPredictionToolParameters.score_ranges.length * 15;
-      const vw_string = String(width_vw) + "vw";
-      c.style.width = "calc("+ vw_string + " + 50px)";
-      // width is dynamic; based on predicion tool
+  // useEffect(() => {
+  //   // draw color ranges legend
+  //   const drawColorRangesLegend = () => {
+  //     // can become a component; input = toolparams , colorlist
+  //     // console.log("ranges redraw");
+  //      // width of each color in the gradient;
+  //     const c = colorRangesLegendRef.current;
+  //     if (!c) {
+  //       return;
+  //     }
+  //     const ctx = c.getContext("2d");
+  //     const width_vw = currentPredictionToolParameters.score_ranges.length * 15;
+  //     const vw_string = String(width_vw) + "vw";
+  //     c.style.width = "calc("+ vw_string + " + 50px)";
+  //     // width is dynamic; based on predicion tool
 
-      const color_ranges_legend_rect = c.getBoundingClientRect();
-      const h = color_ranges_legend_rect.height; // is always the same
-      c.style.height = h + "px";
-      // const w = color_ranges_legend_rect.width;
-      // const h = color_ranges_legend_rect.height;
-      const w = color_ranges_legend_rect.width;
-      console.log("w= " + w );
-      // const w =
-      //   currentPredictionToolParameters.score_ranges.length *
-      //     (number_of_colors + 1) *
-      //     step_size +
-      //   50; // 25 from beggining and end to make sure last number isn't cut short
-      // *31, to account for black lines , + 15 to account for current_x starting from 15, and + 15 to make sure last number isn't cut short;
-      const ratio = window.devicePixelRatio;
-      c.width = w * ratio;
-      c.height = h * ratio;
-      ctx.scale(ratio, ratio);
-      // buffer for 50, and number_of_rectangles (including black divider ones);
-      const step_size = (w-50)/(((number_of_colors + 1) * currentPredictionToolParameters.score_ranges.length) + 1 ) ;
-      // w = 500; 450/(30*3) = 5, 
-      // ctx.fillRect(0,h/4,w,h/2);
-      let current_x = 25;
-      ctx.fillStyle = "black";
-      ctx.fillRect(current_x, h / 4, Math.ceil(step_size) + 1, h / 2); //(x: number, y: number, w: number, h: number): void
-      ctx.textAlign = "center";
-      ctx.font = "16px Arial";
-      ctx.fillText(
-        currentPredictionToolParameters.score_ranges[0].start.toFixed(2),
-        current_x,
-        15,
-        50
-      );
-      current_x += step_size;
+  //     const color_ranges_legend_rect = c.getBoundingClientRect();
+  //     const h = color_ranges_legend_rect.height; // is always the same
+  //     c.style.height = h + "px";
+  //     // const w = color_ranges_legend_rect.width;
+  //     // const h = color_ranges_legend_rect.height;
+  //     const w = color_ranges_legend_rect.width;
+  //     console.log("w= " + w );
+  //     // const w =
+  //     //   currentPredictionToolParameters.score_ranges.length *
+  //     //     (number_of_colors + 1) *
+  //     //     step_size +
+  //     //   50; // 25 from beggining and end to make sure last number isn't cut short
+  //     // *31, to account for black lines , + 15 to account for current_x starting from 15, and + 15 to make sure last number isn't cut short;
+  //     const ratio = window.devicePixelRatio;
+  //     c.width = w * ratio;
+  //     c.height = h * ratio;
+  //     ctx.scale(ratio, ratio);
+  //     // buffer for 50, and number_of_rectangles (including black divider ones);
+  //     const step_size = (w-50)/(((number_of_colors + 1) * currentPredictionToolParameters.score_ranges.length) + 1 ) ;
+  //     // w = 500; 450/(30*3) = 5, 
+  //     // ctx.fillRect(0,h/4,w,h/2);
+  //     let current_x = 25;
+  //     ctx.fillStyle = "black";
+  //     ctx.fillRect(current_x, h / 4, Math.ceil(step_size) + 1, h / 2); //(x: number, y: number, w: number, h: number): void
+  //     ctx.textAlign = "center";
+  //     ctx.font = "16px Arial";
+  //     ctx.fillText(
+  //       currentPredictionToolParameters.score_ranges[0].start.toFixed(2),
+  //       current_x,
+  //       15,
+  //       50
+  //     );
+  //     current_x += step_size;
 
-      for (let i = 0; i < currentPredictionToolParameters.score_ranges.length; i++) {
-        // i = 0,1
-        for (let j = 0; j < color_lists_array[i].length; j++) {
-          ctx.fillStyle = color_lists_array[i][j];
-          ctx.fillRect(current_x, h / 4, Math.ceil(step_size) + 1  , h / 2);
-          current_x += step_size;
-          if (j === Math.floor(color_lists_array[i].length / 2)) {
-            // middle element
-            ctx.fillText(
-              currentPredictionToolParameters.score_ranges[i].risk_assessment,
-              current_x,
-              15,
-              (number_of_colors * step_size - 50)
-            ); // 30 = number of colors
-          }
+  //     for (let i = 0; i < currentPredictionToolParameters.score_ranges.length; i++) {
+  //       // i = 0,1
+  //       for (let j = 0; j < color_lists_array[i].length; j++) {
+  //         ctx.fillStyle = color_lists_array[i][j];
+  //         ctx.fillRect(current_x, h / 4, Math.ceil(step_size) + 1  , h / 2);
+  //         current_x += step_size;
+  //         if (j === Math.floor(color_lists_array[i].length / 2)) {
+  //           // middle element
+  //           ctx.fillText(
+  //             currentPredictionToolParameters.score_ranges[i].risk_assessment,
+  //             current_x,
+  //             15,
+  //             (number_of_colors * step_size - 50)
+  //           ); // 30 = number of colors
+  //         }
          
-          // normal color line;
+  //         // normal color line;
          
-        }
-        // empty black line
-        ctx.fillStyle = "black";
-        ctx.fillRect(current_x, h / 4, step_size, h / 2); // last rect, won't use Math.ceil()
-        // in previous rects we deliberately draw a bit more than enough to make sure there aren't any gaps between them;
-        current_x += step_size;
-        ctx.fillText(
-          currentPredictionToolParameters.score_ranges[i].end.toFixed(2),
-          current_x,
-          15,
-          50
-        );
-      }
+  //       }
+  //       // empty black line
+  //       ctx.fillStyle = "black";
+  //       ctx.fillRect(current_x, h / 4, step_size, h / 2); // last rect, won't use Math.ceil()
+  //       // in previous rects we deliberately draw a bit more than enough to make sure there aren't any gaps between them;
+  //       current_x += step_size;
+  //       ctx.fillText(
+  //         currentPredictionToolParameters.score_ranges[i].end.toFixed(2),
+  //         current_x,
+  //         15,
+  //         50
+  //       );
+  //     }
       
-      return;
-    };
-    drawColorRangesLegend();
-  }, [currentPredictionToolParameters, color_lists_array]);
+  //     return;
+  //   };
+  //   drawColorRangesLegend();
+  // }, [currentPredictionToolParameters, color_lists_array]); // resizeCount Added to drawColorRangesLegend
 
   useEffect(() => {
     // fetch metadata
@@ -478,9 +465,48 @@ const ProteinPage = () => {
     fetchMetadata();
   }, [md5sum]);
 
+  
+  const helper_switch_tool_find_minmax_of_tool_scores = (prediction_tool_parameters) => {
+      let minimum_value = 100;
+      let maximum_value = -40;
+      const current_tool_protein_data = allProteinData[prediction_tool_parameters.toolname_json];
+      let i = 1;
+      while(Object.hasOwn( current_tool_protein_data , i )){ // each position
+        for(let j = 0; j<20; j++){ // each aminoacid for that position
+          let current_score = "NaN"; // default value
+          const cur_amino_acid = aminoacid_ordering[j]
+          if (Object.hasOwn( current_tool_protein_data[i], cur_amino_acid ) ){
+            current_score = parseFloat(current_tool_protein_data[i][cur_amino_acid]);
+            if ( ! isNaN(current_score)){// not NaN
+              if (maximum_value < current_score){
+                maximum_value = current_score;
+              }
+              if (minimum_value > current_score){
+                minimum_value = current_score;
+              }
+            } 
+          }
+        }
+        i+= 1;
+      }
+      return {min_value: minimum_value, max_value: maximum_value}
+  }
   const switchTool = (e, prediction_tool_parameters) => {
     // Probably no need to use prev => prediction_tool_parameters
-    setCurrentPredictionToolParameters((prev) => prediction_tool_parameters);
+    // iterate over data and find minimum and maximum values
+    if (prediction_tool_parameters.toolname_json === 'provean'){ 
+      const {min_value,max_value} = helper_switch_tool_find_minmax_of_tool_scores(prediction_tool_parameters);
+      const first_score_range = {...prediction_tool_parameters.score_ranges[0], start: min_value }
+      const second_score_range = {...prediction_tool_parameters.score_ranges[1], end: max_value }
+      const new_score_ranges = [first_score_range,second_score_range];
+      setCurrentPredictionToolParameters( {
+        ...prediction_tool_parameters,score_ranges: new_score_ranges 
+      })
+    }
+    else{
+      setCurrentPredictionToolParameters(prediction_tool_parameters);
+    }
+    // setCurrentPredictionToolParameters((prev) => prediction_tool_parameters);
     // drawColorRangesLegend();
   };
   // console.log("pdata = ");
@@ -575,12 +601,17 @@ const ProteinPage = () => {
             <h2 style={{ marginLeft: "0px", marginRight: "auto" }}>
               Current tool : {currentPredictionToolParameters.toolname}
             </h2>
-            <canvas
+            <ColorRangesLegend 
+              currentPredictionToolParameters = {currentPredictionToolParameters} 
+              color_lists_array = {color_lists_array} 
+              number_of_colors = {number_of_colors}
+            />
+            {/* <canvas
               id="color_ranges_legend"
               ref={colorRangesLegendRef}
               height={"85"}
               style={{width:'calc(30vw + 50px)', height:"85px"}}
-            ></canvas>
+            ></canvas> */}
           </div>
           }
         </div>
@@ -718,3 +749,25 @@ export default ProteinPage;
   //     // always executed
   //   });
   // },[currentPredictionToolParameters,md5sum] );
+  // let minimum_value = 100;
+  // let maximum_value = -40;
+  // const current_tool_protein_data = allProteinData[prediction_tool_parameters.toolname_json];
+  // let i = 1;
+  // while(Object.hasOwn( current_tool_protein_data , i )){ // each position
+  //   for(let j = 0; j<20; j++){ // each aminoacid for that position
+  //     let current_score = "NaN"; // default value
+  //     const cur_amino_acid = aminoacid_ordering[j]
+  //     if (Object.hasOwn( current_tool_protein_data[i], cur_amino_acid ) ){
+  //       current_score = parseFloat(current_tool_protein_data[i][cur_amino_acid]);
+  //       if ( ! isNaN(current_score)){// not NaN
+  //         if (maximum_value < current_score){
+  //           maximum_value = current_score;
+  //         }
+  //         if (minimum_value > current_score){
+  //           minimum_value = current_score;
+  //         }
+  //       } 
+  //     }
+  //   }
+  //   i+= 1;
+  // }
