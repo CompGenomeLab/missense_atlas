@@ -14,8 +14,14 @@ function MetadataFeaturesTable({ allFeaturesArray, sequenceLength, scaleAndOrigi
   // const [mousePosY, setMousePosY] = useState(0);
 
   const changeTooltipFeature = (new_feature,new_mouse_posX,new_mouse_posY) => {
+    if (currentTooltipFeature === 'invisible' && new_feature === 'invisible'){
+      return; // to reduce the number of redraws, return without 'setState' in this case
+      // not really necessary probably, as its perforamnce wasn't a problem without this "optimization"
+    }
     setCurrentTooltipFeature(new_feature);
     setMousePosXY({x:new_mouse_posX, y:new_mouse_posY});
+   
+    
   }
 
 
@@ -73,18 +79,21 @@ function MetadataFeaturesTable({ allFeaturesArray, sequenceLength, scaleAndOrigi
       ];
     }
   );
-  const currenTooltipFeatureList = Object.keys(currentTooltipFeature)?.map( ftrKey => {
-    console.log(ftrKey);
-
+  // if currentTooltipFeature is 'invisible' it doesn't give an error, so it is fine now;
+  const currenTooltipFeatureTooltip = Object.keys(currentTooltipFeature)?.map( ftrKey => {
+    // console.log(ftrKey);
     if (typeof(currentTooltipFeature[ftrKey]) === 'string' )
     {
       return(
         <li key={ftrKey}>
-          {currentTooltipFeature[ftrKey]}
+          {ftrKey} : {currentTooltipFeature[ftrKey]}
         </li>
       )
     }
-    return <li key={ftrKey}> Remove </li>
+    return(
+      <li key={ftrKey}>
+        {ftrKey} : {JSON.stringify(currentTooltipFeature[ftrKey])} 
+      </li>)
     
     
   } )
@@ -102,10 +111,10 @@ function MetadataFeaturesTable({ allFeaturesArray, sequenceLength, scaleAndOrigi
       {featureCategoriesAndColumnsJsx}
     </div>
     {
-      currentTooltipFeature !== 'invisible' && // if Panning starts currentToolTipFeature will turn into 'invisible backgroundColor:'lavender''
-    <div style={{position:'absolute', left: (String(mousePosXY.x) + 'px') ,top: (String(mousePosXY.y) + 'px'), zIndex:1000, pointerEvents:'none' }}> 
+      currentTooltipFeature !== 'invisible' && // if Panning starts currentToolTipFeature will turn into 'invisible'
+    <div style={{position:'absolute', left: (String(mousePosXY.x) + 'px') ,top: (String(mousePosXY.y) + 'px'), zIndex:1000, pointerEvents:'none', backgroundColor:'lavender' }}> 
       {/* <p> {JSON.stringify(currentTooltipFeature)} </p> */}
-      <ul style={{ listStyleType:'none' }}> {currenTooltipFeatureList} </ul>
+      <ul style={{ listStyleType:'none' }}> {currenTooltipFeatureTooltip} </ul>
     </div>
     }
     
