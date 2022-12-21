@@ -277,9 +277,9 @@ function MetadataFeatureLane({
   };
 
 
-  const helper_find_feature = (position) =>  {
+  const helper_find_feature = (position_idx) =>  {
     for(let i = 0; i< featureArray.length; i++){
-      if (position >= featureArray[i].begin && position <= featureArray[i].end){
+      if (position_idx >= featureArray[i].begin && position_idx <= featureArray[i].end){
         return featureArray[i];
       }
     }

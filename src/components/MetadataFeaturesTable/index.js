@@ -73,7 +73,21 @@ function MetadataFeaturesTable({ allFeaturesArray, sequenceLength, scaleAndOrigi
       ];
     }
   );
+  const currenTooltipFeatureList = Object.keys(currentTooltipFeature)?.map( ftrKey => {
+    console.log(ftrKey);
 
+    if (typeof(currentTooltipFeature[ftrKey]) === 'string' )
+    {
+      return(
+        <li key={ftrKey}>
+          {currentTooltipFeature[ftrKey]}
+        </li>
+      )
+    }
+    return <li key={ftrKey}> Remove </li>
+    
+    
+  } )
   return (
     // can't give rowgap, because then the canvasses won't touch, and there will be dead zones for zoom, instead make canvas larger, and then not draw the figures to those areas
     <> 
@@ -88,9 +102,10 @@ function MetadataFeaturesTable({ allFeaturesArray, sequenceLength, scaleAndOrigi
       {featureCategoriesAndColumnsJsx}
     </div>
     {
-      currentTooltipFeature !== 'invisible' && // if Panning starts currentToolTipFeature will turn into 'invisible'
-    <div style={{position:'absolute', left: (String(mousePosXY.x) + 'px') ,top: (String(mousePosXY.y) + 'px'), zIndex:1000, pointerEvents:'none'}}> 
-      <p> {JSON.stringify(currentTooltipFeature)} </p>
+      currentTooltipFeature !== 'invisible' && // if Panning starts currentToolTipFeature will turn into 'invisible backgroundColor:'lavender''
+    <div style={{position:'absolute', left: (String(mousePosXY.x) + 'px') ,top: (String(mousePosXY.y) + 'px'), zIndex:1000, pointerEvents:'none' }}> 
+      {/* <p> {JSON.stringify(currentTooltipFeature)} </p> */}
+      <ul style={{ listStyleType:'none' }}> {currenTooltipFeatureList} </ul>
     </div>
     }
     
