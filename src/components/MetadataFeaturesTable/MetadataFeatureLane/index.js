@@ -60,7 +60,32 @@ function MetadataFeatureLane({
   const subLaneCount = findSubLanesNeeded().lane_count;
   const curCategory = extendedFeatureArray[0].category;
 
-
+  const calculateLaneMarginDividerandHeight = useCallback(
+    (laneHeight) => {
+      let lane_top_margin;
+      let sub_lane_divider_height;
+      let sub_lane_height;
+      if (subLaneCount === 1) {
+        lane_top_margin = laneHeight / 4; // the coefficient we divide with can be part of config.js
+        sub_lane_divider_height = 0;
+        sub_lane_height = (laneHeight - lane_top_margin * 2) / subLaneCount;
+      } else {
+        lane_top_margin = laneHeight / 8; // the coefficient we divide with can be part of config.js
+        sub_lane_divider_height = lane_top_margin / 2; // the coefficient we divide with can be part of config.js
+        sub_lane_height =
+          (laneHeight -
+            lane_top_margin * 2 -
+            sub_lane_divider_height * (subLaneCount - 1)) /
+          subLaneCount;
+      }
+      return {
+        lane_top_margin: lane_top_margin,
+        sub_lane_divider_height: sub_lane_divider_height,
+        sub_lane_height: sub_lane_height,
+      };
+    },
+    [subLaneCount]
+  );
 
   const drawLane = useCallback(() => {
     // let s_time = Date.now();
@@ -87,9 +112,6 @@ function MetadataFeatureLane({
 
     // ctx.fillRect(0,0,lane_width,lane_height/2);
     const cell_width = laneWidth / sequenceLength;
-    let sub_lane_height = 0;
-    let lane_top_margin = 0;
-    let sublane_divider_height = 0;
     ctx.strokeStyle = "green";
     ctx.beginPath();
     ctx.moveTo(0, 1);
@@ -100,18 +122,9 @@ function MetadataFeatureLane({
       ctx.lineTo(laneWidth, laneHeight - 1);
       ctx.stroke();
     }
-    if (subLaneCount === 1) {
-      lane_top_margin = laneHeight / 4;
-      sublane_divider_height = 0;
-      sub_lane_height = (laneHeight - lane_top_margin * 2) / subLaneCount;
-    } else {
-      lane_top_margin = laneHeight / 4;
-      sublane_divider_height = lane_top_margin / 2;
-      sub_lane_height =
-        laneHeight -
-        lane_top_margin * 2 -
-        (sublane_divider_height * (subLaneCount - 1)) / subLaneCount;
-    }
+    
+    const {sub_lane_height , lane_top_margin, sub_lane_divider_height } = calculateLaneMarginDividerandHeight(laneHeight);
+
     for (let i = 0; i < extendedFeatureArray.length; i++) { // -1, because begin is indexed from 1, not 0;
       const cur_begin_x = (parseInt(extendedFeatureArray[i].begin) -1 )  * cell_width;
       const cur_end_x =
@@ -120,7 +133,7 @@ function MetadataFeatureLane({
       const fill_width = cur_end_x - cur_begin_x;
       const start_height =
         lane_top_margin +
-        (cur_sub_lane - 1) * (sub_lane_height + sublane_divider_height);
+        (cur_sub_lane - 1) * (sub_lane_height + sub_lane_divider_height);
       ctx.fillStyle = "black";
       ctx.fillRect(cur_begin_x, start_height, fill_width, sub_lane_height);
       if (curCategory === "TOPOLOGY") {
@@ -148,9 +161,9 @@ function MetadataFeatureLane({
     extendedFeatureArray,
     sequenceLength,
     curCategory,
-    subLaneCount,
     isLastLane,
     scaleAndOriginX,
+    calculateLaneMarginDividerandHeight
   ]);
 
   const wheelZoomLane = useCallback(
@@ -277,10 +290,19 @@ function MetadataFeatureLane({
   };
 
 
-  const helper_find_feature = (position_idx) =>  {
-    for(let i = 0; i< featureArray.length; i++){
-      if (position_idx >= featureArray[i].begin && position_idx <= featureArray[i].end){
-        return featureArray[i];
+  const helper_find_feature = (position_idx,mouse_ycor,lane_height) =>  {
+
+    const {sub_lane_height , lane_top_margin, sub_lane_divider_height } = calculateLaneMarginDividerandHeight(lane_height);
+    for(let i = 0; i< extendedFeatureArray.length; i++){
+      if (position_idx >= extendedFeatureArray[i].begin && position_idx <= extendedFeatureArray[i].end){
+        const cur_sub_lane = extendedFeatureArray[i].sub_lane;
+        const cur_ftr_start_ycor =
+        lane_top_margin +
+        (cur_sub_lane - 1) * (sub_lane_height + sub_lane_divider_height);
+        const cur_ftr_end_ycor = cur_ftr_start_ycor + sub_lane_height;
+        if (cur_ftr_start_ycor <=  mouse_ycor && mouse_ycor <= cur_ftr_end_ycor ){
+          return extendedFeatureArray[i];
+        }
       }
     }
     console.log("Not a Feature");
@@ -311,7 +333,7 @@ function MetadataFeatureLane({
       let real_xcor =  lane_originX_prev + (mouse_xcor/lane_scale);
       const current_aminoacid_position = Math.max(Math.ceil(real_xcor/cell_width),1) 
       // find the feature that corresponds to that position
-      const feature = helper_find_feature(current_aminoacid_position);
+      const feature = helper_find_feature(current_aminoacid_position,mouse_ycor,lane_height);
       changeTooltipFeature(feature,e.pageX, e.pageY);
       setIsDown(true);
       setPanningStartX(prev => mouse_xcor);

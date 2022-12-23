@@ -1,6 +1,9 @@
 import React, {useState} from "react";
 import MetadataFeatureLane from "./MetadataFeatureLane";
 
+
+const tooltip_filtered_categories = ['category','sub_lane']; // config.js
+
 function MetadataFeaturesTable({ allFeaturesArray, sequenceLength, scaleAndOriginX, setScaleAndOriginX }) {
   
   // these 3 are shared by all lanes
@@ -80,7 +83,15 @@ function MetadataFeaturesTable({ allFeaturesArray, sequenceLength, scaleAndOrigi
     }
   );
   // if currentTooltipFeature is 'invisible' it doesn't give an error, so it is fine now;
-  const currenTooltipFeatureTooltip = Object.keys(currentTooltipFeature)?.map( ftrKey => {
+  const currenTooltipFeatureTooltip = Object.keys(currentTooltipFeature)?.filter(ftrKey => {
+    if(currentTooltipFeature[ftrKey].length === 0 ){
+      return false;
+    }
+    if(tooltip_filtered_categories.indexOf(ftrKey) !== -1 ){
+      return false; // the key is included in categories to be filtered;
+    }
+    return true; // value for key exists, and it is not one of the to be filterd categories
+  }).map( ftrKey => {
     // console.log(ftrKey);
     if (typeof(currentTooltipFeature[ftrKey]) === 'string' )
     {
@@ -90,7 +101,7 @@ function MetadataFeaturesTable({ allFeaturesArray, sequenceLength, scaleAndOrigi
         </li>
       )
     }
-    return(
+    return( // make a recursive or iterative function to handle this case
       <li key={ftrKey}>
         {ftrKey} : {JSON.stringify(currentTooltipFeature[ftrKey])} 
       </li>)
