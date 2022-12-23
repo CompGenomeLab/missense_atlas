@@ -5,13 +5,11 @@ import { IconButton } from "@mui/material";
 import CloseIcon from '@mui/icons-material/Close';
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
-
-const aminoacid_ordering = ['A','R','N','D','C','Q','E','G','H','I','L','K','M','F','P','S','T','W','Y','V'];
+import { database_url,aminoacid_ordering } from "../../config/config";
 
 function SearchBox(){
 
     const navigate = useNavigate();
-    const database_url = "http://10.3.2.13:8080/database/";
     const [searchMethod,setSearchMethod] = useState('Sequence'); // sequence or md5sum
     const [proteinSequence,setProteinSequence] = useState(''); // .trim() the sequence to remove white spaces
     const [inputMD5Sum , setInputMD5Sum] = useState('');
@@ -103,7 +101,7 @@ function SearchBox(){
     }
     
     const callApi = (final_md5Sum) => {
-        const request_url = "md5sum_to_sequence/" + String(final_md5Sum);
+        const request_url = "md5sum_to_sequence/" + String(final_md5Sum); // may also add this to configjs
         axios.get(database_url + request_url ) // cors policy
         .then(function (response) {
           // handle success

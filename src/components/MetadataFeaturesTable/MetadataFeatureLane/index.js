@@ -1,5 +1,12 @@
 import React, { useEffect, useRef, useCallback, useState } from "react";
 
+import {
+  top_margin_sl_coef,
+  top_margin_ml_coef,
+  sub_lane_divider_coef,
+} from "../../../config/config";
+// sl = single line, ml = multiline;
+//coef = coefficient
 function MetadataFeatureLane({
   featureArray,
   sequenceLength,
@@ -14,7 +21,6 @@ function MetadataFeatureLane({
   changeTooltipFeature
 }) {
   const metadataFeatureLaneRef = useRef(null);
-  const metadataTooltipRef = useRef(null);
   const [prevTime, setPrevTime] = useState(() => Date.now()); // limit number of drawings per second, must have for resizing window
   // also returns the extendedFeatureArray, which has an extra field that specifies which sublane is the current feature supposed to be in
   const findSubLanesNeeded = () => {
@@ -66,12 +72,12 @@ function MetadataFeatureLane({
       let sub_lane_divider_height;
       let sub_lane_height;
       if (subLaneCount === 1) {
-        lane_top_margin = laneHeight / 4; // the coefficient we divide with can be part of config.js
-        sub_lane_divider_height = 0;
+        lane_top_margin = laneHeight / top_margin_sl_coef; // the coefficient we divide with can be part of config.js
+        sub_lane_divider_height = 0; // no divider exists between lanes , as there is a single lane
         sub_lane_height = (laneHeight - lane_top_margin * 2) / subLaneCount;
       } else {
-        lane_top_margin = laneHeight / 8; // the coefficient we divide with can be part of config.js
-        sub_lane_divider_height = lane_top_margin / 2; // the coefficient we divide with can be part of config.js
+        lane_top_margin = laneHeight / top_margin_ml_coef; // the coefficient we divide with can be part of config.js
+        sub_lane_divider_height = lane_top_margin / sub_lane_divider_coef; // the coefficient we divide with can be part of config.js
         sub_lane_height =
           (laneHeight -
             lane_top_margin * 2 -
@@ -92,7 +98,7 @@ function MetadataFeatureLane({
     const c = metadataFeatureLaneRef.current;
     const ctx = c.getContext("2d");
     c.style.width = "100%"; //lane_width + "px"; //'calc(100vw - 200px)'; // !!! IMPORTANT for sizing MUST BE SAME IN THE HTML CODE
-    c.style.height = "5vh";
+    c.style.height = "100%";
     const rect = c.getBoundingClientRect(); //console.log(rect);
     const laneWidth = rect.width; // must be the same as in canvas width html element
     const laneHeight = rect.height;
@@ -112,7 +118,7 @@ function MetadataFeatureLane({
 
     // ctx.fillRect(0,0,lane_width,lane_height/2);
     const cell_width = laneWidth / sequenceLength;
-    ctx.strokeStyle = "green";
+    ctx.strokeStyle = "red";
     ctx.beginPath();
     ctx.moveTo(0, 1);
     ctx.lineTo(laneWidth, 1);
@@ -168,6 +174,8 @@ function MetadataFeatureLane({
 
   const wheelZoomLane = useCallback(
     (e, lane_scale_and_originX) => {
+
+      changeTooltipFeature('invisible',0,0);
       const cur_time = Date.now();
 
       const c = metadataFeatureLaneRef.current;
@@ -177,13 +185,13 @@ function MetadataFeatureLane({
       const mouse_xcor = e.clientX - rect.left;
       const mouse_ycor = e.clientY - rect.top;
 
+      // impossible for coordinates to be out of boudnaries 
       if (
         mouse_xcor > lane_width ||
         mouse_xcor < 0 ||
         mouse_ycor < 0 ||
         mouse_ycor > lane_height
       ) {
-        // heatmap boundaries
         return;
       }
       e.preventDefault(); // so that it doesn't scroll while zooming
@@ -219,7 +227,7 @@ function MetadataFeatureLane({
         });
       }
     },
-    [prevTime, setScaleAndOriginX,setIsDown]
+    [prevTime, setScaleAndOriginX,setIsDown,changeTooltipFeature]
   );
   
   // zoom listener registration
@@ -229,9 +237,9 @@ function MetadataFeatureLane({
     // tooltipRef.current.addEventListener("wheel" , (e) => wheelZoom(e,topCanvasScalePrevRef)); // to cancel scrolling while on heatmap
     const zoomListener = (e) => wheelZoomLane(e, scaleAndOriginX);
     let ttRefValue = null;
-    if (metadataTooltipRef.current) {
-      metadataTooltipRef.current.addEventListener("wheel", zoomListener);
-      ttRefValue = metadataTooltipRef.current; // to cancel scrolling while on heatmap
+    if (metadataFeatureLaneRef.current) {
+      metadataFeatureLaneRef.current.addEventListener("wheel", zoomListener);
+      ttRefValue = metadataFeatureLaneRef.current; // to cancel scrolling while on heatmap
     }
 
     return () => {
@@ -248,38 +256,26 @@ function MetadataFeatureLane({
   }, [drawLane]);
 
   
-  const drawTooltipOrPan = (e) => {
-    const c = metadataTooltipRef.current;
-    const ctx = c.getContext("2d");
-    const tooltipRect = c.getBoundingClientRect();
-    const tooltip_width = tooltipRect.width;// must be the same as in canvas width html element
-    const tooltip_height = tooltipRect.height;//must be the same as in canvas height html element
-    const ratio = window.devicePixelRatio;
-    c.style.width = "100%"; //lane_width + "px"; //'calc(100vw - 200px)'; // !!! IMPORTANT for sizing MUST BE SAME IN THE HTML CODE
-    c.style.height = "5vh";
-    c.width = tooltip_width * ratio;
-    c.height = tooltip_height * ratio;
-    // console.log("width =   "  + c.width);
-    ctx.scale(ratio,ratio);
-    ctx.clearRect(0,0,tooltip_width,tooltip_height);
-    const cLane = metadataFeatureLaneRef.current;
-    // !! get boundaries of the heatmap instead of the tooltip canvas, for the "rect" variable;
-    const laneRect = cLane.getBoundingClientRect();  // !! get boundaries of the heatmap//console.log(rect);
+  const panLane = (e) => {
+    if (isDown === false)
+    {
+      return;
+    }
+    const c = metadataFeatureLaneRef.current;
+    const laneRect = c.getBoundingClientRect();  // !! get boundaries of the heatmap//console.log(rect);
     const lane_width = laneRect.width;
     const mouse_xcor = e.clientX - laneRect.left;//console.log("hover mouse_xcor = " + mouse_xcor); // console.log(laneRect.width);
     const lane_scale = scaleAndOriginX.scale; // value of zoom before scroll event
     const lane_originX_prev = scaleAndOriginX.originX * lane_width; // QZY  
-    if (isDown) // panning the canvas if mouse down is down;
-    {
-      // console.log("isdonwnnnn2");
-      changeTooltipFeature("invisible",e.pageX,e.pageY);
-      const dx_normalized = (panningStartX - mouse_xcor) / lane_scale; // change in X direction
+    const dx_normalized = (panningStartX - mouse_xcor) / lane_scale; // change in X direction
 
-      let lane_originX_next = lane_originX_prev + dx_normalized;
-      
-      lane_originX_next = Math.max(lane_originX_next,0); // origin not smaller than 0
-      lane_originX_next = Math.min(lane_originX_next, (lane_width - lane_width/lane_scale)); // origin not larger than heatmap rightmost point;
-      lane_originX_next = lane_originX_next / lane_width; // QZY
+    let lane_originX_next = lane_originX_prev + dx_normalized;
+    
+    lane_originX_next = Math.max(lane_originX_next,0); // origin not smaller than 0
+    lane_originX_next = Math.min(lane_originX_next, (lane_width - lane_width/lane_scale)); // origin not larger than heatmap rightmost point;
+    if (lane_originX_next !== lane_originX_prev ){
+      lane_originX_next = lane_originX_next / lane_width; // QZY To make it in the correct format 
+      changeTooltipFeature('invisible',0,0) // resetting tooltip so that it doesn't point to a different part;
       setScaleAndOriginX(prev => {
         return (  
           {scale: lane_scale ,originX: lane_originX_next }
@@ -287,6 +283,7 @@ function MetadataFeatureLane({
         } );
       setPanningStartX(prev => mouse_xcor); 
     }
+    
   };
 
 
@@ -319,6 +316,7 @@ function MetadataFeatureLane({
    
     //console.log("mouse xcor_point = " +mouse_xcor);
     //console.log("mouse_ycor " + mouse_ycor);
+    // impossible to be out of them I guess
     if (mouse_xcor > lane_width || mouse_xcor < 0 || mouse_ycor > lane_height || mouse_ycor < 0 )  // lane boundaries;
     {
       return;
@@ -349,9 +347,8 @@ function MetadataFeatureLane({
     const mouse_xcor = e.clientX - laneRect.left;//console.log("hover mouse_xcor = " + mouse_xcor); // console.log(laneRect.width);
     const mouse_ycor = e.clientY - laneRect.top;
     // out of bounds from right or left, or topmost lanes's top, or bottom most lane's bottom
-    if ( (mouse_xcor > lane_width || mouse_xcor < 0) || (isFirstLane && mouse_ycor < 0) || (isLastLane && mouse_ycor > lane_height)  ) 
+    if ( (mouse_xcor > (lane_width -1 )  || mouse_xcor < 1 ) || (isFirstLane && mouse_ycor < 1) || (isLastLane && mouse_ycor > lane_height -1 )  ) 
     { // boundary check for heatmap, -50 is for the space left for position indices
-      // bigger or equal to, so that index finders don't go out of bounds, as maxwidth/cell_width = an index 1 bigger than the sequence length
       setIsDown(prev => false);// so that panning point resets when mouse goes out of bounds;
       return
     }
@@ -361,6 +358,12 @@ function MetadataFeatureLane({
     setIsDown(false)
   };
 
+  const onDoubleClickHelper = () => {
+    if(scaleAndOriginX.scale !== 1){
+      setScaleAndOriginX({ scale: 1, originX: 0 })
+      changeTooltipFeature('invisible',0,0) // remove tooltip because it will point to a location that is not the mouse;
+    }
+  }
 
   return (
     // using canvas because we want to be able to zoom and pan, similar to heatmap, and I have already implemented it in canvas
@@ -370,26 +373,28 @@ function MetadataFeatureLane({
     // to get %10 + 80% => 8/9 => 0.8888 => 88.888 percent
     <div
       id={"Lane Div " + curCategory}
-      style={{ width: "80vw", height: "5vh", position: "relative" }}
+      style={{ width: "100%", height: "100%", position: "relative" }}
     >
           <canvas
             id={"Lane " + curCategory}
             ref={metadataFeatureLaneRef}
             style={{ position: "absolute", top: "0px", left: "0px" }}
-          ></canvas>
-
-          <canvas
-            id={"Lane " + curCategory + "Ttip"}
-            ref={metadataTooltipRef}
-            style={{ position: "absolute", top: "0px", left: "0px", height:'5vh', width:'100%', zIndex:100 }}
-            height={window.innerHeight/20} // doesn't matter, as we are giving height and width in style part;
-            width={window.innerWidth} // doesn't matter as well, Also, after the initial run styles are overriden by the drawToolTipOrPan function
-            onDoubleClick={() => setScaleAndOriginX({ scale: 1, originX: 0 })}
+            // zoom is added manually to prevent scrolling
+            onDoubleClick={() => onDoubleClickHelper()}
             onMouseDown={(e) => onMouseDownHelper(e)}
             onMouseUp={(e) => onMouseUpHelper(e)}
-            onMouseMove={(e) => drawTooltipOrPan(e)}
+            onMouseMove={(e) => panLane(e)}
             onMouseLeave = {(e) => onMouseLeaveHelper(e) }
           ></canvas>
+
+          {/* <canvas
+            id={"Lane " + curCategory + "Ttip"}
+            ref={metadataFeatureLaneRef}
+            style={{ position: "absolute", top: "0px", left: "0px", height:'100%', width:'100%', zIndex:100 }}
+            height={window.innerHeight/20} // doesn't matter, as we are giving height and width in style part;
+            width={window.innerWidth} // doesn't matter as well, Also, after the initial run styles are overriden by the drawToolTipOrPan function
+            
+          ></canvas> */}
     </div>
   );
 }

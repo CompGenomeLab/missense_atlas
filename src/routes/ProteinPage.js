@@ -6,7 +6,12 @@ import OpenInNewIcon from "@mui/icons-material/OpenInNew";
 import Heatmap from "../components/Heatmap";
 import MetadataFeaturesTable from "../components/MetadataFeaturesTable";
 import ColorRangesLegend from "../components/ColorRangesLegend";
-
+import {
+  database_url,
+  all_prediction_tools_array,
+  aminoacid_ordering,
+  number_of_colors
+} from "../config/config";
 // http://10.3.2.13:8080/database/efin/8a8c1b6c6d5e7589f18afd6455086c82
 // http://10.3.2.13:8080/database/sift/8a8c1b6c6d5e7589f18afd6455086c82
 // http://10.3.2.13:8080/database/provean/8a8c1b6c6d5e7589f18afd6455086c82 // what is del?; also has negative values; be careful;
@@ -15,249 +20,10 @@ import ColorRangesLegend from "../components/ColorRangesLegend";
 // const md5sum = "8a8c1b6c6d5e7589f18afd6455086c82"; // for our current protein; // will be passed as a prop ?
 // const protein_name = "Q5SRN2"; // can also be passed as a prop or taken from metadata?
 
-const aminoacid_ordering = ['A','R','N','D','C','Q','E','G','H','I','L','K','M','F','P','S','T','W','Y','V'];
-
-const database_url = "http://10.3.2.13:8080/database/";
 
 
-
-const lists2_parameters = {
-  toolname: "LIST-S2", // shown to the user
-  //toolname_api: "lists2", // api url, example: /database/lists2/{md5sum} // deprecated
-  toolname_json: "lists2", // field name in the api response json.
-  score_ranges: [
-    {
-      start: 0.0,
-      end: 0.85,
-      risk_assessment: "benign",
-      start_color: "#2c663c",
-      end_color: "#ffa500",
-      gamma:1
-      // end_color: "#fcedaa",
-    },
-    {
-      start: 0.85,
-      end: 1.0,
-      risk_assessment: "deleterious",
-      start_color: "#ffa500",
-      // start_color: "#fcedaa",
-      end_color: "#981e2a",
-      gamma:1
-
-    },
-  ],
-  ref_value: 0,
-};
-const polyphen2_humdiv_parameters = {
-  toolname: "Polyphen-2 (Humdiv)",
- // toolname_api: "polyphen", // used in the api url
-  toolname_json: "pph_humdiv", // used in the return value of the all_scores api
-  score_ranges: [
-    {
-      start: 0.0,
-      end: 0.15,
-      risk_assessment: " benign",
-      start_color: "#2c663c",
-      end_color: "#d3d3d3",
-      gamma:1
-
-    },
-    {
-      start: 0.15,
-      end: 0.85,
-      risk_assessment: "possibly damaging",
-      start_color: "#d3d3d3",
-      end_color: "#ffa500",
-      gamma:1
-    },
-    {
-      start: 0.85,
-      end: 1.0,
-      risk_assessment: "confidently damaging",
-      start_color: "#ffa500",
-      end_color: "#981e2a",
-      gamma:1
-    },
-  ],
-  ref_value: 0,
-};
-const polyphen2_humvar_parameters = {
-  toolname: "Polyphen-2 (Humvar)",
-  //toolname_api: "polyphen", // used in the api url
-  toolname_json: "pph_humvar", // used in the return value of the all_scores api
-  score_ranges: [
-    {
-      start: 0.0,
-      end: 0.15,
-      risk_assessment: " benign",
-      start_color: "#2c663c",
-      end_color: "#d3d3d3",
-      gamma:1
-
-    },
-    {
-      start: 0.15,
-      end: 0.85,
-      risk_assessment: "possibly damaging",
-      start_color: "#d3d3d3",
-      end_color: "#ffa500",
-      gamma:1
-
-    },
-    {
-      start: 0.85,
-      end: 1.0,
-      risk_assessment: "confidently damaging",
-      start_color: "#ffa500",
-      end_color: "#981e2a",
-      gamma:1
-
-    },
-  ],
-  ref_value: 0,
-};
-const sift_swissprot_parameters = {
-  toolname: "Sift (Swissprot) ",
-  //toolname_api: "sift",
-  toolname_json: "sift4g_swissprot",
-  score_ranges: [
-    {
-      start: 0.0,
-      end: 0.05,
-      risk_assessment: "deleterious",
-      start_color: "#981e2a",
-      end_color: "#fcedaa",
-      gamma:1
-
-    },
-    {
-      start: 0.05,
-      end: 1.0,
-      risk_assessment: "benign",
-      start_color: "#fcedaa",
-      end_color: "#2c663c",
-      gamma:1
-
-    },
-  ],
-  ref_value: 1,
-};
-const sift_trembl_parameters = {
-  toolname: "Sift (Trembl)",
-  //toolname_api: "sift",
-  toolname_json: "sift4g_sp_trembl",
-  score_ranges: [
-    {
-      start: 0.0,
-      end: 0.05,
-      risk_assessment: "deleterious",
-      start_color: "#981e2a",
-      end_color: "#fcedaa",
-      gamma:1
-
-    },
-    {
-      start: 0.05,
-      end: 1.0,
-      risk_assessment: "benign",
-      start_color: "#fcedaa",
-      end_color: "#2c663c",
-      gamma:1
-
-    },
-  ],
-  ref_value: 1,
-};
-const efin_humdiv_parameters= {
-  toolname: "Efin (Humdiv)",
-  //toolname_api: "sift",
-  toolname_json: "efin_humdiv",
-  score_ranges: [
-    {
-      start: 0.0,
-      end: 0.28,
-      risk_assessment: "deleterious",
-      start_color: "#981e2a",
-      end_color: "#fcedaa",
-      gamma:1
-
-    },
-    {
-      start: 0.28,
-      end: 1.0,
-      risk_assessment: "neutral",
-      start_color: "#fcedaa",
-      end_color: "#2c663c",
-      gamma:1
-
-    },
-  ],
-  ref_value: 1,
-};
-const efin_swissprot_parameters = {
-  toolname: "Efin (Swissprot)",
-  //toolname_api: "sift",
-  toolname_json: "efin_swissprot",
-  score_ranges: [
-    {
-      start: 0.0,
-      end: 0.60,
-      risk_assessment: "deleterious",
-      start_color: "#981e2a",
-      end_color: "#fcedaa",
-      gamma:1
-
-    },
-    {
-      start: 0.60,
-      end: 1.0,
-      risk_assessment: "neutral",
-      start_color: "#fcedaa",
-      end_color: "#2c663c",
-      gamma:1
-
-    },
-  ],
-  ref_value: 1,
-};
 //????
-const provean_parameters = { // change based on array;
-  toolname: "Provean",
-  toolname_json: "provean",
-  score_ranges: [
-    {
-      start: -40.00, // minimum value of the scores will be used instead
-      end: -2.50,
-      risk_assessment: "deleterious",
-      start_color: "#981e2a",
-      end_color: "#fcedaa",
-      gamma:1
-    },
-    {
-      start: -2.50,
-      end: 15, // maximum value of the scores will be used instead
-      risk_assessment: "neutral",
-      start_color: "#fcedaa",
-      end_color: "#2c663c",
-      gamma:1
-    },
-  ],
-  ref_value : 0
-}
 
-const possible_prediction_tools_array = [
-  lists2_parameters,
-  polyphen2_humdiv_parameters,
-  polyphen2_humvar_parameters,
-  sift_swissprot_parameters,
-  sift_trembl_parameters,
-  efin_humdiv_parameters,
-  efin_swissprot_parameters,
-  provean_parameters
-];
-
-
-const number_of_colors = 60; // add to config.js
 
 const ProteinPage = () => {
   // add ?q=1, to the url to get uniprot metadata
@@ -302,18 +68,7 @@ const ProteinPage = () => {
   }, [currentPredictionToolParameters]);
 
   useEffect(() => {
-    // to fetch protein data
-
-    const findAvailablePredictionTools = (all_protein_data) => {
-      let temp_tools_list = [];
-      for(let i = 0; i< possible_prediction_tools_array.length; i++)
-      {
-        if (Object.hasOwn(all_protein_data, possible_prediction_tools_array[i].toolname_json )){
-          temp_tools_list.push(possible_prediction_tools_array[i]);
-        }
-      }
-      return temp_tools_list;
-    }
+    // to fetch protein data 
     const request_url = "all_scores/" + md5sum;
     axios
       .get(database_url + request_url) // cors policy
@@ -323,7 +78,9 @@ const ProteinPage = () => {
         // testing;
         // delete response.data.Sift;
         // delete response.data.Lists2;
-        const first_available_tool = findAvailablePredictionTools(response.data)[0];
+        const first_available_tool = all_prediction_tools_array.filter((tool) =>
+          Object.hasOwn(response.data, tool.toolname_json)
+        )[0];
         setCurrentPredictionToolParameters(first_available_tool);
         setAllProteinData(response.data);
         setProteinDataLoadingStatus("Protein data loaded successfully");
@@ -451,14 +208,14 @@ const ProteinPage = () => {
   );
   const geneName = metadata[metadataHumanIndex]?.gene?.[0]?.name?.value;
   
-  const changePredictionToolButtons = possible_prediction_tools_array
+  const changePredictionToolButtons = all_prediction_tools_array
     .filter((tool) => Object.hasOwn(allProteinData, tool.toolname_json))
     .map((tool) => {
       return (
         <li key={tool.toolname_json}>
           <button onClick={(e) => switchTool(e, tool)}>{tool.toolname}</button>
         </li>
-      );
+      )
     });
 
   // undefined if no synonyms exist
@@ -518,7 +275,6 @@ const ProteinPage = () => {
             <ColorRangesLegend 
               currentPredictionToolParameters = {currentPredictionToolParameters} 
               color_lists_array = {color_lists_array} 
-              number_of_colors = {number_of_colors}
             />
             {/* <canvas
               id="color_ranges_legend"

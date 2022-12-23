@@ -1,7 +1,7 @@
 import React, { useRef,useState,useEffect } from "react";
+import { number_of_colors } from "../../config/config";
 
-
-const ColorRangesLegend = ({currentPredictionToolParameters, color_lists_array, number_of_colors}) => {
+const ColorRangesLegend = ({currentPredictionToolParameters, color_lists_array}) => {
 
   const colorRangesLegendRef = useRef(null);
   const [resizeCount,setResizeCount] = useState(0);
@@ -91,7 +91,7 @@ const ColorRangesLegend = ({currentPredictionToolParameters, color_lists_array, 
       return;
     };
     drawColorRangesLegend();
-  }, [currentPredictionToolParameters, color_lists_array,resizeCount,number_of_colors]); // resizeCount Added to drawColorRangesLegend
+  }, [currentPredictionToolParameters, color_lists_array,resizeCount]); // resizeCount Added to drawColorRangesLegend
 
   useEffect(() => { // redraw on resize
     const handleResize = () => { // reset canvasScaleOrigin reference and draw in roughly 30 fps

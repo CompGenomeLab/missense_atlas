@@ -1,8 +1,9 @@
 import React, {useState} from "react";
 import MetadataFeatureLane from "./MetadataFeatureLane";
+import { lane_height, lane_width, filtered_categories } from "../../config/config";
 
 
-const tooltip_filtered_categories = ['category','sub_lane']; // config.js
+
 
 function MetadataFeaturesTable({ allFeaturesArray, sequenceLength, scaleAndOriginX, setScaleAndOriginX }) {
   
@@ -53,30 +54,42 @@ function MetadataFeaturesTable({ allFeaturesArray, sequenceLength, scaleAndOrigi
           key={category}
           style={{
             display: "flex",
-            flexWrap: "wrap",
-            height: "4.5vh",
-            backgroundColor: "lightblue",
-            justifyContent: "center",
-            alignContent: "center",
+            // height: "4.5vh",
+            // backgroundColor: "lightblue",
+            alignItems: "center",
           }}
         >
-          <h3 style={{ fontSize: "1.5vh", textAlign: "center" }}>
-            {category.split("_").join(" ")}
-          </h3>
+          <div
+            style={{
+              display: "flex",
+              height: "4.5vh",
+              backgroundColor: "lightblue",
+              width: "100%",
+              justifyContent: "center",
+              alignItems: "center",
+            }}
+          >
+            <h3 style={{ fontSize: "1.5vh", textAlign: "center" }}>
+              {category.split("_").join(" ")}
+            </h3>
+          </div>
         </div>,
-        <div key={category + "metadataFeatureLane"} style={{ height: "5vh" }}>
+        <div
+          key={category + "metadataFeatureLane"}
+          style={{ height: lane_height, width: lane_width }}
+        >
           <MetadataFeatureLane
             featureArray={cur_category_features}
             sequenceLength={sequenceLength}
             isLastLane={idx === featureCategories.size - 1} // index starts from 0, size starts from 1
-            isFirstLane ={idx === 0}
-            scaleAndOriginX = {scaleAndOriginX}
-            setScaleAndOriginX = {setScaleAndOriginX}
-            isDown = {isDown}
-            setIsDown = {setIsDown}
-            panningStartX = {panningStartX}
-            setPanningStartX = {setPanningStartX}
-            changeTooltipFeature = {changeTooltipFeature}
+            isFirstLane={idx === 0}
+            scaleAndOriginX={scaleAndOriginX}
+            setScaleAndOriginX={setScaleAndOriginX}
+            isDown={isDown}
+            setIsDown={setIsDown}
+            panningStartX={panningStartX}
+            setPanningStartX={setPanningStartX}
+            changeTooltipFeature={changeTooltipFeature}
           />
         </div>,
       ];
@@ -87,7 +100,7 @@ function MetadataFeaturesTable({ allFeaturesArray, sequenceLength, scaleAndOrigi
     if(currentTooltipFeature[ftrKey].length === 0 ){
       return false;
     }
-    if(tooltip_filtered_categories.indexOf(ftrKey) !== -1 ){
+    if(filtered_categories.indexOf(ftrKey) !== -1 ){
       return false; // the key is included in categories to be filtered;
     }
     return true; // value for key exists, and it is not one of the to be filterd categories
