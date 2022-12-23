@@ -444,7 +444,7 @@ const ProteinPage = () => {
   // FIX calculation bug;
 
 
-  const proteinKeywordsJsx = metadata[metadataHumanIndex]?.keywords?.map(
+  const sequenceKeywordsJsx = metadata[metadataHumanIndex]?.keywords?.map(
     (keyword) => {
       return <li key={keyword.value}>{keyword.value}</li>;
     }
@@ -558,14 +558,14 @@ const ProteinPage = () => {
         setScaleAndOriginX = {setScaleAndOriginX} 
       />
       {
-        proteinKeywordsJsx &&
+        sequenceKeywordsJsx &&
       <div>
         <h3>Sequence Keywords:</h3>
-        <ul style={{ listStyleType: "none" }}>{proteinKeywordsJsx} </ul>
+        <ul style={{ listStyleType: "none" }}>{sequenceKeywordsJsx} </ul>
       </div>
        }
 
-      { // synonymsListJsx && 
+      { // synonymsListJsx && uncomment to Remove gene Name title if no gene name part exists
         <div style={{ display: "flex" }}>
           <h3>Gene name:</h3>
           <h4 style={{ paddingLeft: "0.25rem" }}> {geneName}</h4>

@@ -56,6 +56,11 @@ function SearchBox(){
     // console.log("method = ");
     // console.log(searchMethod);
     
+    let MD5Sum_text_area_color = 'red';
+    if (inputMD5Sum.length === 32){
+      MD5Sum_text_area_color = 'green';
+    }
+
     const textBoxField = () => {
         if(searchMethod === 'MD5Sum'){
             return(
@@ -65,8 +70,8 @@ function SearchBox(){
                         :'MD5Sum is Correct Length' }
                     </h4>
                     <input 
-                    style={{height:'1rem', width:'25rem'}}
-                    placeholder="MD5Sum"
+                    style={{height:'1rem', width:'25rem', color: MD5Sum_text_area_color }}
+                    placeholder="Enter MD5Sum"
                     value={inputMD5Sum}
                     onChange={(e) => setInputMD5Sum(() => e.target.value)}
                     >
@@ -80,7 +85,7 @@ function SearchBox(){
                     <h4 style={{margin:'0.5rem 0px'}}> Sequence Length: {trimmedProteinSequence.length}</h4>
                     <textarea 
                     style={{width:'50%',height:'30vh'}}
-                    placeholder="protein Sequence"
+                    placeholder="Enter protein sequence. The lines containing sequence can only contain aminoacid characters and spaces"
                     value={proteinSequence}
                     onChange={(e) => setProteinSequence(() => e.target.value)}
                     >
