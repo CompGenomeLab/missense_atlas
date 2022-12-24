@@ -28,6 +28,12 @@ function MetadataFeaturesTable({ allFeaturesArray, sequenceLength, scaleAndOrigi
     
   }
 
+  // onMouseUp in tooltip div;
+  const onMouseUpHelper = () => {
+    if(isDown){
+      setIsDown(prev => false);
+    }
+  }
 
   const featureCategories =
     allFeaturesArray?.reduce((curSet, ftr) => {
@@ -59,7 +65,7 @@ function MetadataFeaturesTable({ allFeaturesArray, sequenceLength, scaleAndOrigi
               source : 
                 <ul style= {{listStyleType:'none',paddingInlineStart:'1rem'}} > {
                 Object.keys(cur_evidence['source'])?.map(src_key => {
-                  if(src_key === 'url' || src_key === 'alternativeUrl'){
+                  if(src_key === 'url' || src_key === 'alternativeUrl'){ // Link,
                     return (
                       <li key={src_key}>
                         {src_key} :{" "}
@@ -69,7 +75,7 @@ function MetadataFeaturesTable({ allFeaturesArray, sequenceLength, scaleAndOrigi
                       </li>
                     );
                   }
-                  return(
+                  return( // not a link
                     <li key={src_key}> 
                         {src_key} : {cur_evidence['source'][src_key]}
                     </li>
@@ -95,7 +101,7 @@ function MetadataFeaturesTable({ allFeaturesArray, sequenceLength, scaleAndOrigi
   //       "url": "string",
   //       "alternativeUrl": "string",
   //       "reviewed": false,
-  //       "properties": {}
+  //       "properties": {} // need to be implemetned
   //     }
   //   }
   // ]
@@ -140,6 +146,7 @@ function MetadataFeaturesTable({ allFeaturesArray, sequenceLength, scaleAndOrigi
         {ftrKey} : {JSON.stringify(currentTooltipFeature[ftrKey])} 
       </li>)
   } )
+  
   const featureCategoriesAndColumnsJsx = Array.from(featureCategories).flatMap(
     (category, idx) => {
       // const cur_ftr = metadata[metadataHumanIndex]?.features.map( (ftr) => {
@@ -202,26 +209,43 @@ function MetadataFeaturesTable({ allFeaturesArray, sequenceLength, scaleAndOrigi
   );
   return (
     // can't give rowgap, because then the canvasses won't touch, and there will be dead zones for zoom, instead make canvas larger, and then not draw the figures to those areas
-    <> 
-    <div
-      style={{
-        display: "grid",
-        columnGap: "10px",
-        // marginLeft:'20px', // 
-        gridTemplateColumns: "10vw auto",
-      }}
-    >
-      {featureCategoriesAndColumnsJsx}
-    </div>
-    {
-      currentTooltipFeature !== 'invisible' && // if Panning starts currentToolTipFeature will turn into 'invisible'
-    <div style={{position:'absolute', left: (String(mousePosXY.x) + 'px') ,top: (String(mousePosXY.y) + 'px'), zIndex:1000, backgroundColor:'lavender', maxHeight:'50vh',overflowY:'auto' }}> 
-      {/* <p> {JSON.stringify(currentTooltipFeature)} </p> */}
-      <ul style={{ listStyleType:'none',paddingInlineStart:'3rem',paddingInlineEnd:'3rem' }}> {currentTooltipFeatureJSX} </ul>
-    </div>
-    }
-    
-
+    <>
+      <div
+        style={{
+          display: "grid",
+          columnGap: "10px",
+          // marginLeft:'20px', //
+          gridTemplateColumns: "10vw auto",
+        }}
+      >
+        {featureCategoriesAndColumnsJsx}
+      </div>
+      {currentTooltipFeature !== "invisible" && ( // if Panning starts currentToolTipFeature will turn into 'invisible'
+        <div
+          onMouseUp={onMouseUpHelper}
+          style={{
+            position: "absolute",
+            left: String(mousePosXY.x) + "px",
+            top: String(mousePosXY.y) + "px",
+            zIndex: 1000,
+            backgroundColor: "lavender",
+            maxHeight: "50vh",
+            overflowY: "auto",
+          }}
+        >
+          {/* <p> {JSON.stringify(currentTooltipFeature)} </p> */}
+          <ul
+            style={{
+              listStyleType: "none",
+              paddingInlineStart: "3rem",
+              paddingInlineEnd: "3rem",
+            }}
+          >
+            {" "}
+            {currentTooltipFeatureJSX}{" "}
+          </ul>
+        </div>
+      )}
     </>
     // <ul style={{ listStyleType: "none", marginTop: "0px", marginLeft: "0px", paddingInlineStart:'0px' }}>
     //   {featureCategoriesAndColumnsJsx}
