@@ -35,6 +35,111 @@ function MetadataFeaturesTable({ allFeaturesArray, sequenceLength, scaleAndOrigi
       return curSet;
     }, new Set()) || new Set(); // return empty set if metadata doesn't exist instead of undefined;
 
+  
+  // if currentTooltipFeature is 'invisible' it doesn't give an error, so it is fine now;
+
+
+  // 
+  const helperFeatureEvidenceParser = (cur_evidence) => {
+    return (
+      <ul style= {{listStyleType:'none',paddingInlineStart:'1rem'}} > 
+        {
+          Object.keys(cur_evidence)?.map((cur_evidence_key,index) => {
+            if (typeof(cur_evidence[cur_evidence_key]) === 'string' ) // code or label
+            {
+              return(
+                <li key={cur_evidence_key}>
+                  {cur_evidence_key} : {cur_evidence[cur_evidence_key]}
+                </li>
+              )
+            }
+            // source object
+            return( 
+            <li key={cur_evidence_key}>
+              source : 
+                <ul style= {{listStyleType:'none',paddingInlineStart:'1rem'}} > {
+                Object.keys(cur_evidence['source'])?.map(src_key => {
+                  if(src_key === 'url' || src_key === 'alternativeUrl'){
+                    return (
+                      <li key={src_key}>
+                        {src_key} :{" "}
+                        <a href={cur_evidence["source"][src_key]}>
+                          {cur_evidence["source"][src_key]}{" "}
+                        </a>
+                      </li>
+                    );
+                  }
+                  return(
+                    <li key={src_key}> 
+                        {src_key} : {cur_evidence['source'][src_key]}
+                    </li>
+                  )
+                })
+              }
+              </ul>
+            </li>)
+          })
+        }
+      </ul>
+    )
+  }
+    //{/* {cur_evidence_key} : {JSON.stringify(cur_evidence[cur_evidence_key])}  */}
+
+  // "evidences": [
+  //   {
+  //     "code": "string",
+  //     "label": "string",
+  //     "source": {
+  //       "name": "string",
+  //       "id": "string",
+  //       "url": "string",
+  //       "alternativeUrl": "string",
+  //       "reviewed": false,
+  //       "properties": {}
+  //     }
+  //   }
+  // ]
+
+  const currentTooltipFeatureJSX = Object.keys(currentTooltipFeature)?.filter(ftrKey => {
+    if(currentTooltipFeature[ftrKey].length === 0 ){
+      return false;
+    }
+    if(filtered_categories.indexOf(ftrKey) !== -1 ){
+      return false; // the key is included in categories to be filtered;
+    }
+    return true; // value for key exists, and it is not one of the to be filterd categories
+  }).map( ftrKey => {
+    // console.log(ftrKey);
+    if (typeof(currentTooltipFeature[ftrKey]) === 'string' )
+    {
+      return(
+        <li key={ftrKey}>
+          {ftrKey} : {currentTooltipFeature[ftrKey]}
+        </li>
+      )
+    }
+    if (ftrKey === "evidences") {
+      // evidences
+      return (
+        <li key={"evidences"}>
+          evidences :
+          <ul style={{ listStyleType: "none", paddingInlineStart: "1rem" }}>
+            {currentTooltipFeature["evidences"]?.map((evidence, index) => {
+              return (
+                <li key={index}>
+                  {index + 1}:{helperFeatureEvidenceParser(evidence)}
+                </li>
+              );
+            })}
+          </ul>
+        </li>
+      );
+    }
+    return( // will write for the case of ligand, probably;
+      <li key={ftrKey}>
+        {ftrKey} : {JSON.stringify(currentTooltipFeature[ftrKey])} 
+      </li>)
+  } )
   const featureCategoriesAndColumnsJsx = Array.from(featureCategories).flatMap(
     (category, idx) => {
       // const cur_ftr = metadata[metadataHumanIndex]?.features.map( (ftr) => {
@@ -95,32 +200,6 @@ function MetadataFeaturesTable({ allFeaturesArray, sequenceLength, scaleAndOrigi
       ];
     }
   );
-  // if currentTooltipFeature is 'invisible' it doesn't give an error, so it is fine now;
-  const currenTooltipFeatureTooltip = Object.keys(currentTooltipFeature)?.filter(ftrKey => {
-    if(currentTooltipFeature[ftrKey].length === 0 ){
-      return false;
-    }
-    if(filtered_categories.indexOf(ftrKey) !== -1 ){
-      return false; // the key is included in categories to be filtered;
-    }
-    return true; // value for key exists, and it is not one of the to be filterd categories
-  }).map( ftrKey => {
-    // console.log(ftrKey);
-    if (typeof(currentTooltipFeature[ftrKey]) === 'string' )
-    {
-      return(
-        <li key={ftrKey}>
-          {ftrKey} : {currentTooltipFeature[ftrKey]}
-        </li>
-      )
-    }
-    return( // make a recursive or iterative function to handle this case
-      <li key={ftrKey}>
-        {ftrKey} : {JSON.stringify(currentTooltipFeature[ftrKey])} 
-      </li>)
-    
-    
-  } )
   return (
     // can't give rowgap, because then the canvasses won't touch, and there will be dead zones for zoom, instead make canvas larger, and then not draw the figures to those areas
     <> 
@@ -136,9 +215,9 @@ function MetadataFeaturesTable({ allFeaturesArray, sequenceLength, scaleAndOrigi
     </div>
     {
       currentTooltipFeature !== 'invisible' && // if Panning starts currentToolTipFeature will turn into 'invisible'
-    <div style={{position:'absolute', left: (String(mousePosXY.x) + 'px') ,top: (String(mousePosXY.y) + 'px'), zIndex:1000, pointerEvents:'none', backgroundColor:'lavender' }}> 
+    <div style={{position:'absolute', left: (String(mousePosXY.x) + 'px') ,top: (String(mousePosXY.y) + 'px'), zIndex:1000, backgroundColor:'lavender', maxHeight:'50vh',overflowY:'auto' }}> 
       {/* <p> {JSON.stringify(currentTooltipFeature)} </p> */}
-      <ul style={{ listStyleType:'none' }}> {currenTooltipFeatureTooltip} </ul>
+      <ul style={{ listStyleType:'none',paddingInlineStart:'3rem',paddingInlineEnd:'3rem' }}> {currentTooltipFeatureJSX} </ul>
     </div>
     }
     
@@ -167,3 +246,28 @@ export default MetadataFeaturesTable;
 //   text-align: center;
 // }
 //category.split("_").map(w => w[0].toUpperCase() + w.substring(1).toLowerCase()).join(" ")
+// const helperFeatureEvidencesParser = (evidences_arr) => {
+  //   let temp_jsx_array = [];
+  //   for(let i = 0; i< evidences_arr.length; i++){
+  //     const cur_evidence = evidences_arr[i];
+  //     const cur_evidence_jsx = Object.keys(cur_evidence)?.map((cur_evidence_key,index) => {
+  //       if (typeof(cur_evidence[cur_evidence_key]) === 'string' ) // code or label
+  //       {
+  //         return(
+  //           <li key={cur_evidence_key}>
+  //             {cur_evidence_key} : {cur_evidence[cur_evidence_key]}
+  //           </li>
+  //         )
+  //       }
+  //       // source object
+
+  //       return( // make a recursive or iterative function to handle this case
+  //     <li key={cur_evidence_key}>
+  //       {cur_evidence_key} : {JSON.stringify(cur_evidence[cur_evidence_key])} 
+  //     </li>)
+  //     })
+  //     temp_jsx_array.push(cur_evidence_jsx);
+
+  //   }
+  //   return temp_jsx_array;
+  // }

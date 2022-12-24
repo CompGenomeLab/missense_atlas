@@ -68,7 +68,7 @@ function MetadataFeatureLane({
 
   const calculateLaneMarginDividerandHeight = useCallback(
     (laneHeight) => {
-      let lane_top_margin;
+      let lane_top_margin; // there will be a bottom margin, but it is equal to top margin so no need to name it
       let sub_lane_divider_height;
       let sub_lane_height;
       if (subLaneCount === 1) {
@@ -175,7 +175,6 @@ function MetadataFeatureLane({
   const wheelZoomLane = useCallback(
     (e, lane_scale_and_originX) => {
 
-      changeTooltipFeature('invisible',0,0);
       const cur_time = Date.now();
 
       const c = metadataFeatureLaneRef.current;
@@ -221,6 +220,7 @@ function MetadataFeatureLane({
       ); // so that heatmap new originX isn't too large, (start and end is constant)
       lane_originX_next = lane_originX_next / lane_width; // !!QZY
       if (lane_scale_next !== lane_scale_prev) {
+        changeTooltipFeature('invisible',0,0);
         setScaleAndOriginX({
           scale: lane_scale_next,
           originX: lane_originX_next,
