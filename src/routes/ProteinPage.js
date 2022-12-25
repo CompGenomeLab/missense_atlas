@@ -25,6 +25,7 @@ import {
 //????
 
 
+
 const ProteinPage = () => {
   // add ?q=1, to the url to get uniprot metadata
   const { md5sum } = useParams();
@@ -139,8 +140,8 @@ const ProteinPage = () => {
     // };
     const fetchMetadata = () => {
       axios
-        .get(
-          "https://www.ebi.ac.uk/proteins/api/proteins?offset=0&size=100&md5=" +
+        .get( // &organism=Homo%20sapiens to only get the results for human proteins
+          "https://www.ebi.ac.uk/proteins/api/proteins?offset=0&size=100&organism=Homo%20sapiens&md5=" +
             md5sum
         )
         .then(function (response) {
@@ -226,9 +227,8 @@ const ProteinPage = () => {
   const proteinNameJsx = (
     <div /*style={{ display: "flex", alignItems: "center" }}*/>
       <h1>
-        {
-          metadata[curMetadataHumanIndex]?.protein?.recommendedName.fullName
-            ?.value
+        { // the structure is different in some proteins, What to do? 
+          metadata[curMetadataHumanIndex]?.protein?.recommendedName?.fullName?.value
         }
       </h1>
     </div>
