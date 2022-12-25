@@ -223,28 +223,53 @@ const ProteinPage = () => {
   //   }
   // );
   // const uniprotId = metadata[curMetadataHumanIndex]?.accession;
+  const proteinNameJsx = (
+    <div /*style={{ display: "flex", alignItems: "center" }}*/>
+      <h1>
+        {
+          metadata[curMetadataHumanIndex]?.protein?.recommendedName.fullName
+            ?.value
+        }
+      </h1>
+    </div>
+  );
+
   const uniprotIdsJSX = (
-    <ul style={{listStyleType:'none', display:'flex' , gap:'0.5rem',paddingInlineStart:'0.5rem'}} >
-      {metadataHumanAccAndIndices?.map((accAndIndex) => {
-        return (
-          <li key={accAndIndex.accession} style={{display:'flex', alignItems:'center'}}>
-            <h1>
-              {accAndIndex.accession}
-              {/* {accAndIndex.index !== metadataHumanAccAndIndices.length - 1 && // is not the last element
+    <div style={{ display: "flex" }}>
+      <h3 style={{ marginBlockStart: "0rem" }}>Uniprot ID :</h3>
+
+      <ul
+        style={{
+          listStyleType: "none",
+          display: "flex",
+          gap: "0.5rem",
+          paddingInlineStart: "0.5rem",
+          marginBlockStart:'0rem'
+        }}
+      >
+        {metadataHumanAccAndIndices?.map((accAndIndex) => {
+          return (
+            <li key={accAndIndex.accession} style={{ display: "flex" }}>
+              <h3 style={{ marginBlockStart: "0rem" }}>
+                {accAndIndex.accession}
+                {/* {accAndIndex.index !== metadataHumanAccAndIndices.length - 1 && // is not the last element
                 ","}  */}
-            </h1>
-            <a
-              href={"https://www.uniprot.org/uniprot/" + accAndIndex.accession}
-              style={{ textDecoration: "none" }}
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              <OpenInNewIcon />
-            </a>
-          </li>
-        );
-      })}
-    </ul>
+              </h3>
+              <a
+                href={
+                  "https://www.uniprot.org/uniprot/" + accAndIndex.accession
+                }
+                style={{ textDecoration: "none" }}
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                <OpenInNewIcon />
+              </a>
+            </li>
+          );
+        })}
+      </ul>
+    </div>
   );
 
 
@@ -310,92 +335,107 @@ const ProteinPage = () => {
       );
     }
   );
+  
   return (
-    
     <>
-      {/* <MetadataFeaturesTable 
-        allFeaturesArray = {metadata[curMetadataHumanIndex]?.features}
-        sequenceLength={metadata[curMetadataHumanIndex]?.sequence.length} 
-      /> */}
-
-      <div style={{ display: "flex", alignItems: "center" }}>
-        <h1>Uniprot ID :</h1> {uniprotIdsJSX}
-        
-      </div>
+      {proteinNameJsx}
+      {uniprotIdsJSX}
 
       <div>
         {/* style={{width:1400 , height:900,overflow:"scroll"  }}*/}
-        <div> 
-          <ul style={{listStyleType:'none', display: "flex", gap:'0.25rem'}}> {changePredictionToolButtons} </ul>
-          { currentPredictionToolParameters &&
-          <div
-            style={{
-              display: "flex",
-              gap: "30px",
-              justifyContent: "flex-end",
-              marginRight: "0px",
-            }}
+        <div>
+          <ul
+            style={{ listStyleType: "none", display: "flex", gap: "0.25rem" }}
           >
-            <h2 style={{ marginLeft: "0px", marginRight: "auto" }}>
-              Current tool : {currentPredictionToolParameters.toolname}
-            </h2>
-            <ColorRangesLegend 
-              currentPredictionToolParameters = {currentPredictionToolParameters} 
-              color_lists_array = {color_lists_array} 
-            />
-            {/* <canvas
+            {" "}
+            {changePredictionToolButtons}{" "}
+          </ul>
+          {currentPredictionToolParameters && (
+            <div
+              style={{
+                display: "flex",
+                gap: "30px",
+                justifyContent: "flex-end",
+                marginRight: "0px",
+              }}
+            >
+              <h2 style={{ marginLeft: "0px", marginRight: "auto" }}>
+                Current tool : {currentPredictionToolParameters.toolname}
+              </h2>
+              <ColorRangesLegend
+                currentPredictionToolParameters={
+                  currentPredictionToolParameters
+                }
+                color_lists_array={color_lists_array}
+              />
+              {/* <canvas
               id="color_ranges_legend"
               ref={colorRangesLegendRef}
               height={"85"}
               style={{width:'calc(30vw + 50px)', height:"85px"}}
             ></canvas> */}
-          </div>
-          }
+            </div>
+          )}
         </div>
-        <div style={{marginBottom:'1rem'}}>
-          { currentPredictionToolParameters ?
-          <Heatmap
-            currentPredictionToolParameters={currentPredictionToolParameters}
-            // adding "|| {}" so that proteinData is never undefined, instead it is an empty object
-            proteinData={
-              allProteinData[currentPredictionToolParameters.toolname_json] || {}
-            }
-            // proteinData={proteinData} // if we want to fetch one by one;
-            color_lists_array={color_lists_array}
-            number_of_colors={number_of_colors}
-            scaleAndOriginX = {scaleAndOriginX}
-            setScaleAndOriginX = {setScaleAndOriginX} 
-          />
-        : 
-        <div  style={{height:'400px',display:'flex',alignItems:'center', justifyContent:'center' }}> 
-          <h1> {proteinDataLoadingStatus}</h1> 
-          
+        <div style={{ marginBottom: "1rem" }}>
+          {currentPredictionToolParameters ? (
+            <Heatmap
+              currentPredictionToolParameters={currentPredictionToolParameters}
+              // adding "|| {}" so that proteinData is never undefined, instead it is an empty object
+              proteinData={
+                allProteinData[currentPredictionToolParameters.toolname_json] ||
+                {}
+              }
+              // proteinData={proteinData} // if we want to fetch one by one;
+              color_lists_array={color_lists_array}
+              number_of_colors={number_of_colors}
+              scaleAndOriginX={scaleAndOriginX}
+              setScaleAndOriginX={setScaleAndOriginX}
+            />
+          ) : (
+            <div
+              style={{
+                height: "400px",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+              }}
+            >
+              <h1> {proteinDataLoadingStatus}</h1>
+            </div>
+          )}
         </div>
-        }
-       </div>
       </div>
-      { 
-        // show switching buttons only if there exists more than 1 metadata for humans
-        metadataHumanAccAndIndices.length > 1 && 
-        <ul style={{listStyleType:'none', display:'flex', gap:'0.25rem', paddingInlineStart:'0rem' }} >
-          {changeMetadataButtons}
-        </ul>
-      }
-      <MetadataFeaturesTable 
-        allFeaturesArray = {metadata[curMetadataHumanIndex]?.features}
-        sequenceLength={metadata[curMetadataHumanIndex]?.sequence.length}
-        scaleAndOriginX = {scaleAndOriginX}
-        setScaleAndOriginX = {setScaleAndOriginX} 
-      />
       {
-        sequenceKeywordsJsx &&
-      <div>
-        <h3>Sequence Keywords:</h3>
-        <ul style={{ listStyleType: "none" }}>{sequenceKeywordsJsx} </ul>
-      </div>
-       }
+        // show switching buttons only if there exists more than 1 metadata for humans
+        metadataHumanAccAndIndices.length > 1 && (
+          <ul
+            style={{
+              listStyleType: "none",
+              display: "flex",
+              gap: "0.25rem",
+              paddingInlineStart: "0rem",
+            }}
+          >
+            {changeMetadataButtons}
+          </ul>
+        )
+      }
+      <MetadataFeaturesTable
+        allFeaturesArray={metadata[curMetadataHumanIndex]?.features}
+        sequenceLength={metadata[curMetadataHumanIndex]?.sequence.length}
+        scaleAndOriginX={scaleAndOriginX}
+        setScaleAndOriginX={setScaleAndOriginX}
+      />
+      {sequenceKeywordsJsx && (
+        <div>
+          <h3>Sequence Keywords:</h3>
+          <ul style={{ listStyleType: "none" }}>{sequenceKeywordsJsx} </ul>
+        </div>
+      )}
 
-      { // synonymsListJsx && uncomment to Remove gene Name title if no gene name part exists
+      {
+        // synonymsListJsx && uncomment to Remove gene Name title if no gene name part exists
         <div style={{ display: "flex" }}>
           <h3>Gene name:</h3>
           <h4 style={{ paddingLeft: "0.25rem" }}> {geneName}</h4>
@@ -414,9 +454,9 @@ const ProteinPage = () => {
           )}
         </div>
       }
-      
-      <br/>
-      
+
+      <br />
+
       {/* <div>{featuresJsx}</div> */}
     </>
   );
