@@ -30,9 +30,9 @@ const ProteinPage = () => {
   const { md5sum } = useParams();
   const [allProteinData, setAllProteinData] = useState({});
   const [proteinDataLoadingStatus, setProteinDataLoadingStatus] = useState("Fetching protein data");
-  const [metadata, setMetadata] = useState({});
+  const [metadata, setMetadata] = useState([]);
   // in case metadata, has more than 1 element, because if the protein exists in other animals;  example: 3d3f7f772cf34ea5db1998fc0eae9f72
-  const [metadataHumanIndex, setMetadataHumanIndex] = useState(-1);
+  const [curMetadataHumanIndex, setCurMetadataHumanIndex] = useState(-1);
   const [currentPredictionToolParameters, setCurrentPredictionToolParameters] = useState();
   // shared between heatmap and metadataFeatureTable
   const [scaleAndOriginX, setScaleAndOriginX] = useState({scale:1, originX:0});
@@ -40,7 +40,29 @@ const ProteinPage = () => {
 
   // , {headers:{'Access-Control-Allow-Origin' : '*',}}
   // const request_url = "polyphen/8a8c1b6c6d5e7589f18afd6455086c82"
-
+  // const findHumanIndex = (input_metadata) => {
+  //   let i = 0;
+  //   while (input_metadata[i]?.organism?.taxonomy !== 9606) {
+  //     i += 1;
+  //     if (i > 2000) {
+  //       // to make sure we don't get an infinite loop
+  //       console.log("Couldn't find the human protein in metadata");
+  //       return -1;
+  //     }
+  //   }
+  //   return i;
+  // };
+  // finds accession (uniprotID), and index
+  const findMetadataHumanAccAndIndices = (input_metadata) => { 
+    let temp_indices = input_metadata?.reduce( ( cur_list ,cur_metadata,index) => {
+      if(cur_metadata?.organism?.taxonomy === 9606){
+        cur_list.push( {accession: cur_metadata.accession, index : index } );
+      }
+      return cur_list
+    }, [] ) || []
+    return temp_indices;
+  }
+  const metadataHumanAccAndIndices = findMetadataHumanAccAndIndices(metadata);
   const color_lists_array = useMemo(() => {
     //color lists to use in drawing heatmap
     let temp_color_lists_array = []; // generate 30 colors between the score ranges
@@ -103,18 +125,18 @@ const ProteinPage = () => {
   useEffect(() => {
     // fetch metadata
 
-    const findHumanIndex = (input_metadata) => {
-      let i = 0;
-      while (input_metadata[i]?.organism?.taxonomy !== 9606) {
-        i += 1;
-        if (i > 2000) {
-          // to make sure we don't get an infinite loop
-          console.log("Couldn't find the human protein in metadata");
-          return -1;
-        }
-      }
-      return i;
-    };
+    // const findHumanIndex = (input_metadata) => {
+    //   let i = 0;
+    //   while (input_metadata[i]?.organism?.taxonomy !== 9606) {
+    //     i += 1;
+    //     if (i > 2000) {
+    //       // to make sure we don't get an infinite loop
+    //       console.log("Couldn't find the human protein in metadata");
+    //       return -1;
+    //     }
+    //   }
+    //   return i;
+    // };
     const fetchMetadata = () => {
       axios
         .get(
@@ -124,7 +146,10 @@ const ProteinPage = () => {
         .then(function (response) {
           setMetadata(response.data);
           console.log(response.data);
-          setMetadataHumanIndex(findHumanIndex(response.data));
+          // setCurMetadataHumanIndex(findHumanIndex(response.data));
+          // we need to run the function on the input of API, can't use a constant value calculated before the api call
+          // can't use metadataHumanAccAndIndices variable
+          setCurMetadataHumanIndex(findMetadataHumanAccAndIndices(response.data)[0].index);
         })
         .catch(function (error) {
           console.log(error);
@@ -136,7 +161,6 @@ const ProteinPage = () => {
     fetchMetadata();
   }, [md5sum]);
 
-  
   const helper_switch_tool_find_minmax_of_tool_scores = (prediction_tool_parameters) => {
       let minimum_value = 100;
       let maximum_value = -40;
@@ -180,33 +204,58 @@ const ProteinPage = () => {
     // setCurrentPredictionToolParameters((prev) => prediction_tool_parameters);
     // drawColorRangesLegend();
   };
-  // console.log("pdata = ");
-  // console.log(allProteinData[currentPredictionToolParameters.toolname_json]);
-  /* <p> {(metadata[metadataHumanIndex]?.protein?.recommendedName?.fullName?.value)}</p> */
-
-  // instead of parsing the metadata JSON in jsx code, I write the constant values here;
-  const uniprotId = metadata[metadataHumanIndex]?.accession;
-
   
+  // const synonymsListJsx = metadata[curMetadataHumanIndex]?.gene?.[0]?.synonyms?.map(
+  //   (syn, idx) => {
+  //     return (
+  //       // in first element add '(' to beggining in last element add ')' to the end instead of ','
+  //       <li key = {syn?.value}>
+  //         <h4>
+  //           {idx === 0 && "("}
+  //           {syn?.value}
+  //           {idx !==
+  //           metadata[curMetadataHumanIndex]?.gene?.[0]?.synonyms.length - 1
+  //             ? ","
+  //             : ")"}
+  //         </h4>
+  //       </li>
+  //     );
+  //   }
+  // );
+  // const uniprotId = metadata[curMetadataHumanIndex]?.accession;
+  const uniprotIdsJSX = (
+    <ul style={{listStyleType:'none', display:'flex' , gap:'0.5rem',paddingInlineStart:'0.5rem'}} >
+      {metadataHumanAccAndIndices?.map((accAndIndex) => {
+        return (
+          <li key={accAndIndex.accession} style={{display:'flex', alignItems:'center'}}>
+            <h1>
+              {accAndIndex.accession}
+              {/* {accAndIndex.index !== metadataHumanAccAndIndices.length - 1 && // is not the last element
+                ","}  */}
+            </h1>
+            <a
+              href={"https://www.uniprot.org/uniprot/" + accAndIndex.accession}
+              style={{ textDecoration: "none" }}
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              <OpenInNewIcon />
+            </a>
+          </li>
+        );
+      })}
+    </ul>
+  );
 
-  // const featureCategoriesJsx = Array.from(featureCategories).map( (category) => {
-  //   console.log(category);
-  //   return(
-  //     <h3>
-  //       {category}
-  //     </h3>
-  //   )
-  // });
-
-  // FIX calculation bug;
 
 
-  const sequenceKeywordsJsx = metadata[metadataHumanIndex]?.keywords?.map(
+
+  const sequenceKeywordsJsx = metadata[curMetadataHumanIndex]?.keywords?.map(
     (keyword) => {
       return <li key={keyword.value}>{keyword.value}</li>;
     }
   );
-  const geneName = metadata[metadataHumanIndex]?.gene?.[0]?.name?.value;
+  const geneName = metadata[curMetadataHumanIndex]?.gene?.[0]?.name?.value;
   
   const changePredictionToolButtons = all_prediction_tools_array
     .filter((tool) => Object.hasOwn(allProteinData, tool.toolname_json))
@@ -215,11 +264,36 @@ const ProteinPage = () => {
         <li key={tool.toolname_json}>
           <button onClick={(e) => switchTool(e, tool)}>{tool.toolname}</button>
         </li>
-      )
+      );
     });
-
+  
+  const changeMetadataButtons = (
+    <ul
+      style={{
+        listStyleType: "none",
+        display: "flex",
+        gap: "0.25rem",
+        paddingInlineStart: "0rem",
+      }}
+    >
+      {metadataHumanAccAndIndices.map((accession) => {
+        return (
+          <li key={accession.accession}>
+            <button
+              onClick={() => {
+                setCurMetadataHumanIndex(accession.index);
+              }}
+            >
+              {accession.accession}
+            </button>
+          </li>
+        );
+      })}
+    </ul>
+  );
+  
   // undefined if no synonyms exist
-  const synonymsListJsx = metadata[metadataHumanIndex]?.gene?.[0]?.synonyms?.map(
+  const synonymsListJsx = metadata[curMetadataHumanIndex]?.gene?.[0]?.synonyms?.map(
     (syn, idx) => {
       return (
         // in first element add '(' to beggining in last element add ')' to the end instead of ','
@@ -228,7 +302,7 @@ const ProteinPage = () => {
             {idx === 0 && "("}
             {syn?.value}
             {idx !==
-            metadata[metadataHumanIndex]?.gene?.[0]?.synonyms.length - 1
+            metadata[curMetadataHumanIndex]?.gene?.[0]?.synonyms.length - 1
               ? ","
               : ")"}
           </h4>
@@ -240,20 +314,13 @@ const ProteinPage = () => {
     
     <>
       {/* <MetadataFeaturesTable 
-        allFeaturesArray = {metadata[metadataHumanIndex]?.features}
-        sequenceLength={metadata[metadataHumanIndex]?.sequence.length} 
+        allFeaturesArray = {metadata[curMetadataHumanIndex]?.features}
+        sequenceLength={metadata[curMetadataHumanIndex]?.sequence.length} 
       /> */}
 
       <div style={{ display: "flex", alignItems: "center" }}>
-        <h1>Uniprot ID : {uniprotId}</h1>
-        <a
-          href={"https://www.uniprot.org/uniprot/" + uniprotId}
-          style={{ textDecoration: "none" }}
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <OpenInNewIcon />
-        </a>
+        <h1>Uniprot ID :</h1> {uniprotIdsJSX}
+        
       </div>
 
       <div>
@@ -307,9 +374,16 @@ const ProteinPage = () => {
         }
        </div>
       </div>
+      { 
+        // show switching buttons only if there exists more than 1 metadata for humans
+        metadataHumanAccAndIndices.length > 1 && 
+        <ul style={{listStyleType:'none', display:'flex', gap:'0.25rem', paddingInlineStart:'0rem' }} >
+          {changeMetadataButtons}
+        </ul>
+      }
       <MetadataFeaturesTable 
-        allFeaturesArray = {metadata[metadataHumanIndex]?.features}
-        sequenceLength={metadata[metadataHumanIndex]?.sequence.length}
+        allFeaturesArray = {metadata[curMetadataHumanIndex]?.features}
+        sequenceLength={metadata[curMetadataHumanIndex]?.sequence.length}
         scaleAndOriginX = {scaleAndOriginX}
         setScaleAndOriginX = {setScaleAndOriginX} 
       />
@@ -360,7 +434,7 @@ export default ProteinPage;
 //   }
 //   return temp_keys;
 // };
-// const feature_categories = find_feature_categories(metadata[metadataHumanIndex]?.features);
+// const feature_categories = find_feature_categories(metadata[curMetadataHuman]?.features);
 // for(let i = 0; i< feature_arr.length; i++){ // is erroneous
 //   if (feature_arr[i].category !== cur_category){
 //     continue;
