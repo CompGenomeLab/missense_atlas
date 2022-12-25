@@ -77,12 +77,20 @@ function MetadataFeatureLane({
         sub_lane_height = (laneHeight - lane_top_margin * 2) / subLaneCount;
       } else {
         lane_top_margin = laneHeight / top_margin_ml_coef; // the coefficient we divide with can be part of config.js
-        sub_lane_divider_height = lane_top_margin / sub_lane_divider_coef; // the coefficient we divide with can be part of config.js
-        sub_lane_height =
-          (laneHeight -
-            lane_top_margin * 2 -
-            sub_lane_divider_height * (subLaneCount - 1)) /
-          subLaneCount;
+         // share this area with sub_lane_height and divider height;
+         // now sub_lane_divider_height is related to sub_lane_height;
+         const non_margin_height = laneHeight - 2* lane_top_margin; 
+         const k = sub_lane_divider_coef; // to make the next line shorter
+         sub_lane_divider_height = non_margin_height/( (subLaneCount * k) + subLaneCount - 1  );
+         sub_lane_height = sub_lane_divider_height * k;
+
+        // OLD calculation, divider_coef, related to lane_top_margin size,
+        // sub_lane_divider_height = lane_top_margin / sub_lane_divider_coef; // the coefficient we divide with can be part of config.js
+        // sub_lane_height =
+        //   (laneHeight -
+        //     lane_top_margin * 2 -
+        //     sub_lane_divider_height * (subLaneCount - 1)) /
+        //   subLaneCount;
       }
       return {
         lane_top_margin: lane_top_margin,
