@@ -10,10 +10,11 @@ import {
   database_url,
   all_prediction_tools_array,
   aminoacid_ordering,
-  number_of_colors
+  number_of_colors,
+  color_mix_mode
 } from "../config/config";
 
-const https = require('https');
+// const https = require('https');
 // http://10.3.2.13:8080/database/efin/8a8c1b6c6d5e7589f18afd6455086c82
 // http://10.3.2.13:8080/database/sift/8a8c1b6c6d5e7589f18afd6455086c82
 // http://10.3.2.13:8080/database/provean/8a8c1b6c6d5e7589f18afd6455086c82 // what is del?; also has negative values; be careful;
@@ -81,12 +82,22 @@ const ProteinPage = () => {
         currentPredictionToolParameters.score_ranges[i].end_color;
       // chroma.scale(['#fafa6e','#2A4858']).mode('lch').colors(6)
       // !!! IMPORTANT , CHECK MODE and GAMMA//
-      const g = currentPredictionToolParameters.score_ranges[i].gamma;
-      const temp_list = chroma
-        .scale([current_range_start_color, current_range_end_color])
-        .mode("lch")
-        .gamma(g)
-        .colors(number_of_colors); // 30 is the number of colors, if you change 30 here, you must change it in drawheatmap color determination based on tool's value
+    //   chroma.scale(['yellow', 'lightgreen', '008ae5']).domain([0,0.25,1]);
+      const gradient_ratio = currentPredictionToolParameters.score_ranges[i].gradient_ratio; // between 0 and 1,
+
+
+      // const test = chroma.scale([current_range_start_color, current_range_end_color]).colors(5);
+      // console.log(test);
+      // const test2 = 
+      // console.log(test2);
+      //  number_of_colors * gradient_ratio => where the 50/50 mix of the blend will be located in the gradient
+      const middle_color = chroma.mix(current_range_start_color,current_range_end_color,0.5, color_mix_mode ).hex();
+      let temp_list = [];
+      let chroma_obj = chroma.scale([current_range_start_color, middle_color ,current_range_end_color]).domain([0, number_of_colors * gradient_ratio  ,number_of_colors-1]).mode(color_mix_mode);
+      for(let j = 0; j< number_of_colors; j++){
+        temp_list.push(  chroma_obj(j).hex() );
+      }
+     
       temp_color_lists_array.push(temp_list);
     }
     return temp_color_lists_array;
@@ -94,12 +105,12 @@ const ProteinPage = () => {
 
   useEffect(() => {
     // to fetch protein data 
-    const axios_config = {
-      httpsAgent: new https.Agent({ rejectUnauthorized: false })
-    }
+    // const axios_config = {
+    //   httpsAgent: new https.Agent({ rejectUnauthorized: false })
+    // }
     const request_url = "all_scores/md5sum/" + String(md5sum);
     axios
-      .get((database_url + request_url) , axios_config  ) // cors policy
+      .get((database_url + request_url)) // cors policy
       .then(function (response) {
         // console.log(response);
         // add a function to calculate a data format for "tools combined", then add this to response.data;
@@ -189,16 +200,21 @@ const ProteinPage = () => {
             current_score = parseFloat(current_tool_protein_data[i][cur_amino_acid]);
             if(current_score < prediction_tool_parameters.score_ranges[0].end){
               // assuming first score range is deleterious second is benign, this is the case for provean
-              deleterious_scores_array.push(current_score);
+              if (isNaN(current_score)){
+                console.log("cs",current_score,"ind",i,j);
+              }
+              else{
+                deleterious_scores_array.push(current_score);
+              }
             } 
             else{
               benign_scores_array.push(current_score);
             }
             if ( ! isNaN(current_score)){// not NaN
-              if (maximum_value < current_score){
+              if (current_score > maximum_value){
                 maximum_value = current_score;
               }
-              if (minimum_value > current_score){
+              if (current_score < minimum_value){
                 minimum_value = current_score;
               }
             } 
@@ -207,12 +223,10 @@ const ProteinPage = () => {
         i+= 1;
       }
       // not taking account of case where number of elements is even, as we don't need to find the exact median vlaue
-      let median_index_deleterious = benign_scores_array.length/2; 
-      let median_index_benign = deleterious_scores_array.length/2;
-
+      let median_index_deleterious = deleterious_scores_array.length/2; 
+      let median_index_benign = benign_scores_array.length/2;
       median_deleterious = deleterious_scores_array.sort()[median_index_deleterious];
       median_benign = benign_scores_array.sort()[median_index_benign];
-
       return {min_value: minimum_value, max_value: maximum_value,median_deleterious : median_deleterious ,median_benign : median_benign};
   }
   const switchTool = (e, prediction_tool_parameters) => {
@@ -220,18 +234,19 @@ const ProteinPage = () => {
     // iterate over data and find minimum and maximum values
     if (prediction_tool_parameters.toolname_json === 'provean'){ 
       const {min_value,max_value,median_deleterious, median_benign} = helper_switch_tool_find_minmax_median_of_tool_scores_provean(prediction_tool_parameters);
-      console.log("benign =" , median_benign);
-      console.log("del =" , median_deleterious);
-
-      // calculate gamma so that median is the middle of 2 colors
-      // this claculation is only for provean, as -2.5 is proveans deleterious median transition value;
-      // !!! IMPORTANT, I didn't understand gamma values effect 100%, so this gamma calculation is an approximation,
-      // median value probably won't be the center, but it will be close
-      let gamma_deleterious = (median_deleterious - min_value)/ (-2.5 - median_deleterious);
-      let gamma_benign = (max_value - median_benign) / (median_benign - (-2.5));
-      console.log(gamma_deleterious,gamma_benign);
-      const first_score_range = {...prediction_tool_parameters.score_ranges[0], start: min_value, gamma: gamma_deleterious };
-      const second_score_range = {...prediction_tool_parameters.score_ranges[1], end: max_value , gamma: gamma_benign};
+     
+      
+      // -2.5 is the transition value between benign and deleterius
+      const deleterious_range = (-2.5) - min_value
+      const benign_range = max_value - (-2.5)
+      let gradient_ratio_deleterious = (median_deleterious - min_value) / deleterious_range;
+      let gradient_ratio_benign =  (median_benign - (-2.5)) / benign_range ;
+      // console.log("benign =" , median_benign);
+      // console.log("del =" , median_deleterious);
+      // console.log("ratios del,ben = ")
+      // console.log(gradient_ratio_deleterious,gradient_ratio_benign);
+      const first_score_range = {...prediction_tool_parameters.score_ranges[0], start: min_value, gradient_ratio: gradient_ratio_deleterious };
+      const second_score_range = {...prediction_tool_parameters.score_ranges[1], end: max_value , gradient_ratio: gradient_ratio_benign};
       const new_score_ranges = [first_score_range,second_score_range];
 
       setCurrentPredictionToolParameters( {
@@ -700,3 +715,7 @@ export default ProteinPage;
   //   };
   //   drawColorRangesLegend();
   // }, [currentPredictionToolParameters, color_lists_array]); // resizeCount Added to drawColorRangesLegend
+ // const temp_list = chroma
+      //   .scale([current_range_start_color, current_range_end_color])
+      //   .mode("lch")
+      //   .colors(number_of_colors); // 30 is the number of colors, if you change 30 here, you must change it in drawheatmap color determination based on tool's value

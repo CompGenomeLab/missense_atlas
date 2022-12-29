@@ -1,7 +1,8 @@
 
 export const aminoacid_ordering = ['A','R','N','D','C','Q','E','G','H','I','L','K','M','F','P','S','T','W','Y','V'];
 
-export const number_of_colors = 60; // legend colors
+export const number_of_colors = 90; // legend colors
+export const color_mix_mode = "lch";
 export const database_url = "https://10.3.2.13:8080/database/"; // database base url
 
 // heatmap
@@ -43,7 +44,7 @@ const lists2_parameters = {
       risk_assessment: "benign",
       start_color: "#2c663c",
       end_color: "#ffa500",
-      gamma:1
+      gradient_ratio:0.5 // between 0 and 1, if 0.5 => then the middle of the gradient is the 50 50 mix of start and end
       // end_color: "#fcedaa",
     },
     {
@@ -53,7 +54,7 @@ const lists2_parameters = {
       start_color: "#ffa500",
       // start_color: "#fcedaa",
       end_color: "#981e2a",
-      gamma:1
+      gradient_ratio:0.5
 
     },
   ],
@@ -70,7 +71,7 @@ const polyphen2_humdiv_parameters = {
       risk_assessment: " benign",
       start_color: "#2c663c",
       end_color: "#d3d3d3",
-      gamma:1
+      gradient_ratio:0.5
 
     },
     {
@@ -79,7 +80,7 @@ const polyphen2_humdiv_parameters = {
       risk_assessment: "possibly damaging",
       start_color: "#d3d3d3",
       end_color: "#ffa500",
-      gamma:1
+      gradient_ratio:0.5
     },
     {
       start: 0.85,
@@ -87,7 +88,7 @@ const polyphen2_humdiv_parameters = {
       risk_assessment: "confidently damaging",
       start_color: "#ffa500",
       end_color: "#981e2a",
-      gamma:1
+      gradient_ratio:0.5
     },
   ],
   ref_value: 0,
@@ -103,7 +104,7 @@ const polyphen2_humvar_parameters = {
       risk_assessment: " benign",
       start_color: "#2c663c",
       end_color: "#d3d3d3",
-      gamma:1
+      gradient_ratio:0.5
 
     },
     {
@@ -112,7 +113,7 @@ const polyphen2_humvar_parameters = {
       risk_assessment: "possibly damaging",
       start_color: "#d3d3d3",
       end_color: "#ffa500",
-      gamma:1
+      gradient_ratio:0.5
 
     },
     {
@@ -121,7 +122,7 @@ const polyphen2_humvar_parameters = {
       risk_assessment: "confidently damaging",
       start_color: "#ffa500",
       end_color: "#981e2a",
-      gamma:1
+      gradient_ratio:0.5
 
     },
   ],
@@ -138,7 +139,7 @@ const sift_swissprot_parameters = {
       risk_assessment: "deleterious",
       start_color: "#981e2a",
       end_color: "#fcedaa",
-      gamma:1
+      gradient_ratio:0.5
 
     },
     {
@@ -147,7 +148,7 @@ const sift_swissprot_parameters = {
       risk_assessment: "benign",
       start_color: "#fcedaa",
       end_color: "#2c663c",
-      gamma:1
+      gradient_ratio:0.5
 
     },
   ],
@@ -164,7 +165,7 @@ const sift_trembl_parameters = {
       risk_assessment: "deleterious",
       start_color: "#981e2a",
       end_color: "#fcedaa",
-      gamma:1
+      gradient_ratio:0.5
 
     },
     {
@@ -173,7 +174,7 @@ const sift_trembl_parameters = {
       risk_assessment: "benign",
       start_color: "#fcedaa",
       end_color: "#2c663c",
-      gamma:1
+      gradient_ratio:0.5
 
     },
   ],
@@ -190,7 +191,7 @@ const efin_humdiv_parameters= {
       risk_assessment: "deleterious",
       start_color: "#981e2a",
       end_color: "#fcedaa",
-      gamma:1
+      gradient_ratio:0.5
 
     },
     {
@@ -199,7 +200,7 @@ const efin_humdiv_parameters= {
       risk_assessment: "neutral",
       start_color: "#fcedaa",
       end_color: "#2c663c",
-      gamma:1
+      gradient_ratio:0.5
 
     },
   ],
@@ -216,7 +217,7 @@ const efin_swissprot_parameters = {
       risk_assessment: "deleterious",
       start_color: "#981e2a",
       end_color: "#fcedaa",
-      gamma:1
+      gradient_ratio:0.5
 
     },
     {
@@ -225,7 +226,7 @@ const efin_swissprot_parameters = {
       risk_assessment: "neutral",
       start_color: "#fcedaa",
       end_color: "#2c663c",
-      gamma:1
+      gradient_ratio:0.5
 
     },
   ],
@@ -241,7 +242,7 @@ const provean_parameters = { // change based on array;
       risk_assessment: "deleterious",
       start_color: "#981e2a",
       end_color: "#fcedaa",
-      gamma:1
+      gradient_ratio:0.5
     },
     {
       start: -2.50,
@@ -249,7 +250,7 @@ const provean_parameters = { // change based on array;
       risk_assessment: "neutral",
       start_color: "#fcedaa",
       end_color: "#2c663c",
-      gamma:1
+      gradient_ratio:0.5
     },
   ],
   ref_value : 0
