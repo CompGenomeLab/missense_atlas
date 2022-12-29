@@ -12,6 +12,8 @@ import {
   aminoacid_ordering,
   number_of_colors
 } from "../config/config";
+
+const https = require('https');
 // http://10.3.2.13:8080/database/efin/8a8c1b6c6d5e7589f18afd6455086c82
 // http://10.3.2.13:8080/database/sift/8a8c1b6c6d5e7589f18afd6455086c82
 // http://10.3.2.13:8080/database/provean/8a8c1b6c6d5e7589f18afd6455086c82 // what is del?; also has negative values; be careful;
@@ -53,7 +55,7 @@ const ProteinPage = () => {
   //   }
   //   return i;
   // };
-  // finds accession (uniprotID), and index
+  // find accessions with features Instead
   const findMetadataHumanAccAndIndices = (input_metadata) => { 
     let temp_indices = input_metadata?.reduce( ( cur_list ,cur_metadata,index) => {
       if(cur_metadata?.organism?.taxonomy === 9606){
@@ -92,9 +94,12 @@ const ProteinPage = () => {
 
   useEffect(() => {
     // to fetch protein data 
-    const request_url = "all_scores/" + md5sum;
+    const axios_config = {
+      httpsAgent: new https.Agent({ rejectUnauthorized: false })
+    }
+    const request_url = "all_scores/md5sum/" + String(md5sum);
     axios
-      .get(database_url + request_url) // cors policy
+      .get((database_url + request_url) , axios_config  ) // cors policy
       .then(function (response) {
         // console.log(response);
         // add a function to calculate a data format for "tools combined", then add this to response.data;
@@ -119,6 +124,7 @@ const ProteinPage = () => {
         console.log("api called for " + database_url + request_url);
         // always executed
       });
+  
     
   }, [md5sum]);
 
@@ -150,7 +156,10 @@ const ProteinPage = () => {
           // setCurMetadataHumanIndex(findHumanIndex(response.data));
           // we need to run the function on the input of API, can't use a constant value calculated before the api call
           // can't use metadataHumanAccAndIndices variable
-          setCurMetadataHumanIndex(findMetadataHumanAccAndIndices(response.data)[0].index);
+          // setCurMetadataHumanIndex(findMetadataHumanAccAndIndices(response.data)[0].index);
+          setCurMetadataHumanIndex(0); // as the api only returns metadata for human;
+          // IMPORTANT 0'th entry might not have features, SO find the first entry that has features?
+          // else write no features exist for this entry;
         })
         .catch(function (error) {
           console.log(error);
@@ -162,17 +171,29 @@ const ProteinPage = () => {
     fetchMetadata();
   }, [md5sum]);
 
-  const helper_switch_tool_find_minmax_of_tool_scores = (prediction_tool_parameters) => {
+  const helper_switch_tool_find_minmax_median_of_tool_scores_provean = (prediction_tool_parameters) => {
       let minimum_value = 100;
       let maximum_value = -40;
       const current_tool_protein_data = allProteinData[prediction_tool_parameters.toolname_json];
       let i = 1;
+      let benign_scores_array = []; 
+      let deleterious_scores_array = [];
+      let median_deleterious = 0;
+      let median_benign = 0;
+
       while(Object.hasOwn( current_tool_protein_data , i )){ // each position
         for(let j = 0; j<20; j++){ // each aminoacid for that position
           let current_score = "NaN"; // default value
           const cur_amino_acid = aminoacid_ordering[j]
           if (Object.hasOwn( current_tool_protein_data[i], cur_amino_acid ) ){
             current_score = parseFloat(current_tool_protein_data[i][cur_amino_acid]);
+            if(current_score < prediction_tool_parameters.score_ranges[0].end){
+              // assuming first score range is deleterious second is benign, this is the case for provean
+              deleterious_scores_array.push(current_score);
+            } 
+            else{
+              benign_scores_array.push(current_score);
+            }
             if ( ! isNaN(current_score)){// not NaN
               if (maximum_value < current_score){
                 maximum_value = current_score;
@@ -185,16 +206,34 @@ const ProteinPage = () => {
         }
         i+= 1;
       }
-      return {min_value: minimum_value, max_value: maximum_value}
+      // not taking account of case where number of elements is even, as we don't need to find the exact median vlaue
+      let median_index_deleterious = benign_scores_array.length/2; 
+      let median_index_benign = deleterious_scores_array.length/2;
+
+      median_deleterious = deleterious_scores_array.sort()[median_index_deleterious];
+      median_benign = benign_scores_array.sort()[median_index_benign];
+
+      return {min_value: minimum_value, max_value: maximum_value,median_deleterious : median_deleterious ,median_benign : median_benign};
   }
   const switchTool = (e, prediction_tool_parameters) => {
     // Probably no need to use prev => prediction_tool_parameters
     // iterate over data and find minimum and maximum values
     if (prediction_tool_parameters.toolname_json === 'provean'){ 
-      const {min_value,max_value} = helper_switch_tool_find_minmax_of_tool_scores(prediction_tool_parameters);
-      const first_score_range = {...prediction_tool_parameters.score_ranges[0], start: min_value }
-      const second_score_range = {...prediction_tool_parameters.score_ranges[1], end: max_value }
+      const {min_value,max_value,median_deleterious, median_benign} = helper_switch_tool_find_minmax_median_of_tool_scores_provean(prediction_tool_parameters);
+      console.log("benign =" , median_benign);
+      console.log("del =" , median_deleterious);
+
+      // calculate gamma so that median is the middle of 2 colors
+      // this claculation is only for provean, as -2.5 is proveans deleterious median transition value;
+      // !!! IMPORTANT, I didn't understand gamma values effect 100%, so this gamma calculation is an approximation,
+      // median value probably won't be the center, but it will be close
+      let gamma_deleterious = (median_deleterious - min_value)/ (-2.5 - median_deleterious);
+      let gamma_benign = (max_value - median_benign) / (median_benign - (-2.5));
+      console.log(gamma_deleterious,gamma_benign);
+      const first_score_range = {...prediction_tool_parameters.score_ranges[0], start: min_value, gamma: gamma_deleterious };
+      const second_score_range = {...prediction_tool_parameters.score_ranges[1], end: max_value , gamma: gamma_benign};
       const new_score_ranges = [first_score_range,second_score_range];
+
       setCurrentPredictionToolParameters( {
         ...prediction_tool_parameters,score_ranges: new_score_ranges 
       })
@@ -285,13 +324,24 @@ const ProteinPage = () => {
   const changePredictionToolButtons = all_prediction_tools_array
     .filter((tool) => Object.hasOwn(allProteinData, tool.toolname_json))
     .map((tool) => {
+      let cur_button_color = "white";
+      if (
+        tool.toolname_json === currentPredictionToolParameters.toolname_json
+      ) {
+        cur_button_color = "green";
+      }
       return (
         <li key={tool.toolname_json}>
-          <button onClick={(e) => switchTool(e, tool)}>{tool.toolname}</button>
+          <button
+            style={{ backgroundColor: cur_button_color }}
+            onClick={(e) => switchTool(e, tool)}
+          >
+            {tool.toolname}
+          </button>
         </li>
       );
     });
-  
+
   const changeMetadataButtons = (
     <ul
       style={{
@@ -302,9 +352,16 @@ const ProteinPage = () => {
       }}
     >
       {metadataHumanAccAndIndices.map((accession) => {
+        let cur_button_color = "white";
+        if (
+          metadata[curMetadataHumanIndex]?.accession === accession.accession
+        ) {
+          cur_button_color = "green";
+        }
         return (
           <li key={accession.accession}>
             <button
+              style={{ backgroundColor: cur_button_color }}
               onClick={() => {
                 setCurMetadataHumanIndex(accession.index);
               }}

@@ -1,5 +1,5 @@
 import React, { useRef,useState,useEffect } from "react";
-import { number_of_colors } from "../../config/config";
+import { number_of_colors, colorRangesLegendHeight,colorRangesLegendRangeWidthCoef } from "../../config/config";
 
 const ColorRangesLegend = ({currentPredictionToolParameters, color_lists_array}) => {
 
@@ -17,7 +17,7 @@ const ColorRangesLegend = ({currentPredictionToolParameters, color_lists_array})
         return;
       }
       const ctx = c.getContext("2d");
-      const width_vw = currentPredictionToolParameters.score_ranges.length * 10;
+      const width_vw = currentPredictionToolParameters.score_ranges.length * colorRangesLegendRangeWidthCoef;
       const vw_string = String(width_vw) + "vw";
       c.style.width = "calc("+ vw_string + " + 50px)";
       // width is dynamic; based on predicion tool
@@ -110,7 +110,7 @@ const ColorRangesLegend = ({currentPredictionToolParameters, color_lists_array})
       id="color_ranges_legend"
       ref={colorRangesLegendRef}
       height={"85"}
-      style={{ width: "calc(30vw + 50px)", height: "85px" }}
+      style={{ width: "calc(30vw + 50px)", height: colorRangesLegendHeight }}
     ></canvas>
   );
 };

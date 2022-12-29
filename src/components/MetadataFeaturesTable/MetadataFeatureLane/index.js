@@ -4,6 +4,7 @@ import {
   top_margin_sl_coef,
   top_margin_ml_coef,
   sub_lane_divider_coef,
+  max_zoom_visible_aa_count
 } from "../../../config/config";
 // sl = single line, ml = multiline;
 //coef = coefficient
@@ -188,32 +189,36 @@ function MetadataFeatureLane({
       const c = metadataFeatureLaneRef.current;
       const rect = c.getBoundingClientRect();
       const lane_width = rect.width;
-      const lane_height = rect.height;
+      // const lane_height = rect.height;
       const mouse_xcor = e.clientX - rect.left;
-      const mouse_ycor = e.clientY - rect.top;
+      // const mouse_ycor = e.clientY - rect.top;
+      
+      // ((a&b) || (c&d)) & (f>1000) => ( (a || b) & (c || d) ) || (f<1000)
+      // !((a&b) || (c&d)) =>  !(a&b) & !(c&d) => ((!a || !b) & (!c || !b)) || f<1000
+      // deltaY => 0 => scrolling down; = zoom out
+      // if code goes into the if block, then actual scrolling of the page is allowed, else the scroll is blocked;
+      // allow scroll after a set time from last zoom or scale change
 
-      // impossible for coordinates to be out of boudnaries 
-      if (
-        mouse_xcor > lane_width ||
-        mouse_xcor < 0 ||
-        mouse_ycor < 0 ||
-        mouse_ycor > lane_height
-      ) {
-        return;
+      let max_zoom_value = sequenceLength/max_zoom_visible_aa_count;
+
+      if ( ((lane_scale_and_originX.scale === 1 && e.deltaY >= 0) || (lane_scale_and_originX.scale === max_zoom_value && e.deltaY <= 0 ))
+      && ((cur_time - prevTime) > 750 ) ){
+        console.log(cur_time - prevTime);
+        return; // so that it scrolls, when it is at max zoom and user does zoom out, 
       }
       e.preventDefault(); // so that it doesn't scroll while zooming
+
       if (cur_time - prevTime < 32) {
         // to limit fps;
         return;
       }
-      setPrevTime(cur_time); // should it stay here or at the end??
       setIsDown((prev) => false);
 
       const lane_scale_prev = lane_scale_and_originX.scale; // value of zoom before scroll event
       const lane_originX_prev = lane_scale_and_originX.originX * lane_width;
 
       let lane_scale_next = (1 - e.deltaY / 180) * lane_scale_prev; //new value of zoom after scroll
-      lane_scale_next = Math.min(Math.max(1, lane_scale_next), 64); // 64 = max zoom value, calculation of zoom value should be based on protein size
+      lane_scale_next = Math.min(Math.max(1, lane_scale_next), max_zoom_value); 
       const scalechange = lane_scale_next / lane_scale_prev; //
 
       let real_xcor = lane_originX_prev + mouse_xcor / lane_scale_prev; // real x coordinate of the mouse pointer, this line is reused in tooltip function
@@ -228,6 +233,7 @@ function MetadataFeatureLane({
       ); // so that heatmap new originX isn't too large, (start and end is constant)
       lane_originX_next = lane_originX_next / lane_width; // !!QZY
       if (lane_scale_next !== lane_scale_prev) {
+        setPrevTime(cur_time); // should it stay here or at the end??
         changeTooltipFeature('invisible',0,0);
         setScaleAndOriginX({
           scale: lane_scale_next,
@@ -235,7 +241,7 @@ function MetadataFeatureLane({
         });
       }
     },
-    [prevTime, setScaleAndOriginX,setIsDown,changeTooltipFeature]
+    [prevTime, setScaleAndOriginX,setIsDown,changeTooltipFeature,sequenceLength]
   );
   
   // zoom listener registration

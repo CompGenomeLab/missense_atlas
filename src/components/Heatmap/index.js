@@ -2,9 +2,8 @@
 import React, { useCallback, useEffect, useRef, useState,useMemo } from "react";
 
 //  22.8 is the magic number for starting position of the heatmap summary, it starts at cell_height * 22.8;
-const aminoacid_ordering = ['A','R','N','D','C','Q','E','G','H','I','L','K','M','F','P','S','T','W','Y','V'];
+import { max_zoom_visible_aa_count,aminoacid_ordering,aa_visible_width_ratio,aminoAcidLegendWidth,heatmapCellHeight,heatmapTotalNumRows,heatmapSpaceBtwnSummaryNumRows,heatmapSummaryNumRows,currentViewWindowNumRows } from "../../config/config";
 // const aminoAcidLegendWidth = 120;
-const aminoAcidLegendWidth = "10vw";
 // const number_of_colors = 30;
 // heatmap offset from config.js
 // yukleme ekranı
@@ -25,7 +24,7 @@ function Heatmap( props ){
   const heatmapRef = useRef(null); // ref for the heatmap in top
   const aminoAcidLegendRef = useRef(null);
   const tooltipRef = useRef(null); // ref for the tooltip layer on top of the heatmap
-  const currentviewWindowRef = useRef(null);
+  const currentViewWindowRef = useRef(null);
   const [isDown,setIsDown] = useState(false);
   const [panningStartX,setPanningStartX] = useState(0); 
   // const [scaleAndOriginX,setScaleAndOriginX] = useState({scale:1,originX:0}); // so that we update both of them at the smae time instead of seperately,;
@@ -208,7 +207,7 @@ function Heatmap( props ){
       c.height = heatmap_height * ratio;
       // console.log(heatmap_width);
       // Probably not but calc syntax should be correct 100vw-200px wont work 
-      c.style.height = heatmap_height + "px";
+      // c.style.height = heatmap_height + "px"; // will change !!!
       // console.log(canvas_originX);
 
       //ctx.resetTransform(); same as setTransform(1,0,0,1,0,0);
@@ -224,7 +223,7 @@ function Heatmap( props ){
       ctx.translate(-canvas_originX,0); 
 
       // console.log("orignx = " + canvas_originX);
-      const cell_height = (heatmap_height - 70)/20; //!! must be same in drawtooltip //10, number 20 = aminoacids, also left 70 px space in the bottom;
+      const cell_height = heatmap_height / heatmapTotalNumRows; //!! must be same in drawtooltip //10, number 20 = aminoacids, also left 70 px space in the bottom;
       const cell_width = (heatmap_width/sequence_length); // sequence_length can not be 0
       // !! must be same in draw tooltip !!!! THIS IS THE REASON OF BORDERS BETWEEN SQUARES !!!
       // cell width changes on resize, because heamtap_width also changes;
@@ -246,12 +245,13 @@ function Heatmap( props ){
       //drawing the aminoacid positions inside the protein;
       ctx.scale(1/canvas_scale,1); // need this so that numbers size stay same;
       ctx.fillStyle = 'black';
-      ctx.font = "12px Arial";
+      ctx.font = "0.8rem Arial"; // change based on device??????
         // i want 20 numbers at most,
         // at scale = 1; number visible = protein len; so I must multiply protein len by (20/protein len)
         // numbefr visible = sequence_length/scale
         // step_size = (num_visible/20)
-      const browser_resize_ratio = (window.innerWidth/window.screen.availWidth); // so that numbers don't get jumbled up
+      // Both browser resize ratio and canvas scale is needed, browser resize ratio is only for step_size  so that numbers don't get jumbled up
+      const browser_resize_ratio = (window.innerWidth/window.screen.availWidth); // max value is 1
       // the constant 20 in step_size calculation will be included in config.js
       const step_size = Math.max(Math.floor(num_visible/ ( 20  *  browser_resize_ratio )),1); // so that step_size isn't smaller than 1; // if stepsize becomes 0 I get infinite loop;
       for (let i = 0; i< rightmost_visible_index; i+= step_size) // without leftmost (let i = 0; i< sequence_length; i+= step_size) 
@@ -264,7 +264,9 @@ function Heatmap( props ){
           ctx.textAlign = "right";
         } 
         // because of ctx.translate(-canvas_originX) after scaling, this looks confusing but it is corrrect;
-        ctx.fillText(String(i+1),cell_width * (i+0.5) * canvas_scale,cell_height*22);
+        ctx.textBaseline = 'middle';
+        ctx.fillText(String(i+1),cell_width * (i+0.5) * canvas_scale, cell_height * (20 + (heatmapSpaceBtwnSummaryNumRows/2)) );
+        
       }
       ctx.scale(canvas_scale,1); // canvas scale returned back to state before we wrote positions;
 
@@ -272,16 +274,35 @@ function Heatmap( props ){
       for ( let i = leftmost_visible_index; i< rightmost_visible_index; i++) // alternative is to count greens/yellows, or take the average of their colors
       {
         ctx.fillStyle = heatmapMeanColors[i];
-        ctx.fillRect(i * cell_width ,22.8 * cell_height ,cell_width ,cell_height* 4.2 );
+        ctx.fillRect(i * cell_width ,(20 + heatmapSpaceBtwnSummaryNumRows )  * cell_height ,cell_width , (cell_height* heatmapSummaryNumRows) );
+        
       } 
+
+      const aa_character_text_metrics = ctx.measureText("M");
+      const aa_character_width = aa_character_text_metrics.width;
+      const aa_character_height = aa_character_text_metrics.actualBoundingBoxAscent + aa_character_text_metrics.actualBoundingBoxDescent;
+      // 1 problem is aa_character_height will always be constant, so If we set the font size too big, it will never draw aminoacid characters.
+      if (aa_character_width < (cell_width * canvas_scale * aa_visible_width_ratio) && aa_character_height < (cell_height* heatmapSummaryNumRows ) )
+      {
+        ctx.fillStyle = 'black';
+        ctx.scale(1/canvas_scale,1);
+        for ( let i = leftmost_visible_index; i< rightmost_visible_index; i++) // alternative is to count greens/yellows, or take the average of their colors
+        {
+          const cur_pos_aminoacid = proteinData[i+1]?.ref;
+          ctx.textAlign = "center";
+          ctx.textBaseline = "middle";
+          ctx.fillText(String(cur_pos_aminoacid), canvas_scale * (i +0.5) * cell_width, cell_height * (20+ heatmapSpaceBtwnSummaryNumRows +  heatmapSummaryNumRows/2) );
+        } 
+        ctx.scale(canvas_scale,1);
+      }
     // const end_time = Date.now();
     // console.log("draw time = " + String(end_time - start_time));
-  },[scaleAndOriginX.originX,scaleAndOriginX.scale,sequence_length,color_lists_array,currentPredictionToolParameters,heatmapColors,heatmapMeanColors] );
+  },[scaleAndOriginX.originX,scaleAndOriginX.scale,sequence_length,color_lists_array,currentPredictionToolParameters,heatmapColors,heatmapMeanColors,proteinData] );
   // callback because it is in useEffect dependency array;
   const drawCurrentViewWindow = useCallback ( () => { // 50 px both left and right for the index number to display
     // const start_time = Date.now();      // takes 13 miliseconds for 1610 aa protein
     // return;
-    const c = currentviewWindowRef.current;
+    const c = currentViewWindowRef.current;
     const ctx = c.getContext("2d");
     c.style.width = 'calc(80vw + 100px)';
 
@@ -293,7 +314,7 @@ function Heatmap( props ){
     c.width = w * ratio;
     c.height = h * ratio;
     // c.style.width = w + "px";
-    c.style.height = h + "px";
+    // c.style.height = h + "px";
     ctx.scale(ratio,ratio);
     ctx.translate(50,0); // shift by the amount of buffer on the left (for the number index to render)
     // - 100 is IMPORTANT, THE OFFSET FROM LEFT AND RIGHT
@@ -321,7 +342,7 @@ function Heatmap( props ){
     } 
     // drawing indices;
     const leftmost_visible_index = String(Math.floor((canvas_originX/heatmapRect_width * sequence_length) +1 ));
-    const rightmost_visible_index = String(Math.floor((canvas_originX/heatmapRect_width * sequence_length) + (sequence_length/canvas_scale)));  
+    const rightmost_visible_index = String(Math.ceil((canvas_originX/heatmapRect_width * sequence_length) + (sequence_length/canvas_scale)));  
     ctx.fillStyle = 'black';
     ctx.textBaseline = 'top';
     ctx.font = '12px Arial';
@@ -389,8 +410,12 @@ function Heatmap( props ){
 
 
     // console.log("originX prev = ")
+    let max_zoom_value = sequence_length/max_zoom_visible_aa_count;
+
     let canvas_scale_next = (1 - (e.deltaY/180)) * canvas_scale_prev; //new value of zoom after scroll
-    canvas_scale_next = Math.min(Math.max(1, canvas_scale_next), 64); // 64 = max zoom value, calculation of zoom value should be based on protein size
+
+
+    canvas_scale_next = Math.min(Math.max(1, canvas_scale_next), max_zoom_value); // 64 = max zoom value, calculation of zoom value should be based on protein size
     const scalechange = canvas_scale_next / canvas_scale_prev; // 
 
     let real_xcor = canvas_originX_prev + (mouse_xcor/canvas_scale_prev); // real x coordinate of the mouse pointer, this line is reused in tooltip function
@@ -406,7 +431,7 @@ function Heatmap( props ){
     // console.log(canvas_scale_prev);
     // console.log("zoom end = " + String(cur_time - prevTime));
     
-  },[prevTime,setScaleAndOriginX]);
+  },[prevTime,setScaleAndOriginX,sequence_length]);
 
   // wheelzoom event registeration
   useEffect(()=>{ 
@@ -476,13 +501,13 @@ function Heatmap( props ){
       const ratio = window.devicePixelRatio;
       c.width = w * ratio;
       c.height = h * ratio;
-      c.style.height = h + "px";
+      // c.style.height = h + "px";
       ctx.scale(ratio,ratio);
       
       //{'A': 0, 'R': 1, 'N': 2, 'D': 3, 'C': 4, 'Q': 5, 'E': 6, 'G': 7, 'H': 8, 'I': 9, 'L': 10, 'K': 11, 'M': 12, 'F': 13, 'P': 14, 'S': 15, 'T': 16, 'W': 17, 'Y': 18, 'V': 19}    
       const cHeatmap = heatmapRef.current;
       const heatmapRect = cHeatmap.getBoundingClientRect();
-      const cell_height = (heatmapRect.height - 70)/20; //!! must be same in drawtooltip and drwaheatmap //10, number 20 = aminoacids, also left 50 px space in the bottom;
+      const cell_height = heatmapRect.height / heatmapTotalNumRows ; //!! must be same in drawtooltip and drwaheatmap //10, number 20 = aminoacids, also left 50 px space in the bottom;
       ctx.font = "12px Arial Narrow";
       
       ctx.lineWidth = 1;
@@ -495,12 +520,12 @@ function Heatmap( props ){
         ctx.lineTo(w - 10 , cell_height * (i+0.5));  // Draw a line to (150, 100)
         ctx.stroke();          // Render the path
       }
-
-      ctx.fillText("Position" , w - 30 , cell_height*(24.5) );
-      ctx.fillText("average" , w - 30 , cell_height* (26) );
+      ctx.textBaseline = 'bottom';
+      ctx.fillText("Position" , w - 30 , cell_height*(20 + heatmapSpaceBtwnSummaryNumRows + heatmapSummaryNumRows/4) );
+      ctx.fillText("average" , w - 30 , cell_height* (20 + heatmapSpaceBtwnSummaryNumRows + heatmapSummaryNumRows*3/4) );
       ctx.beginPath();
-      ctx.moveTo(w - 20 ,  cell_height * (25));
-      ctx.lineTo(w - 10, cell_height * (25));
+      ctx.moveTo(w - 20 ,  cell_height * (20 + heatmapSpaceBtwnSummaryNumRows + heatmapSummaryNumRows/2));
+      ctx.lineTo(w - 10, cell_height * (20 + heatmapSpaceBtwnSummaryNumRows + heatmapSummaryNumRows/2));
       ctx.stroke();
       // ctx.fillText("Position average",20,(cell_height*(25+1)));
       // ctx.beginPath();
@@ -521,7 +546,7 @@ function Heatmap( props ){
     const mouse_xcor = e.clientX - heatmapRect.left;//console.log("hover mouse_xcor = " + mouse_xcor); // console.log(heatmapRect.width);
     const mouse_ycor = e.clientY - heatmapRect.top; // scale doen't affect this, so this is the real_ycoordinate //console.log("hover mouse_ycor = " + mouse_ycor);// console.log(heatmapRect.height-50); // -50 space for position indexes;
 
-    const cell_height = (heatmapRect_height-70)/20; //!! must be same in drawheatmap // 300/20 = 15 ,  number 20 is same for all 
+    const cell_height = heatmapRect_height /heatmapTotalNumRows ;  //!! must be same in drawheatmap // 300/20 = 15 ,  number 20 is same for all 
     const cell_width = (heatmapRect_width/sequence_length); //!! must be same in drawheatmap // if we use floor, it will result in 0 cell width when protein length is larger than c.width;
     
     const canvas_scale = scaleAndOriginX.scale; // value of zoom before scroll event
@@ -675,7 +700,7 @@ function Heatmap( props ){
     c.width = tooltip_width * ratio;
     c.height = tooltip_height * ratio;
     c.style.width = "calc(100vw - 20px)"; // will override the value in html, We have overflow-x: hidden in App.css;
-    c.style.height = tooltip_height + "px";
+    // c.style.height = tooltip_height + "px";
     c.style.top = "-80px"; // safari weird bug; canvas blurry text;
     // console.log("width =   "  + c.width);
     ctx.scale(ratio,ratio);
@@ -688,7 +713,7 @@ function Heatmap( props ){
     const heatmapRect = cHeatmap.getBoundingClientRect();  // !! get boundaries of the heatmap//console.log(rect);
     const heatmapRect_height = heatmapRect.height;
     const heatmapRect_width = heatmapRect.width;
-    const cell_height = (heatmapRect_height-70)/20; //!! must be same in drawheatmap // 300/20 = 15 ,  number 20 is same for all 
+    const cell_height = heatmapRect_height / heatmapTotalNumRows; //!! must be same in drawheatmap // 300/20 = 15 ,  number 20 is same for all 
     const mouse_xcor = e.clientX - heatmapRect.left;//console.log("hover mouse_xcor = " + mouse_xcor); // console.log(heatmapRect.width);
     const mouse_ycor = e.clientY - heatmapRect.top; // scale doen't affect this, so this is the real_ycoordinate //console.log("hover mouse_ycor = " + mouse_ycor);// console.log(heatmapRect.height-50); // -50 space for position indexes;
     
@@ -706,10 +731,10 @@ function Heatmap( props ){
       setIsDown(prev => false);// so that panning point resets when mouse goes out of bounds;
       return
     }
-    else if ( mouse_ycor >= (cell_height*22.8) ){ // inside summary part
+    else if ( mouse_ycor >= (cell_height* (20 + heatmapSummaryNumRows) ) ){ // inside summary part
       drawTooltipHeatmapSummary(c,cHeatmap,e,x_offset,y_offset);
     }
-    else if (mouse_ycor < (heatmapRect_height - 70)){ // inside main heatmap
+    else if (mouse_ycor <= ( cell_height * 20 )){ // inside main heatmap
       drawTooltipHeatmapMain(c,cHeatmap,e,x_offset,y_offset);
     }
     
@@ -759,6 +784,9 @@ function Heatmap( props ){
       setIsDown(false);
   }
 
+  const heatmapHeightJSX = String(heatmapCellHeight * heatmapTotalNumRows) + 'vh';
+  // const heatmapPlusCurrentViewWindowHeightJSX = String(heatmapCellHeight * (heatmapTotalNumRows + currentViewWindowNumRows)) + 'vh'
+  const currentVisibleWindowHeightJSX = String(heatmapCellHeight * currentViewWindowNumRows) + 'vh'
   return (
       <>
           {/* <button onClick={fetchDataTest2}> Fetch all protein data</button>
@@ -767,26 +795,26 @@ function Heatmap( props ){
            10px is the gap property in metadataFeatureTable grid */}
           <div style={{marginBottom:'2rem'}}>  
             <h5 style={{textAlign:'center', marginBottom:'0.25rem', marginTop:'0rem'}}> current visible window: </h5>
-            <canvas id="current_view_window" ref={currentviewWindowRef} height={"30"} width={window.innerWidth -  200}
-                        style= {{marginLeft:"calc(" + aminoAcidLegendWidth + " - 40px" , width:'calc(100vw - 100px)'}}  > 
+            <canvas id="current_view_window" ref={currentViewWindowRef}
+                        style= {{marginLeft:"calc(" + aminoAcidLegendWidth + " - 40px" , width:'calc(80vw - 100px)', height:currentVisibleWindowHeightJSX}}  > 
             </canvas>
           </div>
           {/* Height of asds must be the same as max(amino_acid_legend,heatmap_canvas) */}
           {/* canvas width width ={window.innerwidth} is only for the initialization, then we change by reassigning the canvas width inside functions */}
           {/* asds is only there because canvas positions are absolute, So it acts as a filler, so that subsequent elements and canvases don't overlap */}
-          <div id="asds" style={{ width:"calc(-200px + 100vw)", height:"270px", position:'relative'}}> 
-                  <canvas  id="heatmap_canvas" ref={heatmapRef} style = {{position:"absolute",top:"0px", left:"calc("+ aminoAcidLegendWidth +  " + 10px)" , zIndex:1, width:'80vw', height:'270px'}}
+          <div id="asds" style={{ width:"calc(-200px + 100vw)", height:heatmapHeightJSX, position:'relative'}}> 
+                  <canvas  id="heatmap_canvas" ref={heatmapRef} style = {{position:"absolute",top:"0px", left:"calc("+ aminoAcidLegendWidth +  " + 10px)" , zIndex:1, width:'80vw', height:heatmapHeightJSX}}
                   // onClick={(e) => console.log("asfasfasfasfs")}
                   // onclick or other functions don't work here as the topmost layers is the canvas below
                   >
                   </canvas>
                   
-                  <canvas id="amino_acid_legend" ref={aminoAcidLegendRef} style={{position:"absolute",top:"0px", left:"10px",width:aminoAcidLegendWidth, height:'270px',zIndex:1 }}>
+                  <canvas id="amino_acid_legend" ref={aminoAcidLegendRef} style={{position:"absolute",top:"0px", left:"10px",width:aminoAcidLegendWidth, height: heatmapHeightJSX ,zIndex:1 }}>
                   </canvas>
 
-                  <canvas  id="heatmap_tooltip_canvas" ref={tooltipRef}  style = {{position:"absolute",top:"-80px", left:"0px" , zIndex:50}} height={"350"} width={window.innerWidth - 20 }
+                  <canvas  id="heatmap_tooltip_canvas" ref={tooltipRef}  style = {{position:"absolute",top:"-80px", left:"0px" , zIndex:50, height:"calc(" + heatmapHeightJSX + " + 85px)"  }} width={window.innerWidth - 20 }
                       // onClick = {clickLogger} 
-                      // onWheel={wheelZoom} added event listener in UseEffect, because "Unable to preventDefault inside passive event listener invocation."
+                      // onWheel={wheelZoom} added event listener in UseEffect, because "Unable to preventDefault inside passive event listener invocation."height:"calc(" + heatmapHeight + "85px)"
                       onMouseMove = {(e) => drawTooltipOrPan2(e)}
                       onMouseDown = {(e) => onMouseDownHelper(e)}
                       onMouseUp= {(e) => onMouseUpHelper(e)}

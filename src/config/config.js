@@ -2,22 +2,34 @@
 export const aminoacid_ordering = ['A','R','N','D','C','Q','E','G','H','I','L','K','M','F','P','S','T','W','Y','V'];
 
 export const number_of_colors = 60; // legend colors
-export const database_url = "http://10.3.2.13:8080/database/"; // database base url
+export const database_url = "https://10.3.2.13:8080/database/"; // database base url
 
+// heatmap
+export const heatmapCellHeight = 1.6 // "2vh" will turn into vh in heatmap component;
+export const currentViewWindowNumRows = 2.5;
+export const heatmapSpaceBtwnSummaryNumRows = 2.5;
+export const heatmapSummaryNumRows = 3.2;
+export const heatmapTotalNumRows = 20 + heatmapSpaceBtwnSummaryNumRows + heatmapSummaryNumRows; // 20 cells rows for each aa + summary + space between heatmap and summary, (previous 2 rows)
+export const heatmapWidth = "80vw"; 
+export const aminoAcidLegendWidth = "10vw";
+export const max_zoom_visible_aa_count = 10; // to determine maximum zoom value
+export const aa_visible_width_ratio = 0.8; // between 1 and 0; if size of aminoacid character is smaller than ratio * cellwidth, then draw;
+
+// export const aa_visible_threshold = 999; // the threshold under which aminoacids become visible
+// may not need this, as it can be based on if text fits,
 
 // for feature lane
-export const lane_height = '5vh';
-export const lane_width = '80vw';
+export const laneHeight = '5vh';
+export const laneWidth = '80vw'; // equal to heatmapWidth;
 // coef = coefficient
 export const top_margin_sl_coef= 4;
 export const top_margin_ml_coef = 8;
-export const sub_lane_divider_coef = 2;
+export const sub_lane_divider_coef = 2; // used to be divided by top margin, now divided by sub_lane height;
 // features tooltip
 export const filtered_categories = ['category','sub_lane'];  // sub_lane is calculated by us;
 
-
-
-
+export const colorRangesLegendRangeWidthCoef = 10; // each range will be this variable 'vw';
+export const colorRangesLegendHeight = '85px';
 
 // prediction tool parameters
 const lists2_parameters = {

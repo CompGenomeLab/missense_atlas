@@ -1,6 +1,6 @@
 import React, {useState} from "react";
 import MetadataFeatureLane from "./MetadataFeatureLane";
-import { lane_height, lane_width, filtered_categories } from "../../config/config";
+import { laneHeight, laneWidth, filtered_categories } from "../../config/config";
 
 
 
@@ -188,7 +188,7 @@ function MetadataFeaturesTable({ allFeaturesArray, sequenceLength, scaleAndOrigi
         </div>,
         <div
           key={category + "metadataFeatureLane"}
-          style={{ height: lane_height, width: lane_width }}
+          style={{ height: laneHeight, width: laneWidth }}
         >
           <MetadataFeatureLane
             featureArray={cur_category_features}
