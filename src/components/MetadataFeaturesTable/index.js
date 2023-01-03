@@ -168,27 +168,28 @@ function MetadataFeaturesTable({ allFeaturesArray, sequenceLength, scaleAndOrigi
             display: "flex",
             // height: "4.5vh",
             // backgroundColor: "lightblue",
+            // justifyContent:'end',
             alignItems: "center",
           }}
         >
           <div
             style={{
               display: "flex",
-              height: "4.5vh",
+              height: String(laneHeight*0.9) +'vh',
               backgroundColor: "lightblue",
               width: "100%",
-              justifyContent: "center",
+              justifyContent: "end",
               alignItems: "center",
             }}
           >
-            <h3 style={{ fontSize: "1.5vh", textAlign: "center" }}>
+            <p style={{ fontSize: "1.5vh", textAlign: "end" }}>
               {category.split("_").join(" ")}
-            </h3>
+            </p>
           </div>
         </div>,
         <div
           key={category + "metadataFeatureLane"}
-          style={{ height: laneHeight, width: laneWidth }}
+          style={{ height: String(laneHeight)+'vh', width: laneWidth }}
         >
           <MetadataFeatureLane
             featureArray={cur_category_features}

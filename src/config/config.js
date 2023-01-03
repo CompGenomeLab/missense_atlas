@@ -10,17 +10,19 @@ export const heatmapCellHeight = 1.6 // "2vh" will turn into vh in heatmap compo
 export const currentViewWindowNumRows = 2.5;
 export const heatmapSpaceBtwnSummaryNumRows = 2.5;
 export const heatmapSummaryNumRows = 3.2;
-export const heatmapTotalNumRows = 20 + heatmapSpaceBtwnSummaryNumRows + heatmapSummaryNumRows; // 20 cells rows for each aa + summary + space between heatmap and summary, (previous 2 rows)
+export const heatmapAminoAcidCharactersNumRows = 2;
+export const heatmapTotalNumRows = 20 + heatmapSpaceBtwnSummaryNumRows + heatmapSummaryNumRows + heatmapAminoAcidCharactersNumRows; // 20 cells rows for each aa + summary + space between heatmap and summary, (previous 2 rows)
 export const heatmapWidth = "80vw"; 
 export const aminoAcidLegendWidth = "10vw";
 export const max_zoom_visible_aa_count = 10; // to determine maximum zoom value
+export const aa_position_notches_threshold = 9; // while drawing positions of the heatmap if step size of positions are smaller than threshold, draw small notches between the positions (like a ruler (cetvel)) 
 export const aa_visible_width_ratio = 0.8; // between 1 and 0; if size of aminoacid character is smaller than ratio * cellwidth, then draw;
 
 // export const aa_visible_threshold = 999; // the threshold under which aminoacids become visible
 // may not need this, as it can be based on if text fits,
 
 // for feature lane
-export const laneHeight = '5vh';
+export const laneHeight = 5; // will be 5vh
 export const laneWidth = '80vw'; // equal to heatmapWidth;
 // coef = coefficient
 export const top_margin_sl_coef= 4;
@@ -33,9 +35,58 @@ export const colorRangesLegendRangeWidthCoef = 10; // each range will be this va
 export const colorRangesLegendHeight = '85px';
 
 // prediction tool parameters
+// The substitutions with scores below and above this threshold (0.679) were assumed to be pathogenic and neutral,
+const phactboost_parameters = {
+  toolname: "PHACT Boost",
+  toolname_json: "phactboost",
+  score_ranges: [
+    {
+      start: 0.0,
+      end: 0.679,
+      risk_assessment: "pathogenic",
+      start_color: "#981e2a",
+      end_color: "#fcedaa",
+      gradient_ratio:0.5
+
+    },
+    {
+      start: 0.679,
+      end: 1.0,
+      risk_assessment: "neutral",
+      start_color: "#fcedaa",
+      end_color: "#2c663c",
+      gradient_ratio:0.5
+    },
+  ],
+  ref_value: 1,
+}
+const phact_parameters = {
+  toolname: "PHACT",
+  toolname_json: "phact",
+  score_ranges: [
+    {
+      start: 0.0,
+      end: 0.679,
+      risk_assessment: "pathogenic",
+      start_color: "#981e2a",
+      end_color: "#fcedaa",
+      gradient_ratio:0.5
+
+    },
+    {
+      start: 0.679,
+      end: 1.0,
+      risk_assessment: "neutral",
+      start_color: "#fcedaa",
+      end_color: "#2c663c",
+      gradient_ratio:0.5
+    },
+  ],
+  ref_value: 1,
+}
+
 const lists2_parameters = {
   toolname: "LIST-S2", // shown to the user
-  //toolname_api: "lists2", // api url, example: /database/lists2/{md5sum} // deprecated
   toolname_json: "lists2", // field name in the api response json.
   score_ranges: [
     {
@@ -62,7 +113,6 @@ const lists2_parameters = {
 };
 const polyphen2_humdiv_parameters = {
   toolname: "Polyphen-2 (Humdiv)",
- // toolname_api: "polyphen", // used in the api url
   toolname_json: "pph_humdiv", // used in the return value of the all_scores api
   score_ranges: [
     {
@@ -95,7 +145,6 @@ const polyphen2_humdiv_parameters = {
 };
 const polyphen2_humvar_parameters = {
   toolname: "Polyphen-2 (Humvar)",
-  //toolname_api: "polyphen", // used in the api url
   toolname_json: "pph_humvar", // used in the return value of the all_scores api
   score_ranges: [
     {
@@ -130,7 +179,6 @@ const polyphen2_humvar_parameters = {
 };
 const sift_swissprot_parameters = {
   toolname: "Sift (Swissprot) ",
-  //toolname_api: "sift",
   toolname_json: "sift4g_swissprot",
   score_ranges: [
     {
@@ -156,7 +204,6 @@ const sift_swissprot_parameters = {
 };
 const sift_trembl_parameters = {
   toolname: "Sift (Trembl)",
-  //toolname_api: "sift",
   toolname_json: "sift4g_sp_trembl",
   score_ranges: [
     {
@@ -182,7 +229,6 @@ const sift_trembl_parameters = {
 };
 const efin_humdiv_parameters= {
   toolname: "Efin (Humdiv)",
-  //toolname_api: "sift",
   toolname_json: "efin_humdiv",
   score_ranges: [
     {
@@ -208,7 +254,6 @@ const efin_humdiv_parameters= {
 };
 const efin_swissprot_parameters = {
   toolname: "Efin (Swissprot)",
-  //toolname_api: "sift",
   toolname_json: "efin_swissprot",
   score_ranges: [
     {
@@ -257,6 +302,8 @@ const provean_parameters = { // change based on array;
 }
 
 export const all_prediction_tools_array = [
+  phact_parameters,
+  phactboost_parameters,
   lists2_parameters,
   polyphen2_humdiv_parameters,
   polyphen2_humvar_parameters,

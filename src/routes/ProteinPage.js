@@ -15,6 +15,7 @@ import {
 } from "../config/config";
 
 // const https = require('https');
+
 // http://10.3.2.13:8080/database/efin/8a8c1b6c6d5e7589f18afd6455086c82
 // http://10.3.2.13:8080/database/sift/8a8c1b6c6d5e7589f18afd6455086c82
 // http://10.3.2.13:8080/database/provean/8a8c1b6c6d5e7589f18afd6455086c82 // what is del?; also has negative values; be careful;
@@ -106,8 +107,23 @@ const ProteinPage = () => {
   useEffect(() => {
     // to fetch protein data 
     // const axios_config = {
-    //   httpsAgent: new https.Agent({ rejectUnauthorized: false })
+    //   // httpsAgent: new https.Agent({ rejectUnauthorized: false })
+      
+    //     rejectUnauthorized: false,
+    //     requestCert: false,
+    //     agent: false,
     // }
+    // const agent = new https.Agent({  
+    //     rejectUnauthorized: false,
+    //     requestCert: false,
+    //     agent: false,
+    //  });
+  //   } const agent = new https.Agent({
+  //     rejectUnauthorized: false,
+  //     requestCert: false,
+  //     agent: false,
+  //  });
+   
     const request_url = "all_scores/md5sum/" + String(md5sum);
     axios
       .get((database_url + request_url)) // cors policy
@@ -223,8 +239,8 @@ const ProteinPage = () => {
         i+= 1;
       }
       // not taking account of case where number of elements is even, as we don't need to find the exact median vlaue
-      let median_index_deleterious = deleterious_scores_array.length/2; 
-      let median_index_benign = benign_scores_array.length/2;
+      let median_index_deleterious = Math.floor(deleterious_scores_array.length/2); 
+      let median_index_benign = Math.floor(benign_scores_array.length/2);
       median_deleterious = deleterious_scores_array.sort()[median_index_deleterious];
       median_benign = benign_scores_array.sort()[median_index_benign];
       return {min_value: minimum_value, max_value: maximum_value,median_deleterious : median_deleterious ,median_benign : median_benign};
@@ -241,14 +257,9 @@ const ProteinPage = () => {
       const benign_range = max_value - (-2.5)
       let gradient_ratio_deleterious = (median_deleterious - min_value) / deleterious_range;
       let gradient_ratio_benign =  (median_benign - (-2.5)) / benign_range ;
-      // console.log("benign =" , median_benign);
-      // console.log("del =" , median_deleterious);
-      // console.log("ratios del,ben = ")
-      // console.log(gradient_ratio_deleterious,gradient_ratio_benign);
       const first_score_range = {...prediction_tool_parameters.score_ranges[0], start: min_value, gradient_ratio: gradient_ratio_deleterious };
       const second_score_range = {...prediction_tool_parameters.score_ranges[1], end: max_value , gradient_ratio: gradient_ratio_benign};
       const new_score_ranges = [first_score_range,second_score_range];
-
       setCurrentPredictionToolParameters( {
         ...prediction_tool_parameters,score_ranges: new_score_ranges 
       })
