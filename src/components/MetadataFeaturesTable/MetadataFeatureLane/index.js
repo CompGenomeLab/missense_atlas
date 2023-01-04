@@ -201,16 +201,11 @@ function MetadataFeatureLane({
 
       let max_zoom_value = sequenceLength/max_zoom_visible_aa_count;
 
-      if ( ((lane_scale_and_originX.scale === 1 && e.deltaY >= 0) || (lane_scale_and_originX.scale === max_zoom_value && e.deltaY <= 0 ))
-      && ((cur_time - prevTime) > 750 ) ){
-        console.log(cur_time - prevTime);
-        return; // so that it scrolls, when it is at max zoom and user does zoom out, 
-      }
-      e.preventDefault(); // so that it doesn't scroll while zooming
-
-      if (cur_time - prevTime < 32) {
-        // to limit fps;
-        return;
+      if (cur_time - prevTime < 1500){
+        e.preventDefault();
+        if (cur_time - prevTime < 32){
+          return;
+        }
       }
       setIsDown((prev) => false);
 
@@ -233,12 +228,14 @@ function MetadataFeatureLane({
       ); // so that heatmap new originX isn't too large, (start and end is constant)
       lane_originX_next = lane_originX_next / lane_width; // !!QZY
       if (lane_scale_next !== lane_scale_prev) {
-        setPrevTime(cur_time); // should it stay here or at the end??
+        e.preventDefault();
         changeTooltipFeature('invisible',0,0);
         setScaleAndOriginX({
           scale: lane_scale_next,
           originX: lane_originX_next,
         });
+        setPrevTime(cur_time); 
+
       }
     },
     [prevTime, setScaleAndOriginX,setIsDown,changeTooltipFeature,sequenceLength]
@@ -416,3 +413,14 @@ function MetadataFeatureLane({
 export default MetadataFeatureLane;
 
 
+// // allow scrolling if not zooming deprecated
+// if ( ((lane_scale_and_originX.scale === 1 && e.deltaY >= 0) || (lane_scale_and_originX.scale === max_zoom_value && e.deltaY <= 0 ))
+// && ((cur_time - prevTime) > 750 ) ){
+//   return; // so that it scrolls, when it is at max zoom and user does zoom out, 
+// }
+// e.preventDefault(); // so that it doesn't scroll while zooming
+
+// if (cur_time - prevTime < 32) {
+//   // to limit fps;
+//   return;
+// }

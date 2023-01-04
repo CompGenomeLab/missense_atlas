@@ -449,14 +449,16 @@ function Heatmap( props ){
     { 
       return
     }
-    e.preventDefault(); // so that it doesn't scroll while zooming
-    if (cur_time - prevTime < 32) // to limit fps;
-    {
-        // console.log(cur_time - prevTime);
-        // console.log("fail");
-        return;
+    if (cur_time - prevTime < 1500) {
+      e.preventDefault(); // so that it doesn't scroll while zooming
+      if (cur_time - prevTime < 32) // to limit fps;
+      {
+          // console.log(cur_time - prevTime);
+          // console.log("fail");
+          return;
+      }
     }
-    setPrevTime(cur_time); // should it stay here or at the end??
+    
     // just to make sure, we are not panning while zooming, 
     //moved here so that It doesn't block during returned (bcs of previous if block) zoom events
     setIsDown(prev => false); 
@@ -495,8 +497,11 @@ function Heatmap( props ){
     let canvas_originX_next = Math.max( (real_xcor - ((real_xcor - canvas_originX_prev)/scalechange)), 0); // so that it doesn't become smaller than 0
     canvas_originX_next = Math.min(canvas_originX_next,(heatmap_width - heatmap_width/canvas_scale_next)) // so that heatmap new originX isn't too large, (start and end is constant)
     canvas_originX_next = canvas_originX_next/heatmap_width // !!QZY
-    if (canvas_scale_next !== canvas_scale_prev){       
+    if (canvas_scale_next !== canvas_scale_prev){     
+      e.preventDefault();
       setScaleAndOriginX( {scale:canvas_scale_next, originX: canvas_originX_next} );
+      setPrevTime(cur_time); // should it stay here or at the end??
+
     }
     // setPrevTime(cur_time); // moved this to here;
     // console.log("setted time");

@@ -20,7 +20,6 @@ const ColorRangesLegend = ({currentPredictionToolParameters, color_lists_array})
       // width is dynamic; based on predicion tool
       const x_buffer = 6
       const x_buffer_px = window.innerWidth/100 * x_buffer; // in pixels
-      console.log(x_buffer_px);
       const y_buffer = window.innerHeight/100 * heatmapCellHeight * 1.4;
       const width_vw = (currentPredictionToolParameters.score_ranges.length * colorRangesLegendRangeWidthCoef) + x_buffer; // 2vw is the x_buffer for writing scores
       const vw_string = String(width_vw) + "vw";
@@ -55,7 +54,6 @@ const ColorRangesLegend = ({currentPredictionToolParameters, color_lists_array})
       ctx.textBaseline = "bottom"
       let font_size = (window.innerHeight/ 100 *  heatmapCellHeight * 1.2); //16
       ctx.font = String(font_size) + "px Arial" ;
-      console.log(font_size);
       ctx.fillText(
         currentPredictionToolParameters.score_ranges[0].start.toFixed(2),
         current_x,
