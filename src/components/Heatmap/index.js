@@ -325,7 +325,6 @@ function Heatmap( props ){
     ctx.fillStyle = 'black';
     // ctx.font = "0.8rem Arial"; // change based on device??????
     ctx.font = String(window.innerHeight * heatmapCellHeight * 0.95 / 100) + "px Arial" // 1.4 vh didn't work, so I had to resort to this
-
     const num_visible = sequence_length/canvas_scale;
     const browser_resize_ratio = (window.innerWidth/window.screen.availWidth); // max value is 1
     // the constant 20 in step_size calculation will be included in config.js
@@ -376,7 +375,6 @@ function Heatmap( props ){
     // return;
     const c = currentViewWindowRef.current;
     const ctx = c.getContext("2d");
-    // c.style.width = 'calc(80vw + 100px)';
 
     const current_view_window_rect = c.getBoundingClientRect();
     const w = current_view_window_rect.width; 
@@ -385,9 +383,8 @@ function Heatmap( props ){
     const ratio = window.devicePixelRatio;
     c.width = w * ratio;
     c.height = h * ratio;
-    // c.style.width = w + "px";
-    // c.style.height = h + "px";
     ctx.scale(ratio,ratio);
+    // 80vw + 100px;
     ctx.translate(50,0); // shift by the amount of buffer on the left (for the number index to render)
     // - 100 is IMPORTANT, THE OFFSET FROM LEFT AND RIGHT
     const heatmapRect_width =  w - 100; // actually the same as current_view_window_rect.width
@@ -419,7 +416,8 @@ function Heatmap( props ){
     const rightmost_visible_index = Math.min(Math.round( (canvas_originX/heatmapRect_width * sequence_length) + (sequence_length/canvas_scale)) , sequence_length );// max = length of sequence
     ctx.fillStyle = 'black';
     ctx.textBaseline = 'top';
-    ctx.font = '12px Arial';
+    ctx.font = String(window.innerHeight * heatmapCellHeight * 0.95 / 100) + "px Arial" // 1.4 vh didn't work, so I had to resort to this
+
     // if (((canvas_originX/heatmapRect_width * sequence_length) +1 ) > 10){ // if left most index is smaller than 20, textAlign to right;
     //     ctx.textAlign = 'right';
     // }
@@ -649,7 +647,12 @@ function Heatmap( props ){
     }      
     const mutation_risk_assessment = calculateRiskAssessment(mutation_risk_raw_value); // handles NaN
     // console.log(mutation_risk_assessment);
-    ctx.font = "15px Arial";
+    let font_size = 16;
+    if ((window.innerHeight * heatmapCellHeight * 0.95 / 100) > 15  ){
+      font_size = (window.innerHeight * heatmapCellHeight * 0.95 / 100);
+    } 
+    ctx.font = String(font_size) + "px Arial" ;
+
     ctx.textBaseline = "top";
     // const text = String(original_aminoacid_idx) + ". " + String(original_aminoacid) + " --> " + String(mutated_aminoacid) + " " + String(mutation_risk_raw_value) + " " + String(mutation_risk_assessment); 
     const position_string = String(original_aminoacid_idx) + ". " + String(original_aminoacid) + " --> " + String(mutated_aminoacid) + " " + mutation_risk_raw_value_string;
@@ -720,7 +723,12 @@ function Heatmap( props ){
     }
     let risk_strings = [];
     let risk_strings_colors = [];
-    ctx.font = "15px Arial";
+    let font_size = 16;
+    if ((window.innerHeight * heatmapCellHeight * 0.95 / 100) > 15  ){
+      font_size = (window.innerHeight * heatmapCellHeight * 0.95 / 100);
+    } 
+    ctx.font = String(font_size) + "px Arial" ;
+    console.log(font_size);
     ctx.textBaseline = "top"; 
     const median_value_string = "Median of values = " + String(cur_pos_median);
     let risk_strings_max_width = ctx.measureText(median_value_string).width;
