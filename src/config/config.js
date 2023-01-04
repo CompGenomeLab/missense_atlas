@@ -36,6 +36,11 @@ export const colorRangesLegendHeight = '85px';
 
 // prediction tool parameters
 // The substitutions with scores below and above this threshold (0.679) were assumed to be pathogenic and neutral,
+//start_color: "#ffa500",
+      // // start_color: "#fcedaa",
+      // end_color: "#981e2a",
+      // start_color: "#2c663c",
+      // end_color: "#ffa500",
 const phactboost_parameters = {
   toolname: "PHACT Boost",
   toolname_json: "phactboost",
@@ -45,7 +50,9 @@ const phactboost_parameters = {
       end: 0.679,
       risk_assessment: "pathogenic",
       start_color: "#981e2a",
-      end_color: "#fcedaa",
+      end_color: "#ffa500",
+      // start_color: "#981e2a",
+      // end_color: "#fcedaa",
       gradient_ratio:0.5
 
     },
@@ -53,8 +60,10 @@ const phactboost_parameters = {
       start: 0.679,
       end: 1.0,
       risk_assessment: "neutral",
-      start_color: "#fcedaa",
+      start_color: "#ffa500",
       end_color: "#2c663c",
+      // start_color: "#fcedaa",
+      // end_color: "#2c663c",
       gradient_ratio:0.5
     },
   ],
@@ -69,7 +78,9 @@ const phact_parameters = {
       end: 0.679,
       risk_assessment: "pathogenic",
       start_color: "#981e2a",
-      end_color: "#fcedaa",
+      end_color: "#ffa500",
+      // start_color: "#981e2a",
+      // end_color: "#fcedaa",
       gradient_ratio:0.5
 
     },
@@ -77,8 +88,10 @@ const phact_parameters = {
       start: 0.679,
       end: 1.0,
       risk_assessment: "neutral",
-      start_color: "#fcedaa",
+      start_color: "#ffa500",
       end_color: "#2c663c",
+      // start_color: "#fcedaa",
+      // end_color: "#2c663c",
       gradient_ratio:0.5
     },
   ],
