@@ -142,8 +142,7 @@ function SearchBox(){
           // handle success
           console.log('FOUND IN DB')
           setErrorMessage('');
-          navigate('/protein/md5sum' + final_md5Sum);
-
+          navigate('/protein/md5sum/' + final_md5Sum);
           console.log(response);
         })
         .catch(function (error) {

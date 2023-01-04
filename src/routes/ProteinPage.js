@@ -34,7 +34,6 @@ const ProteinPage = () => {
   // add ?q=1, to the url to get uniprot metadata
   //searchMethod is either md5sum, geneId, or uniprotId
   const { searchMethod,searchString } = useParams(); // searchString is either md5sum, geneid or uniprotId
-  console.log(useParams());
   const [md5sum, setMd5sum] = useState("");
   const [allProteinData, setAllProteinData] = useState({});
   const [proteinDataLoadingStatus, setProteinDataLoadingStatus] = useState("Fetching protein data");
@@ -128,7 +127,6 @@ const ProteinPage = () => {
   //  });
     
     let request_url = "";
-    console.log(searchMethod,searchString);
     if(searchMethod.toLowerCase() === 'md5sum'){
       request_url = "all_scores/md5sum/" + String(searchString);
       setMd5sum(searchString);
@@ -139,6 +137,7 @@ const ProteinPage = () => {
     if (searchMethod.toLowerCase() === 'geneid'){
       request_url = "all_scores/geneid/" + String(searchString);
     }
+    // just making sure request url exists
     if (request_url.length > 2){
       axios
         .get((database_url + request_url)) // cors policy

@@ -127,7 +127,7 @@ function Heatmap( props ){
           current_score = parseFloat(proteinData[i+1][aminoacid_ordering[j]]);
           if (isNaN(current_score))
           {
-            temp_heatmapColorsMatrix[i][j] = "#FFFFFF";
+            temp_heatmapColorsMatrix[i][j] = "#add8e6";
             continue;
           }
         }
@@ -137,7 +137,7 @@ function Heatmap( props ){
         }
         else{
           // doesn't exist and is not reference, similar to NaN value but harder to find, isn't as obvious, more insidious;
-          temp_heatmapColorsMatrix[i][j] = "#FFFFFF";
+          temp_heatmapColorsMatrix[i][j] = "#add8e6";
           continue;
         }
         let color_index;
@@ -175,7 +175,7 @@ function Heatmap( props ){
     {
       const cur_pos_median = calculateMedianOfPosition(i+1); // i+1, because proteinData.scores' index starts from 1;
       if (isNaN(cur_pos_median)){ // NaN value checking, it will be NaN if something went wrong (missing values or NaN values)
-        temp_heatmapMeanColors[i] = "#FFFFFF";
+        temp_heatmapMeanColors[i] = "#add8e6";
       }
       else{        
         let color_index;  

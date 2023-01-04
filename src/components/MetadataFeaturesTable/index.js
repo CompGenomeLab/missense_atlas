@@ -182,7 +182,7 @@ function MetadataFeaturesTable({ allFeaturesArray, sequenceLength, scaleAndOrigi
               alignItems: "center",
             }}
           >
-            <p style={{ fontSize: "1.5vh", textAlign: "end" }}>
+            <p style={{ fontSize: "1.3vh", textAlign: "end" }}>
               {category.split("_").join(" ")}
             </p>
           </div>
