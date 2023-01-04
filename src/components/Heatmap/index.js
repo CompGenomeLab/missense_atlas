@@ -728,7 +728,6 @@ function Heatmap( props ){
       font_size = (window.innerHeight * heatmapCellHeight * 0.95 / 100);
     } 
     ctx.font = String(font_size) + "px Arial" ;
-    console.log(font_size);
     ctx.textBaseline = "top"; 
     const median_value_string = "Median of values = " + String(cur_pos_median);
     let risk_strings_max_width = ctx.measureText(median_value_string).width;
