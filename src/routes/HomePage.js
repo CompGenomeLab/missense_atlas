@@ -7,7 +7,7 @@ const HomePage = () => {
     <>
       <h1>
         Welcome
-        <Link to="/protein/8a8c1b6c6d5e7589f18afd6455086c82">
+        <Link to="/protein/md5sum/8a8c1b6c6d5e7589f18afd6455086c82">
           go to TSBP1
         </Link>
       </h1>
