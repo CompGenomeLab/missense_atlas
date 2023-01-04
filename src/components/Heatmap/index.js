@@ -877,7 +877,7 @@ function Heatmap( props ){
           <button onClick={fetchDataTest}> Metadata test</button> */}
           {/* current_view_window left = aminoacidlegendwidht + 10px -50px (50 is the buffer for position number drawing)
            10px is the gap property in metadataFeatureTable grid */}
-          <div style={{marginBottom: String(heatmapCellHeight) + 'vh'}}>  
+          <div style={{marginBottom: String(heatmapCellHeight) + 'vh' , marginTop:'1vh'}}>  
             <canvas id="current_view_window" ref={currentViewWindowRef}
                         style= {{marginLeft:"calc(" + aminoAcidLegendWidth + " - 40px" , width:'calc(80vw + 100px)', height:currentVisibleWindowHeightJSX}}  > 
             </canvas>

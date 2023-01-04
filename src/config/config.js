@@ -6,8 +6,11 @@ export const color_mix_mode = "lch";
 export const database_url = "https://10.3.2.13:8080/database/"; // database base url
 
 // heatmap
+//aminoacidlegend colorrangeslegend and heatmap fonts are tied to heatmapCellHeight
 export const heatmapCellHeight = 1.6 // "2vh" will turn into vh in heatmap component;
 export const currentViewWindowNumRows = 2.5;
+export const colorRangesLegendNumRows = 2.5;
+
 export const heatmapSpaceBtwnSummaryNumRows = 2.5;
 export const heatmapSummaryNumRows = 3.2;
 export const heatmapAminoAcidCharactersNumRows = 2;
@@ -32,7 +35,7 @@ export const sub_lane_divider_coef = 2; // used to be divided by top margin, now
 export const filtered_categories = ['category','sub_lane'];  // sub_lane is calculated by us;
 
 export const colorRangesLegendRangeWidthCoef = 10; // each range will be this variable 'vw';
-export const colorRangesLegendHeight = '85px';
+// export const colorRangesLegendHeight = '85px';
 
 // prediction tool parameters
 // The substitutions with scores below and above this threshold (0.679) were assumed to be pathogenic and neutral,
@@ -47,7 +50,7 @@ const phactboost_parameters = {
   score_ranges: [
     {
       start: 0.0,
-      end: 0.679,
+      end: 0.35,
       risk_assessment: "pathogenic",
       start_color: "#981e2a",
       end_color: "#ffa500",
@@ -57,7 +60,7 @@ const phactboost_parameters = {
 
     },
     {
-      start: 0.679,
+      start: 0.35,
       end: 1.0,
       risk_assessment: "neutral",
       start_color: "#ffa500",
