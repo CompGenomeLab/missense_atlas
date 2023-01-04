@@ -62,7 +62,7 @@ const ProteinPage = () => {
   // find accessions with features Instead
   const findMetadataHumanAccAndIndices = (input_metadata) => { 
     let temp_indices = input_metadata?.reduce( ( cur_list ,cur_metadata,index) => {
-      if(cur_metadata?.organism?.taxonomy === 9606){
+      if(cur_metadata?.organism?.taxonomy === 9606 && cur_metadata.features?.length > 0){
         cur_list.push( {accession: cur_metadata.accession, index : index } );
       }
       return cur_list
@@ -185,7 +185,8 @@ const ProteinPage = () => {
           // we need to run the function on the input of API, can't use a constant value calculated before the api call
           // can't use metadataHumanAccAndIndices variable
           // setCurMetadataHumanIndex(findMetadataHumanAccAndIndices(response.data)[0].index);
-          setCurMetadataHumanIndex(0); // as the api only returns metadata for human;
+          const temp_human_index = findMetadataHumanAccAndIndices(response.data)[0]?.index; 
+          setCurMetadataHumanIndex(temp_human_index); // as the api only returns metadata for human;
           // IMPORTANT 0'th entry might not have features, SO find the first entry that has features?
           // else write no features exist for this entry;
         })
