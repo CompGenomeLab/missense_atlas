@@ -29,7 +29,7 @@ function App() {
     <Router>
       <Routes>
         <Route path = '/' element={<HomePage/>}/>
-        <Route path = '/protein/:md5sum' element={<ProteinPage/>}/> 
+        <Route path = '/protein/:searchMethod/:searchString' element={<ProteinPage/>}/> 
       </Routes>
     </Router>
     </>

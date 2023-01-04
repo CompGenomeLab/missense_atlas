@@ -32,7 +32,10 @@ import {
 
 const ProteinPage = () => {
   // add ?q=1, to the url to get uniprot metadata
-  const { md5sum } = useParams();
+  //searchMethod is either md5sum, geneId, or uniprotId
+  const { searchMethod,searchString } = useParams(); // searchString is either md5sum, geneid or uniprotId
+  console.log(useParams());
+  const [md5sum, setMd5sum] = useState("");
   const [allProteinData, setAllProteinData] = useState({});
   const [proteinDataLoadingStatus, setProteinDataLoadingStatus] = useState("Fetching protein data");
   const [metadata, setMetadata] = useState([]);
@@ -123,54 +126,53 @@ const ProteinPage = () => {
   //     requestCert: false,
   //     agent: false,
   //  });
-   
-    const request_url = "all_scores/md5sum/" + String(md5sum);
-    axios
-      .get((database_url + request_url)) // cors policy
-      .then(function (response) {
-        // console.log(response);
-        // add a function to calculate a data format for "tools combined", then add this to response.data;
-        // testing;
-        // delete response.data.Sift;
-        // delete response.data.Lists2;
-        const first_available_tool = all_prediction_tools_array.filter((tool) =>
-          Object.hasOwn(response.data, tool.toolname_json)
-        )[0];
-        setCurrentPredictionToolParameters(first_available_tool);
-        setAllProteinData(response.data);
-        setProteinDataLoadingStatus("Protein data loaded successfully");
-        // console.log("pdata = ");
-        // console.log(response.data);
-      })
-      .catch(function (error) {
-        // handle error
-        console.log(error);
-        setProteinDataLoadingStatus("Error loading protein data");
-      })
-      .then(function () {
-        console.log("api called for " + database_url + request_url);
-        // always executed
-      });
-  
     
-  }, [md5sum]);
+    let request_url = "";
+    console.log(searchMethod,searchString);
+    if(searchMethod.toLowerCase() === 'md5sum'){
+      request_url = "all_scores/md5sum/" + String(searchString);
+      setMd5sum(searchString);
+    }
+    if (searchMethod.toLowerCase() === 'uniprotid'){
+      request_url = "all_scores/uniprotid/" + String(searchString)
+    }
+    if (searchMethod.toLowerCase() === 'geneid'){
+      request_url = "all_scores/geneid/" + String(searchString);
+    }
+    if (request_url.length > 2){
+      axios
+        .get((database_url + request_url)) // cors policy
+        .then(function (response) {
+          // console.log(response);
+          // add a function to calculate a data format for "tools combined", then add this to response.data;
+          // testing;
+          // delete response.data.Sift;
+          // delete response.data.Lists2;
+          const first_available_tool = all_prediction_tools_array.filter((tool) =>
+            Object.hasOwn(response.data, tool.toolname_json)
+          )[0];
+          setCurrentPredictionToolParameters(first_available_tool);
+          setAllProteinData(response.data);
+          setProteinDataLoadingStatus("Protein data loaded successfully");
+          setMd5sum(response.data?.md5sum)
+          // console.log("pdata = ");
+          // console.log(response.data);
+        })
+        .catch(function (error) {
+          // handle error
+          console.log(error);
+          setProteinDataLoadingStatus("Error loading protein data");
+        })
+        .then(function () {
+          console.log("api called for " + database_url + request_url);
+          // always executed
+        });
+    }
+    
+  }, [searchMethod, searchString]);
 
  
   useEffect(() => {
-    // fetch metadata
-
-    // const findHumanIndex = (input_metadata) => {
-    //   let i = 0;
-    //   while (input_metadata[i]?.organism?.taxonomy !== 9606) {
-    //     i += 1;
-    //     if (i > 2000) {
-    //       // to make sure we don't get an infinite loop
-    //       console.log("Couldn't find the human protein in metadata");
-    //       return -1;
-    //     }
-    //   }
-    //   return i;
-    // };
     const fetchMetadata = () => {
       axios
         .get( // &organism=Homo%20sapiens to only get the results for human proteins
@@ -195,7 +197,9 @@ const ProteinPage = () => {
           console.log("api called to fetfch metadata");
         });
     };
-    fetchMetadata();
+    if (md5sum.length === 32){
+      fetchMetadata();
+    }
   }, [md5sum]);
 
   const helper_switch_tool_find_minmax_median_of_tool_scores_provean = (prediction_tool_parameters) => {
