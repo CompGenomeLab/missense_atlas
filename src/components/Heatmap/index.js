@@ -14,6 +14,9 @@ import {
   currentViewWindowNumRows,
   aa_position_notches_threshold,
   heatmapAminoAcidCharactersNumRows,
+  all_prediction_tools_array,
+  tools_negative_synonyms,
+  // tools_positive_synonyms
 } from "../../config/config";
 // const aminoAcidLegendWidth = 120;
 // const number_of_colors = 30;
@@ -21,18 +24,35 @@ import {
 // yukleme ekranı
 function Heatmap( props ){
   const {currentPredictionToolParameters,proteinData,color_lists_array,number_of_colors, scaleAndOriginX, setScaleAndOriginX } = props;
-
     // maybe looping over the whole proteinData makes a differnece but probably not much
     // used use memo to not define a function and call it in the next line, because it is easier to read;
     // immediately invoked function expresssions can be used too, but there is no harm in useMemo I think
+
+  const available_tools_list = useMemo( () => {
+    if(currentPredictionToolParameters.toolname_json === 'AggregatorLocal'){
+      return all_prediction_tools_array.filter( tool => Object.hasOwn(proteinData, tool.toolname_json) );
+    }
+    return [currentPredictionToolParameters];
+  },[currentPredictionToolParameters,proteinData] )
+
   const sequence_length = useMemo ( () => { // calculate sequence length based on the return value of the api
+    /// aggregator additionnal code
+    let sequence;
+    if (currentPredictionToolParameters.toolname_json === 'AggregatorLocal'){
+      const first_tool_name = available_tools_list[0].toolname_json;
+      sequence = proteinData[first_tool_name];
+    }
+    else{
+      sequence = proteinData;
+    }
+    // aggregator code ends;
     let i = 1;
-    while( Object.hasOwn (proteinData, i)  )
+    while( Object.hasOwn (sequence, i)  )
     {
       i += 1;
     }
     return i - 1 ;
-  }, [proteinData] )
+  }, [proteinData,currentPredictionToolParameters.toolname_json,available_tools_list] )
   const heatmapRef = useRef(null); // ref for the heatmap in top
   const positionsRef = useRef(null); // for showing heatmap indices between the heatmap's 20 aminoacids and heatmap summary
 
@@ -47,21 +67,21 @@ function Heatmap( props ){
   const [prevTime, setPrevTime] = useState( () => Date.now() ); // limit number of drawings per second, must have for resizing window
 
   // handles NaN
-  const calculateMedianOfPosition = useCallback ( (i) => {
+  const calculateMedianOfPosition = (i,input_protein_data,tool_parameters) => {
     let cur_pos_array = [];
     let ref_flag = true;
     for (let j = 0; j<20; j++) // for each aminoacid
     {
         let current_score = "Missing";
-        if (Object.hasOwn(proteinData[i] , aminoacid_ordering[j]  )  ){
-          current_score = parseFloat(proteinData[i][aminoacid_ordering[j]]);
+        if (Object.hasOwn(input_protein_data[i] , aminoacid_ordering[j]  )  ){
+          current_score = parseFloat(input_protein_data[i][aminoacid_ordering[j]]);
           if(isNaN(current_score) ){ // typeof(current_score) !== 'number'
             // NaN value reached Nan nan
             return "There is a NaN value"; // used in heatmap median colors
           }
         }
         else if (ref_flag){ // NEED TO ACCOUNT FOR MISSING VALUES !!!!
-          current_score = currentPredictionToolParameters.ref_value;
+          current_score = tool_parameters.ref_value;
           ref_flag = false;
         }
         if (current_score !== "Missing"){
@@ -76,17 +96,17 @@ function Heatmap( props ){
     if (cur_pos_array.length !== 20){
       cur_pos_median = "There are missing values";
     }
-    else if (currentPredictionToolParameters.ref_value === 0){// biger or equal to, for the case of all tools prediction;
-      cur_pos_median = cur_pos_array[10].toFixed(3); 
+    else if (tool_parameters.ref_value === 0){// biger or equal to, for the case of all tools prediction;
+      cur_pos_median = cur_pos_array[10].toFixed(3);  // elements are numbers, won't ever be strings;
     }
     else{ // 1 is benign, so final element isn't considered in median calculation, 
       cur_pos_median = cur_pos_array[9].toFixed(3); 
     } // this will also work in the special case of visualizing all of the tools;
     return cur_pos_median;
-  },[proteinData,currentPredictionToolParameters.ref_value])
+  }
 
   // handles NaN;
-  const calculateRiskAssessment = (mutation_risk_raw_value) => {
+  const calculateRiskAssessment = (mutation_risk_raw_value, tool_parameters) => {
 
     if (mutation_risk_raw_value === "Missing value"){
       return "Missing value";
@@ -95,8 +115,6 @@ function Heatmap( props ){
       //NaN
       return "NaN value in data";
     }
-    
-    const tool_parameters = currentPredictionToolParameters;
     let mutation_risk_assessment // 'Neutral';  // change based on mutation_risk_raw value;
       // score_ranges:[ {start:0.00, end:0.15, risk_assessment : ' benign' , start_color:"2C663C", end_color:"D3D3D3" } , 
       //            {start:0.15, end:0.85, risk_assessment :'possibly damaging',start_color:"D3D3D3", end_color:"FFA500" }, 
@@ -113,31 +131,69 @@ function Heatmap( props ){
     }
   }
 
+  // hard to read, but not broken;
+
+  const helperGetPositionScore = useCallback( (i,j,input_protein_data) => {
+    let current_score;
+    // everything is normal;
+    if (Object.hasOwn(input_protein_data[i+1] , aminoacid_ordering[j]  )  ){
+      current_score = parseFloat(input_protein_data[i+1][aminoacid_ordering[j]]);
+      if (isNaN(current_score))
+      {
+        // temp_heatmapColorsMatrix[i][j] = "#add8e6";
+        return "NaN";
+      }
+    }
+    else if (aminoacid_ordering[j] === input_protein_data[i+1]?.ref){
+      // doesn't exist because it is the ref, everything going normal
+      current_score = currentPredictionToolParameters.ref_value;
+    }
+    else{
+      // doesn't exist and is not reference, similar to NaN value but harder to find, isn't as obvious, more insidious;
+      // temp_heatmapColorsMatrix[i][j] = "#add8e6";
+      return "Missin Value";
+    }    
+    return current_score;
+  },[currentPredictionToolParameters.ref_value]);
+
+
+  const helperGetPositionAggregateScore = useCallback( (i,j) => {
+    let negative_count = 0;
+    let negative_predicting_tools_array = [];
+    for (let k = 0; k < available_tools_list.length; k++){
+      const cur_tool = available_tools_list[k];
+      const cur_score = helperGetPositionScore(i,j,proteinData[cur_tool.toolname_json]);
+      const cur_risk_assessment = calculateRiskAssessment(cur_score,cur_tool);
+      if ( tools_negative_synonyms.includes(cur_risk_assessment)  ){
+        negative_count += 1;
+        negative_predicting_tools_array.push(cur_tool.toolname);
+      }      
+    }
+    return {score: negative_count , pred_tools: negative_predicting_tools_array};
+  },[available_tools_list,helperGetPositionScore,proteinData]);
+
   const heatmapColors = useMemo( () => {
-    if (currentPredictionToolParameters.score_ranges.length !== color_lists_array.length){
+    console.log("colors");
+    if (currentPredictionToolParameters.score_ranges?.length !== color_lists_array.length){
       return
     }
+    // 2 helper functio
+   
+
     // 2d array; row count = sequence_length cols = 20, as we are looping the same way in drawheatmap etc.
     let temp_heatmapColorsMatrix = Array(sequence_length).fill().map(entry => Array(2).fill(-1)) 
     for(let i = 0; i< sequence_length; i++){
       for (let j = 0; j <20; j++) // aminoacid_ordering
       {
         let current_score;
-        if (Object.hasOwn(proteinData[i+1] , aminoacid_ordering[j]  )  ){
-          current_score = parseFloat(proteinData[i+1][aminoacid_ordering[j]]);
-          if (isNaN(current_score))
-          {
-            temp_heatmapColorsMatrix[i][j] = "#add8e6";
-            continue;
-          }
-        }
-        else if (aminoacid_ordering[j] === proteinData[i+1].ref){
-          // doesn't exist because it is the ref, everything going normal
-          current_score = currentPredictionToolParameters.ref_value;
+        if (currentPredictionToolParameters.toolname_json === 'AggregatorLocal'){
+          current_score = helperGetPositionAggregateScore(i,j).score;
         }
         else{
-          // doesn't exist and is not reference, similar to NaN value but harder to find, isn't as obvious, more insidious;
-          temp_heatmapColorsMatrix[i][j] = "#add8e6";
+          current_score = helperGetPositionScore(i,j,proteinData);
+        }
+        if (isNaN(current_score)){
+          temp_heatmapColorsMatrix[i][j] = '#add8e6'
           continue;
         }
         let color_index;
@@ -164,16 +220,32 @@ function Heatmap( props ){
   return temp_heatmapColorsMatrix;
     
     // if( Object.hasOwn(proteinData) )
-  },[color_lists_array,proteinData,currentPredictionToolParameters,number_of_colors,sequence_length])
+  },[color_lists_array,proteinData,currentPredictionToolParameters,number_of_colors,sequence_length,helperGetPositionAggregateScore,helperGetPositionScore])
 
   const heatmapMeanColors = useMemo( () => {
+    console.log("meancolors");
     if (currentPredictionToolParameters.score_ranges.length !== color_lists_array.length){
       return
     }
     let temp_heatmapMeanColors = Array(sequence_length).fill(-1);
     for ( let i = 0; i < sequence_length; i++) // alternative is to count greens/yellows, or take the average of their colors
     {
-      const cur_pos_median = calculateMedianOfPosition(i+1); // i+1, because proteinData.scores' index starts from 1;
+      let cur_pos_median;
+      if (currentPredictionToolParameters.toolname_json !== 'AggregatorLocal'){
+        cur_pos_median = calculateMedianOfPosition(i+1,proteinData,currentPredictionToolParameters); // i+1, because proteinData.scores' index starts from 1;
+      }
+      else{
+        let negative_count = 0;
+        for (let k = 0; k< available_tools_list.length; k++){
+          const cur_tool = available_tools_list[k];
+          const cur_tool_median = calculateMedianOfPosition(i+1,proteinData[cur_tool.toolname_json],cur_tool);
+          const cur_assessment = calculateRiskAssessment(cur_tool_median,cur_tool);
+          if (tools_negative_synonyms.includes(cur_assessment)){
+            negative_count += 1;
+          }
+        }
+        cur_pos_median = negative_count;
+      }
       if (isNaN(cur_pos_median)){ // NaN value checking, it will be NaN if something went wrong (missing values or NaN values)
         temp_heatmapMeanColors[i] = "#add8e6";
       }
@@ -200,7 +272,7 @@ function Heatmap( props ){
     } 
     return temp_heatmapMeanColors;
 
-  },[color_lists_array,currentPredictionToolParameters,number_of_colors,sequence_length,calculateMedianOfPosition] )
+  },[color_lists_array,currentPredictionToolParameters,number_of_colors,sequence_length,available_tools_list,proteinData] )
   // callback because it is in useEffect dependency array,
   const drawHeatmap2 = useCallback (() => { // scale is given as parameter right now;
       //// be careful, cell_height and width must be the same in the tooltio, if you change this also change tooltip;
@@ -260,7 +332,6 @@ function Heatmap( props ){
       {
         ctx.fillStyle = heatmapMeanColors[i];
         ctx.fillRect(i * cell_width ,(20 + heatmapSpaceBtwnSummaryNumRows )  * cell_height ,cell_width , (cell_height* heatmapSummaryNumRows) );
-        
       } 
       ctx.font = String(window.innerHeight * heatmapAminoAcidCharactersNumRows * 0.8 / 100) + "px Arial"
       const aa_character_text_metrics = ctx.measureText("M"); // widest character
@@ -273,7 +344,14 @@ function Heatmap( props ){
         ctx.scale(1/canvas_scale,1);
         for ( let i = leftmost_visible_index; i< rightmost_visible_index; i++) // alternative is to count greens/yellows, or take the average of their colors
         {
-          const cur_pos_aminoacid = proteinData[i+1]?.ref;
+          let cur_pos_aminoacid;
+          if (currentPredictionToolParameters.toolname_json !== 'AggregatorLocal'){
+            cur_pos_aminoacid = proteinData[i+1]?.ref;
+          }
+          else{
+            const first_tool_name = available_tools_list[0].toolname_json;
+            cur_pos_aminoacid = proteinData[first_tool_name][i+1]?.ref;
+          }
           ctx.textAlign = "center";
           ctx.textBaseline = "middle";
           ctx.fillText(
@@ -292,7 +370,7 @@ function Heatmap( props ){
 
     // const end_time = Date.now();
     // console.log("draw time = " + String(end_time - start_time));
-  },[scaleAndOriginX.originX,scaleAndOriginX.scale,sequence_length,color_lists_array,currentPredictionToolParameters,heatmapColors,heatmapMeanColors,proteinData] );
+  },[scaleAndOriginX.originX,scaleAndOriginX.scale,sequence_length,color_lists_array,currentPredictionToolParameters,heatmapColors,heatmapMeanColors,proteinData,available_tools_list] );
   // callback because it is in useEffect dependency array;
 
   const drawHeatmapPositions = useCallback ( () => {
@@ -613,9 +691,15 @@ function Heatmap( props ){
   
   
   const drawTooltipHeatmapMain = (c,cHeatmap,e,x_offset,y_offset) => {
-    const tool_parameters =  currentPredictionToolParameters;
     // tooltip ref variables
     const ctx = c.getContext("2d");      
+    ctx.textBaseline = "top";
+    ctx.textAlign = "center";
+    let font_size = 16;
+    if ((window.innerHeight * heatmapCellHeight * 0.95 / 100) > 15  ){
+      font_size = (window.innerHeight * heatmapCellHeight * 0.95 / 100);
+    } 
+    ctx.font = String(font_size) + "px Arial" ;
     //heatmap ref variables
     const heatmapRect = cHeatmap.getBoundingClientRect();  // !! get boundaries of the heatmap//console.log(rect);
     const heatmapRect_height = heatmapRect.height;
@@ -628,53 +712,57 @@ function Heatmap( props ){
     
     const canvas_scale = scaleAndOriginX.scale; // value of zoom before scroll event
     const canvas_originX_prev = scaleAndOriginX.originX * heatmapRect_width; // QZY
+    
+    
+
+
     //const canvas_originX_prev = scaleAndOriginX.originX;
     let real_xcor =  canvas_originX_prev + (mouse_xcor/canvas_scale); // real x coordinate of the mouse pointer, this line and the if else block is reused in tooltip function
-          
-    const original_aminoacid_idx = Math.max(Math.ceil(real_xcor/cell_width),1);
-    const original_aminoacid = proteinData[original_aminoacid_idx].ref;
+    //  | | | | => 0,1,2;
+    const original_aminoacid_idx = Math.max(Math.ceil(real_xcor/cell_width),1) ;
     const mutated_aminoacid_idx = Math.min(Math.floor(mouse_ycor/cell_height),19);
     const mutated_aminoacid = aminoacid_ordering[mutated_aminoacid_idx]; // the resulting aminoacid from SNP mutation    
-    let mutation_risk_raw_value_string;
-    let mutation_risk_raw_value;
-    if ( Object.hasOwn(proteinData[original_aminoacid_idx] , mutated_aminoacid)  ){
-      mutation_risk_raw_value = parseFloat(proteinData[original_aminoacid_idx][mutated_aminoacid]);
-      mutation_risk_raw_value_string = mutation_risk_raw_value.toFixed(3);
+    if (currentPredictionToolParameters.toolname_json !== 'AggregatorLocal'){
+      const original_aminoacid = proteinData[original_aminoacid_idx].ref;
+      const mutation_risk_raw_value = helperGetPositionScore(original_aminoacid_idx -1 ,mutated_aminoacid_idx,proteinData); 
+      const mutation_risk_assessment = calculateRiskAssessment(mutation_risk_raw_value, currentPredictionToolParameters); // handles NaN
+      // console.log(mutation_risk_assessment);
+      
+      // const text = String(original_aminoacid_idx) + ". " + String(original_aminoacid) + " --> " + String(mutated_aminoacid) + " " + String(mutation_risk_raw_value) + " " + String(mutation_risk_assessment); 
+      const position_string = String(original_aminoacid_idx) + ". " + String(original_aminoacid) + " --> " + String(mutated_aminoacid) + " " + String(mutation_risk_raw_value);
+      const risk_string =  String(mutation_risk_assessment);
+      const strings_max_width = Math.max(ctx.measureText(position_string).width , ctx.measureText(risk_string).width);
+      const strings_max_height = Math.max(
+      (ctx.measureText(position_string).actualBoundingBoxAscent + ctx.measureText(position_string).actualBoundingBoxDescent ) ,
+      (ctx.measureText(risk_string).actualBoundingBoxAscent + ctx.measureText(risk_string).actualBoundingBoxDescent) );
+
+      ctx.fillStyle="black"
+      ctx.fillRect(mouse_xcor, mouse_ycor + y_offset - (4 * strings_max_height) -2  , strings_max_width + 10  , strings_max_height * 2 + 10 );
+
+      ctx.fillStyle = "white";
+      ctx.fillText(position_string, mouse_xcor + ((strings_max_width )/2) + 5 , mouse_ycor + y_offset -  (4 * strings_max_height) + 2 )
+      ctx.fillStyle = heatmapColors[original_aminoacid_idx -1 ][mutated_aminoacid_idx]; // -1 because of heatmapColors is 0 indexed;
+      ctx.fillText(risk_string ,mouse_xcor + ((strings_max_width )/2) + 5 , mouse_ycor + y_offset - (4 * strings_max_height) + strings_max_height + 4 );
     }
-    else if (proteinData[original_aminoacid_idx].ref === mutated_aminoacid){// if field doesn't exist but is the refernce aminoacid, working as intended no bug, or NaN situation
-        mutation_risk_raw_value = tool_parameters.ref_value;
-        mutation_risk_raw_value_string = mutation_risk_raw_value.toFixed(3);
-      }
     else{
-      mutation_risk_raw_value = "Missing value";
-      mutation_risk_raw_value_string = "Missing value";
+      // original_aminoacid can be split into multiplelnes
+      const first_tool_name = available_tools_list[0]?.toolname_json;
+      const original_aminoacid = proteinData?.[first_tool_name]?.[original_aminoacid_idx]?.ref;
+      const num_negative_predictions = helperGetPositionAggregateScore(original_aminoacid_idx-1,mutated_aminoacid_idx).score;
+      const position_string = String(original_aminoacid_idx) + ". " + String(original_aminoacid) + " --> " + String(mutated_aminoacid);
+      const risk_string =  String(num_negative_predictions) + " out of " + String(available_tools_list.length) + " predicts pathogenic";
+      const strings_max_width = Math.max(ctx.measureText(position_string).width , ctx.measureText(risk_string).width);
+      const strings_max_height = Math.max(
+      (ctx.measureText(position_string).actualBoundingBoxAscent + ctx.measureText(position_string).actualBoundingBoxDescent ) ,
+      (ctx.measureText(risk_string).actualBoundingBoxAscent + ctx.measureText(risk_string).actualBoundingBoxDescent) );
+      ctx.fillStyle="black"
+      ctx.fillRect(mouse_xcor, mouse_ycor + y_offset - (4 * strings_max_height) -2  , strings_max_width + 10  , strings_max_height * 2 + 10 );
 
-    }      
-    const mutation_risk_assessment = calculateRiskAssessment(mutation_risk_raw_value); // handles NaN
-    // console.log(mutation_risk_assessment);
-    let font_size = 16;
-    if ((window.innerHeight * heatmapCellHeight * 0.95 / 100) > 15  ){
-      font_size = (window.innerHeight * heatmapCellHeight * 0.95 / 100);
-    } 
-    ctx.font = String(font_size) + "px Arial" ;
-
-    ctx.textBaseline = "top";
-    // const text = String(original_aminoacid_idx) + ". " + String(original_aminoacid) + " --> " + String(mutated_aminoacid) + " " + String(mutation_risk_raw_value) + " " + String(mutation_risk_assessment); 
-    const position_string = String(original_aminoacid_idx) + ". " + String(original_aminoacid) + " --> " + String(mutated_aminoacid) + " " + mutation_risk_raw_value_string;
-    const risk_string =  String(mutation_risk_assessment);
-    const strings_max_width = Math.max(ctx.measureText(position_string).width , ctx.measureText(risk_string).width);
-    const strings_max_height = Math.max(
-    (ctx.measureText(position_string).actualBoundingBoxAscent + ctx.measureText(position_string).actualBoundingBoxDescent ) ,
-    (ctx.measureText(risk_string).actualBoundingBoxAscent + ctx.measureText(risk_string).actualBoundingBoxDescent) );
-
-    ctx.fillStyle="black"
-    ctx.fillRect(mouse_xcor, mouse_ycor + y_offset - (4 * strings_max_height) -2  , strings_max_width + 10  , strings_max_height * 2 + 10 );
-
-    ctx.fillStyle = "white";
-    ctx.textAlign = "center"; 
-    ctx.fillText(position_string, mouse_xcor + ((strings_max_width )/2) + 5 , mouse_ycor + y_offset -  (4 * strings_max_height) + 2 )
-    ctx.fillStyle = heatmapColors[original_aminoacid_idx -1 ][mutated_aminoacid_idx]; // -1 because of heatmapColors is 0 indexed;
-    ctx.fillText(risk_string ,mouse_xcor + ((strings_max_width )/2) + 5 , mouse_ycor + y_offset - (4 * strings_max_height) + strings_max_height + 4 );
+      ctx.fillStyle = "white";
+      ctx.fillText(position_string, mouse_xcor + ((strings_max_width )/2) + 5 , mouse_ycor + y_offset -  (4 * strings_max_height) + 2 )
+      ctx.fillStyle = heatmapColors[original_aminoacid_idx -1 ][mutated_aminoacid_idx]; // -1 because of heatmapColors is 0 indexed;
+      ctx.fillText(risk_string ,mouse_xcor + ((strings_max_width )/2) + 5 , mouse_ycor + y_offset - (4 * strings_max_height) + strings_max_height + 4 );
+    }
     // console.log(ctx.measureText(text).width); // 260; 
 
     // rect size = text size + 30,
@@ -685,7 +773,14 @@ function Heatmap( props ){
   const drawTooltipHeatmapSummary = (c,cHeatmap,e,x_offset,y_offset) => { // to be completd
     const tool_parameters = currentPredictionToolParameters;
     // tooltip ref variables
-    const ctx = c.getContext("2d");      
+    const ctx = c.getContext("2d");     
+    ctx.textBaseline = "top";
+    ctx.textAlign = "center"; 
+    let font_size = 16;
+    if ((window.innerHeight * heatmapCellHeight * 0.95 / 100) > 15  ){
+      font_size = (window.innerHeight * heatmapCellHeight * 0.95 / 100);
+    } 
+    ctx.font = String(font_size) + "px Arial" ;
     //heatmap ref variables
     const heatmapRect = cHeatmap.getBoundingClientRect();  // !! get boundaries of the heatmap//console.log(rect);
     const heatmapRect_width = heatmapRect.width;
@@ -695,82 +790,115 @@ function Heatmap( props ){
     const canvas_scale = scaleAndOriginX.scale; // value of zoom before scroll event
     const canvas_originX_prev = scaleAndOriginX.originX * heatmapRect_width; // QZY
     //const canvas_originX_prev = scaleAndOriginX.originX;
+    
+
     let real_xcor =  canvas_originX_prev + (mouse_xcor/canvas_scale); // real x coordinate of the mouse pointer, this line and the if else block is reused in tooltip function
+    
     const original_aminoacid_idx = Math.max(Math.ceil(real_xcor/cell_width),1) // real_xcor 0 to cell_wid = 0th aminoacid; realxcor cell_width to 2*cell_width = 1st aminoacid; // +1 because our scores start from 1;
-    const original_aminoacid = proteinData[original_aminoacid_idx].ref;
-    const cur_pos_median = calculateMedianOfPosition(original_aminoacid_idx);
-    // for every risk assessment, make a list of which aminoacids are deleterious, which of them are benign for that position;
-    let risk_assessment_buckets = {};
-    for (let i = 0; i < tool_parameters.score_ranges.length; i++) 
-    {
-      risk_assessment_buckets[tool_parameters.score_ranges[i].risk_assessment] = new Set();
-    }
-    risk_assessment_buckets["NaN value in data"]= new Set();
+    if (currentPredictionToolParameters.toolname_json !== 'AggregatorLocal'){
+      const original_aminoacid = proteinData[original_aminoacid_idx].ref;
+      const cur_pos_median = calculateMedianOfPosition(original_aminoacid_idx-1,proteinData,currentPredictionToolParameters);
+      // for every risk assessment, make a list of which aminoacids are deleterious, which of them are benign for that position;
+      let risk_assessment_buckets = {};
+      for (let i = 0; i < tool_parameters.score_ranges.length; i++) 
+      {
+        risk_assessment_buckets[tool_parameters.score_ranges[i].risk_assessment] = new Set();
+      }
+      risk_assessment_buckets["NaN value in data"]= new Set();
 
-    for(let i = 0; i < 20; i++) // for each aminoacid determine their risk assessment;
-    {
-      let mutation_risk_raw_value;
-      const mutated_aminoacid = aminoacid_ordering[i];
-      if ( Object.hasOwn(proteinData[original_aminoacid_idx] , mutated_aminoacid)  ){
-        mutation_risk_raw_value = parseFloat(proteinData[original_aminoacid_idx][mutated_aminoacid]);
-        // if Nan, calculate risk assessment will handle this case;
+      for(let i = 0; i < 20; i++) // for each aminoacid determine their risk assessment;
+      {
+        let mutation_risk_raw_value;
+        const mutated_aminoacid = aminoacid_ordering[i];
+        if ( Object.hasOwn(proteinData[original_aminoacid_idx] , mutated_aminoacid)  ){
+          mutation_risk_raw_value = parseFloat(proteinData[original_aminoacid_idx][mutated_aminoacid]);
+          // if Nan, calculate risk assessment will handle this case;
+        }
+        else if (proteinData[original_aminoacid_idx].ref === mutated_aminoacid)
+        {// if field doesn't exist but is the refernce aminoacid, working as intended no bug, or NaN situation
+          mutation_risk_raw_value = tool_parameters.ref_value;
+        }
+        else{ 
+          // Missing field for aminoacid, instead of value being NaN, This bug isn't as obvious, harder to find;
+          mutation_risk_raw_value = "NaN value in data";
+        }
+        const mutation_risk_assessment = calculateRiskAssessment(mutation_risk_raw_value, currentPredictionToolParameters);
+        risk_assessment_buckets[mutation_risk_assessment].add(mutated_aminoacid);
       }
-      else if (proteinData[original_aminoacid_idx].ref === mutated_aminoacid)
-      {// if field doesn't exist but is the refernce aminoacid, working as intended no bug, or NaN situation
-        mutation_risk_raw_value = tool_parameters.ref_value;
-      }
-      else{ 
-        // Missing field for aminoacid, instead of value being NaN, This bug isn't as obvious, harder to find;
-        mutation_risk_raw_value = "NaN value in data";
-      }
-      const mutation_risk_assessment = calculateRiskAssessment(mutation_risk_raw_value);
-      risk_assessment_buckets[mutation_risk_assessment].add(mutated_aminoacid);
-    }
-    let risk_strings = [];
-    let risk_strings_colors = [];
-    let font_size = 16;
-    if ((window.innerHeight * heatmapCellHeight * 0.95 / 100) > 15  ){
-      font_size = (window.innerHeight * heatmapCellHeight * 0.95 / 100);
-    } 
-    ctx.font = String(font_size) + "px Arial" ;
-    ctx.textBaseline = "top"; 
-    const median_value_string = "Median of values = " + String(cur_pos_median);
-    let risk_strings_max_width = ctx.measureText(median_value_string).width;
-    let risk_strings_max_height = ctx.measureText(median_value_string).actualBoundingBoxAscent + ctx.measureText(median_value_string).actualBoundingBoxDescent;
-    for(let i = 0; i< tool_parameters.score_ranges.length; i++){
-      const cur_assessment = tool_parameters.score_ranges[i].risk_assessment;
-      const num_of_cur_assessment = risk_assessment_buckets[cur_assessment].size;
-      const cur_string = "" + cur_assessment + " : " + String(num_of_cur_assessment);
-      risk_strings.push(cur_string);
-      const cur_risk_string_color = String(color_lists_array[i][Math.floor(number_of_colors/2)]); 
-      risk_strings_colors.push(cur_risk_string_color);
-      const cur_string_metrics = ctx.measureText(cur_string);
-      const cur_string_width = cur_string_metrics.width;
-      const cur_string_height = cur_string_metrics.actualBoundingBoxAscent + cur_string_metrics.actualBoundingBoxDescent;
+      let risk_strings = [];
+      let risk_strings_colors = [];
+      
+      const median_value_string = "Median of values = " + String(cur_pos_median);
+      let risk_strings_max_width = ctx.measureText(median_value_string).width;
+      let risk_strings_max_height = ctx.measureText(median_value_string).actualBoundingBoxAscent + ctx.measureText(median_value_string).actualBoundingBoxDescent;
+      for(let i = 0; i< tool_parameters.score_ranges.length; i++){
+        const cur_assessment = tool_parameters.score_ranges[i].risk_assessment;
+        const num_of_cur_assessment = risk_assessment_buckets[cur_assessment].size;
+        const cur_string = "" + cur_assessment + " : " + String(num_of_cur_assessment);
+        risk_strings.push(cur_string);
+        const cur_risk_string_color = String(color_lists_array[i][Math.floor(number_of_colors/2)]); 
+        risk_strings_colors.push(cur_risk_string_color);
+        const cur_string_metrics = ctx.measureText(cur_string);
+        const cur_string_width = cur_string_metrics.width;
+        const cur_string_height = cur_string_metrics.actualBoundingBoxAscent + cur_string_metrics.actualBoundingBoxDescent;
 
-      if (cur_string_width > risk_strings_max_width){
-        risk_strings_max_width = cur_string_width ;
+        if (cur_string_width > risk_strings_max_width){
+          risk_strings_max_width = cur_string_width ;
+        }
+        if (cur_string_height > risk_strings_max_height){
+          risk_strings_max_height = cur_string_height;
+        }
       }
-      if (cur_string_height > risk_strings_max_height){
-        risk_strings_max_height = cur_string_height;
-      }
-    }
-    risk_strings.push(median_value_string);
-    risk_strings_colors.push(heatmapMeanColors[original_aminoacid_idx -1 ]); // because original_aminoacid_idx starts from 1 and heatmapMeancolors start from 0; 
-    // risk_strings.push(median_value_string)
+      risk_strings.push(median_value_string);
+      risk_strings_colors.push(heatmapMeanColors[original_aminoacid_idx -1 ]); // because original_aminoacid_idx starts from 1 and heatmapMeancolors start from 0; 
+      // risk_strings.push(median_value_string)
 
-    ctx.fillStyle="black"
-    ctx.fillRect((mouse_xcor),( mouse_ycor + y_offset - 85) , (risk_strings_max_width + 10) , (risk_strings_max_height * (risk_strings.length + 1) + 10 ) ); // cell_width*40,cell_height*5 250 for sift, 300 for polyphen
-    // ctx.fillRect(mouse_xcor + x_offset , mouse_ycor + y_offset ,100 , 100); // cell_width*40,cell_height*5 250 for sift, 300 for polyphen
-    ctx.fillStyle = "white";
-    ctx.textAlign = "center";
-    const position_string = String(original_aminoacid_idx) + ". " + String(original_aminoacid); 
-    ctx.fillText(position_string, mouse_xcor + ((risk_strings_max_width + 10)/2) , mouse_ycor + y_offset -80 )
-    for(let i = 0; i < risk_strings.length; i++)
-    {
-      ctx.fillStyle = risk_strings_colors[i];
-      ctx.fillText( risk_strings[i] , (mouse_xcor + ((risk_strings_max_width + 10)/2) ) , mouse_ycor + y_offset - 80 + risk_strings_max_height  + (i * risk_strings_max_height) );
+      ctx.fillStyle="black"
+      ctx.fillRect((mouse_xcor),( mouse_ycor + y_offset - 85) , (risk_strings_max_width + 10) , (risk_strings_max_height * (risk_strings.length + 1) + 10 ) ); // cell_width*40,cell_height*5 250 for sift, 300 for polyphen
+      // ctx.fillRect(mouse_xcor + x_offset , mouse_ycor + y_offset ,100 , 100); // cell_width*40,cell_height*5 250 for sift, 300 for polyphen
+      ctx.fillStyle = "white";
+      const position_string = String(original_aminoacid_idx) + ". " + String(original_aminoacid); // definitely smaller than median value string; so I didn't add it into calculation of risk_strings;
+      ctx.fillText(position_string, mouse_xcor + ((risk_strings_max_width + 10)/2) , mouse_ycor + y_offset -80 )
+      for(let i = 0; i < risk_strings.length; i++)
+      {
+        ctx.fillStyle = risk_strings_colors[i];
+        ctx.fillText( risk_strings[i] , (mouse_xcor + ((risk_strings_max_width + 10)/2) ) , mouse_ycor + y_offset - 80 + risk_strings_max_height  + (i * risk_strings_max_height) );
+      }
     }
+    // else aggregator
+    else{
+      
+      const first_tool_name = available_tools_list[0]?.toolname_json; // doesn't matter which tool we are looking at, the sequence is the same
+      const original_aminoacid = proteinData[first_tool_name][original_aminoacid_idx].ref;
+      // get aggregation results for each index;
+      let aggregate_scores_array = [];
+      for(let j = 0; j < 20; j++){
+        const num_negative_predictions = helperGetPositionAggregateScore(original_aminoacid_idx-1, j).score;
+        aggregate_scores_array.push(num_negative_predictions);
+      }
+      const median_of_aggregates = aggregate_scores_array.sort()[10]; // 0'th index is 0, so 10 is the median of the 19 values
+      const position_string =  String(original_aminoacid_idx) + ". " + String(original_aminoacid);
+      const median_string_title = "Position aggregation median:"
+      const median_string_result = String(median_of_aggregates) + " out of " + String(available_tools_list.length) + " predicts pathogenic";
+      const strings_max_width = Math.max(ctx.measureText(position_string).width , ctx.measureText(median_string_title).width,ctx.measureText(median_string_result).width);
+      const strings_max_height = Math.max(
+      (ctx.measureText(position_string).actualBoundingBoxAscent + ctx.measureText(position_string).actualBoundingBoxDescent ) ,
+      (ctx.measureText(median_string_title).actualBoundingBoxAscent + ctx.measureText(median_string_title).actualBoundingBoxDescent),
+      (ctx.measureText(median_string_result).actualBoundingBoxAscent + ctx.measureText(median_string_result).actualBoundingBoxDescent));
+
+      ctx.fillStyle="black"
+      ctx.fillRect(mouse_xcor, mouse_ycor + y_offset - (6 * strings_max_height) -2  , strings_max_width + 10  , strings_max_height * 3 + 10 );
+
+      ctx.fillStyle = "white";
+      ctx.fillText(position_string, mouse_xcor + ((strings_max_width )/2) + 5 , mouse_ycor + y_offset -  (6 * strings_max_height) + 2 );
+      ctx.fillText(median_string_title ,mouse_xcor + ((strings_max_width )/2) + 5 , mouse_ycor + y_offset - (6 * strings_max_height) + strings_max_height + 4 );
+      const range_size = available_tools_list.length;
+      const aggregate_color_index = Math.min( Math.floor((median_of_aggregates) * (1/ range_size) * number_of_colors ) ,number_of_colors - 1 ) // copied and simplified from heatmapCOlors;
+      ctx.fillStyle = color_lists_array[0][aggregate_color_index]; // -1 because of heatmapColors is 0 indexed;
+      ctx.fillText(median_string_result ,mouse_xcor + ((strings_max_width )/2) + 5 , mouse_ycor + y_offset - (6 * strings_max_height) + strings_max_height * 2  + 4 );
+
+    }
+    
   }
 
   function drawTooltipOrPan2(e) // scale comes from top_canvas_scale
@@ -925,3 +1053,101 @@ function Heatmap( props ){
 
 export default Heatmap;
 
+
+
+// const heatmapColors = useMemo( () => {
+//   if (currentPredictionToolParameters.score_ranges?.length !== color_lists_array.length){
+//     return
+//   }
+//   // 2d array; row count = sequence_length cols = 20, as we are looping the same way in drawheatmap etc.
+//   let temp_heatmapColorsMatrix = Array(sequence_length).fill().map(entry => Array(2).fill(-1)) 
+//   for(let i = 0; i< sequence_length; i++){
+//     for (let j = 0; j <20; j++) // aminoacid_ordering
+//     {
+//       let current_score;
+//       if (Object.hasOwn(proteinData[i+1] , aminoacid_ordering[j]  )  ){
+//         current_score = parseFloat(proteinData[i+1][aminoacid_ordering[j]]);
+//         if (isNaN(current_score))
+//         {
+//           temp_heatmapColorsMatrix[i][j] = "#add8e6";
+//           continue;
+//         }
+//       }
+//       else if (aminoacid_ordering[j] === proteinData[i+1]?.ref){
+//         // doesn't exist because it is the ref, everything going normal
+//         current_score = currentPredictionToolParameters.ref_value;
+//       }
+//       else{
+//         // doesn't exist and is not reference, similar to NaN value but harder to find, isn't as obvious, more insidious;
+//         temp_heatmapColorsMatrix[i][j] = "#add8e6";
+//         continue;
+//       }
+//       let color_index;
+//       let range_start;
+//       let range_end;
+//       let range_size;
+//       let color_lists_index;
+//       for (let k = 0; k< currentPredictionToolParameters.score_ranges.length; k++){
+//         const current_loop_range_start = currentPredictionToolParameters.score_ranges[k].start;
+//         const current_loop_range_end = currentPredictionToolParameters.score_ranges[k].end;
+//         if(current_score >= current_loop_range_start && current_score <=current_loop_range_end ){
+//           // is between current ranges
+//           range_start = current_loop_range_start;
+//           range_end = current_loop_range_end;
+//           range_size = range_end - range_start
+//           color_lists_index = k;
+//         } 
+//       }
+//       // 30 is number of colors // 29 = number of //colors in range -1
+//       color_index = Math.min( Math.floor((current_score - range_start) * (1/ range_size) * number_of_colors ) ,number_of_colors - 1 ) 
+//       temp_heatmapColorsMatrix[i][j] =  String(color_lists_array[color_lists_index][color_index]); 
+//   }
+// }
+// return temp_heatmapColorsMatrix;
+  
+//   // if( Object.hasOwn(proteinData) )
+// },[color_lists_array,proteinData,currentPredictionToolParameters,number_of_colors,sequence_length])
+
+
+
+// original_aminoacid = proteinData[original_aminoacid_idx].ref;
+// let mutation_risk_raw_value_string;
+// let mutation_risk_raw_value;
+// if ( Object.hasOwn(proteinData[original_aminoacid_idx] , mutated_aminoacid)  ){
+//   mutation_risk_raw_value = parseFloat(proteinData[original_aminoacid_idx][mutated_aminoacid]);
+//   mutation_risk_raw_value_string = mutation_risk_raw_value.toFixed(3);
+// }
+// else if (proteinData[original_aminoacid_idx].ref === mutated_aminoacid){// if field doesn't exist but is the refernce aminoacid, working as intended no bug, or NaN situation
+//     mutation_risk_raw_value = tool_parameters.ref_value;
+//     mutation_risk_raw_value_string = mutation_risk_raw_value.toFixed(3);
+//   }
+// else{
+//   mutation_risk_raw_value = "Missing value";
+//   mutation_risk_raw_value_string = "Missing value";
+
+// }      
+// const mutation_risk_assessment = calculateRiskAssessment(mutation_risk_raw_value, currentPredictionToolParameters); // handles NaN
+// // console.log(mutation_risk_assessment);
+// let font_size = 16;
+// if ((window.innerHeight * heatmapCellHeight * 0.95 / 100) > 15  ){
+//   font_size = (window.innerHeight * heatmapCellHeight * 0.95 / 100);
+// } 
+// ctx.font = String(font_size) + "px Arial" ;
+
+// ctx.textBaseline = "top";
+// // const text = String(original_aminoacid_idx) + ". " + String(original_aminoacid) + " --> " + String(mutated_aminoacid) + " " + String(mutation_risk_raw_value) + " " + String(mutation_risk_assessment); 
+// const position_string = String(original_aminoacid_idx) + ". " + String(original_aminoacid) + " --> " + String(mutated_aminoacid) + " " + mutation_risk_raw_value_string;
+// const risk_string =  String(mutation_risk_assessment);
+// const strings_max_width = Math.max(ctx.measureText(position_string).width , ctx.measureText(risk_string).width);
+// const strings_max_height = Math.max(
+// (ctx.measureText(position_string).actualBoundingBoxAscent + ctx.measureText(position_string).actualBoundingBoxDescent ) ,
+// (ctx.measureText(risk_string).actualBoundingBoxAscent + ctx.measureText(risk_string).actualBoundingBoxDescent) );
+
+// ctx.fillStyle="black"
+// ctx.fillRect(mouse_xcor, mouse_ycor + y_offset - (4 * strings_max_height) -2  , strings_max_width + 10  , strings_max_height * 2 + 10 );
+
+// ctx.fillStyle = "white";
+// ctx.textAlign = "center"; 
+// ctx.fillText(position_string, mouse_xcor + ((strings_max_width )/2) + 5 , mouse_ycor + y_offset -  (4 * strings_max_height) + 2 )
+// ctx.fillStyle = heatmapColors[original_aminoacid_idx -1 ][mutated_aminoacid_idx]; // -1 because of heatmapColors is 0 indexed;
+// ctx.fillText(risk_s

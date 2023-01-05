@@ -56,6 +56,11 @@ export const colorRangesLegendRangeWidthCoef = 10; // each range will be this va
       // end_color: "#981e2a",
       // start_color: "#2c663c",
       // end_color: "#ffa500",
+
+
+export const tools_negative_synonyms = ["pathogenic","deleterious","possibly damaging","confidently damaging"];
+export const tools_positive_synonyms = ["neutral", "benign"];
+
 const phactboost_parameters = {
   toolname: "PHACT Boost",
   toolname_json: "phactboost",
@@ -329,7 +334,24 @@ const provean_parameters = { // change based on array;
   ref_value : 0
 }
 
+const aggregator_parameters = {
+  toolname: "Aggregator",
+  toolname_json: "AggregatorLocal",
+  score_ranges: [
+    {
+      start: 0.0,
+      end: 1, // is assigend to number of tools in the button
+      risk_assessment: "deleterious",
+      start_color: "green",
+      end_color: "red",
+      gradient_ratio:0.5
+    }
+  ]
+  // ref_value: 1, no ref value needed, as it is not like other tools
+}
+
 export const all_prediction_tools_array = [
+  aggregator_parameters,
   phact_parameters,
   phactboost_parameters,
   lists2_parameters,
@@ -339,5 +361,5 @@ export const all_prediction_tools_array = [
   sift_trembl_parameters,
   efin_humdiv_parameters,
   efin_swissprot_parameters,
-  provean_parameters
+  provean_parameters,
 ];

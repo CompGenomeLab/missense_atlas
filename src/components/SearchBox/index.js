@@ -158,7 +158,15 @@ function SearchBox(){
     }
 
     const callApiById = (search_method , input_id) => {
-      navigate('/protein/' + String(searchMethod) + "/" + String(input_id).toUpperCase());
+      let search_method_api;
+      // CAREFUL API calls
+      if (search_method === 'Uniprot Gene ID'){
+        search_method_api = "geneId";
+      }
+      else if (search_method === 'Uniprot Accession ID'){
+        search_method_api = "uniprotId"
+      }
+      navigate('/protein/' + search_method_api + "/" + String(input_id).toUpperCase());
     }
     const handleSearchClicked = () => {
       if (searchMethod === 'Sequence' || searchMethod === 'MD5Sum')

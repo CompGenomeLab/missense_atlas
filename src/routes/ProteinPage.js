@@ -75,7 +75,7 @@ const ProteinPage = () => {
     let temp_color_lists_array = []; // generate 30 colors between the score ranges
     for (
       let i = 0;
-      i < currentPredictionToolParameters?.score_ranges.length;
+      i < currentPredictionToolParameters?.score_ranges?.length;
       i++
     ) {
       
@@ -127,6 +127,7 @@ const ProteinPage = () => {
   //  });
     
     let request_url = "";
+    console.log(searchMethod);
     if(searchMethod.toLowerCase() === 'md5sum'){
       request_url = "all_scores/md5sum/" + String(searchString);
       setMd5sum(searchString);
@@ -268,6 +269,10 @@ const ProteinPage = () => {
         ...prediction_tool_parameters,score_ranges: new_score_ranges 
       })
     }
+    else if (prediction_tool_parameters.toolname_json === 'AggregatorLocal'){
+      // ugly,code but correct; nested objecet setting state, count number of buttons shown == number of tools
+      setCurrentPredictionToolParameters( {...prediction_tool_parameters, score_ranges: [{...prediction_tool_parameters.score_ranges[0] , end: changePredictionToolButtons.length -1  }]} );
+    }
     else{
       setCurrentPredictionToolParameters(prediction_tool_parameters);
     }
@@ -350,13 +355,13 @@ const ProteinPage = () => {
     }
   );
   const geneName = metadata[curMetadataHumanIndex]?.gene?.[0]?.name?.value;
-  
+  // index 0 = aggregator
   const changePredictionToolButtons = all_prediction_tools_array
-    .filter((tool) => Object.hasOwn(allProteinData, tool.toolname_json))
+    .filter((tool , idx) => ( idx === 0 || Object.hasOwn(allProteinData, tool.toolname_json) ))
     .map((tool) => {
       let cur_button_color = "white";
       if (
-        tool.toolname_json === currentPredictionToolParameters.toolname_json
+        tool.toolname_json === currentPredictionToolParameters?.toolname_json
       ) {
         cur_button_color = "green";
       }
@@ -423,6 +428,16 @@ const ProteinPage = () => {
     }
   );
   
+
+
+  let heatmapProteinDataProp;
+  if (currentPredictionToolParameters?.toolname_json === 'AggregatorLocal' ){
+    heatmapProteinDataProp = allProteinData;
+  }
+  else if (currentPredictionToolParameters?.toolname_json?.length > 1){ // currentPredictionToolExists (has loaded)
+    heatmapProteinDataProp = allProteinData[currentPredictionToolParameters?.toolname_json] || {};
+  }
+
   return (
     <>
       {proteinNameJsx}
@@ -435,7 +450,7 @@ const ProteinPage = () => {
             style={{ listStyleType: "none", display: "flex", gap: "0.25rem" }}
           >
             {" "}
-            {changePredictionToolButtons}{" "}
+            {currentPredictionToolParameters && changePredictionToolButtons}{" "}
           </ul>
           {currentPredictionToolParameters && (
             <div
@@ -469,10 +484,7 @@ const ProteinPage = () => {
             <Heatmap
               currentPredictionToolParameters={currentPredictionToolParameters}
               // adding "|| {}" so that proteinData is never undefined, instead it is an empty object
-              proteinData={
-                allProteinData[currentPredictionToolParameters.toolname_json] ||
-                {}
-              }
+              proteinData={heatmapProteinDataProp}
               // proteinData={proteinData} // if we want to fetch one by one;
               color_lists_array={color_lists_array}
               number_of_colors={number_of_colors}
