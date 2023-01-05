@@ -19,7 +19,8 @@ function MetadataFeatureLane({
   setIsDown,
   panningStartX,
   setPanningStartX,
-  changeTooltipFeature
+  changeTooltipFeature,
+  colorPalette
 }) {
   const metadataFeatureLaneRef = useRef(null);
   const [prevTime, setPrevTime] = useState(() => Date.now()); // limit number of drawings per second, must have for resizing window
@@ -67,6 +68,16 @@ function MetadataFeatureLane({
   const subLaneCount = findSubLanesNeeded().lane_count;
   const curCategory = extendedFeatureArray[0].category;
 
+  let typesAndColors = {};
+  let cur_palette_index = 0;
+  for (let i = 0; i < featureArray.length; i++) {
+    const cur_type = featureArray[i].type;
+    if (typesAndColors[cur_type] === undefined) {
+      typesAndColors[cur_type] = colorPalette[cur_palette_index];
+      cur_palette_index = (cur_palette_index + 1) % colorPalette.length;
+    }
+  }
+
   const calculateLaneMarginDividerandHeight = useCallback(
     (laneHeight) => {
       let lane_top_margin; // there will be a bottom margin, but it is equal to top margin so no need to name it
@@ -101,6 +112,8 @@ function MetadataFeatureLane({
     },
     [subLaneCount]
   );
+
+
 
   const drawLane = useCallback(() => {
     // let s_time = Date.now();
@@ -149,12 +162,13 @@ function MetadataFeatureLane({
       const start_height =
         lane_top_margin +
         (cur_sub_lane - 1) * (sub_lane_height + sub_lane_divider_height);
-      ctx.fillStyle = "black";
+      const cur_type = extendedFeatureArray[i].type;
+      ctx.fillStyle = typesAndColors[cur_type];
       ctx.fillRect(cur_begin_x, start_height, fill_width, sub_lane_height);
       if (curCategory === "TOPOLOGY") {
         const topology_text = extendedFeatureArray[i].type;
         ctx.textAlign = "center";
-        ctx.fillStyle = "red";
+        ctx.fillStyle = "black";
         ctx.textBaseline = "middle";
 
         ctx.scale(1 / lane_scale, 1);
@@ -178,7 +192,8 @@ function MetadataFeatureLane({
     curCategory,
     isLastLane,
     scaleAndOriginX,
-    calculateLaneMarginDividerandHeight
+    calculateLaneMarginDividerandHeight,
+    typesAndColors
   ]);
 
   const wheelZoomLane = useCallback(
@@ -229,7 +244,7 @@ function MetadataFeatureLane({
       lane_originX_next = lane_originX_next / lane_width; // !!QZY
       if (lane_scale_next !== lane_scale_prev) {
         e.preventDefault();
-        changeTooltipFeature('invisible',0,0);
+        changeTooltipFeature('invisible',0,0,'#FFFFFF');
         setScaleAndOriginX({
           scale: lane_scale_next,
           originX: lane_originX_next,
@@ -286,7 +301,7 @@ function MetadataFeatureLane({
     lane_originX_next = Math.min(lane_originX_next, (lane_width - lane_width/lane_scale)); // origin not larger than heatmap rightmost point;
     if (lane_originX_next !== lane_originX_prev ){
       lane_originX_next = lane_originX_next / lane_width; // QZY To make it in the correct format 
-      changeTooltipFeature('invisible',0,0) // resetting tooltip so that it doesn't point to a different part;
+      changeTooltipFeature('invisible',0,0,'#FFFFFF') // resetting tooltip so that it doesn't point to a different part;
       setScaleAndOriginX(prev => {
         return (  
           {scale: lane_scale ,originX: lane_originX_next }
@@ -343,7 +358,8 @@ function MetadataFeatureLane({
       const current_aminoacid_position = Math.max(Math.ceil(real_xcor/cell_width),1) 
       // find the feature that corresponds to that position
       const feature = helper_find_feature(current_aminoacid_position,mouse_ycor,lane_height);
-      changeTooltipFeature(feature,e.pageX, e.pageY);
+      const ftr_color = typesAndColors[feature.type];
+      changeTooltipFeature(feature,e.pageX, e.pageY,ftr_color);
       setIsDown(true);
       setPanningStartX(prev => mouse_xcor);
     }
@@ -372,7 +388,7 @@ function MetadataFeatureLane({
   const onDoubleClickHelper = () => {
     if(scaleAndOriginX.scale !== 1){
       setScaleAndOriginX({ scale: 1, originX: 0 })
-      changeTooltipFeature('invisible',0,0) // remove tooltip because it will point to a location that is not the mouse;
+      changeTooltipFeature('invisible',0,0,'black') // remove tooltip because it will point to a location that is not the mouse;
     }
   }
 

@@ -27,7 +27,19 @@ export const aa_visible_width_ratio = 0.8; // between 1 and 0; if size of aminoa
 // for feature lane
 export const laneHeight = 5; // will be 5vh
 export const laneWidth = '80vw'; // equal to heatmapWidth;
-// coef = coefficient
+//https://coolors.co/palette/001219-005f73-0a9396-94d2bd-e9d8a6-ee9b00-ca6702-bb3e03-ae2012-9b2226
+// const cp1 = ["#001219", "#005f73", "#0a9396", "#94d2bd", "#e9d8a6", "#ee9b00", "#ca6702", "#bb3e03", "#ae2012", "#9b2226"];
+// //https://coolors.co/palette/ffadad-ffd6a5-fdffb6-caffbf-9bf6ff-a0c4ff-bdb2ff-ffc6ff-fffffc
+// const cp2 = ["#ffadad","#ffd6a5","#fdffb6","#caffbf","#9bf6ff","#a0c4ff","#bdb2ff","#ffc6ff"];
+// //https://coolors.co/palette/f94144-f3722c-f8961e-f9844a-f9c74f-90be6d-43aa8b-4d908e-577590-277da1
+// const cp3 = ["#f94144","#f3722c","#f8961e","#f9844a","#f9c74f","#90be6d","#43aa8b","#4d908e","#577590","#277da1"];
+// export const c_palettes = [cp1,cp2,cp3];
+// next 3 are made from cp3, one of them is reversed, other has mixed first and second halves, last one is reversed and mixed halves;
+const testcp3_1 = ["#f94144","#f3722c","#f8961e","#f9844a","#f9c74f","#90be6d","#43aa8b","#4d908e","#577590","#277da1"];
+const testcp3_2 = ["#277da1", "#577590", "#4d908e", "#43aa8b", "#90be6d", "#f9c74f", "#f9844a", "#f8961e", "#f3722c", "#f94144"];
+const testcp3_3 = ["#90be6d","#43aa8b","#4d908e","#577590","#277da1","#f94144","#f3722c","#f8961e","#f9844a","#f9c74f"];
+const testcp3_4 = ["#f9c74f", "#f9844a", "#f8961e", "#f3722c", "#f94144","#277da1", "#577590", "#4d908e", "#43aa8b", "#90be6d"];
+export const c_palettes = [testcp3_1, testcp3_2, testcp3_3, testcp3_4];
 export const top_margin_sl_coef= 4;
 export const top_margin_ml_coef = 8;
 export const sub_lane_divider_coef = 2; // used to be divided by top margin, now divided by sub_lane height;

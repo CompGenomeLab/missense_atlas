@@ -10,7 +10,7 @@ import { database_url,aminoacid_ordering } from "../../config/config";
 function SearchBox(){
 
     const navigate = useNavigate();
-    const [searchMethod,setSearchMethod] = useState('Sequence'); // sequence md5sum geneId or UniprotId
+    const [searchMethod,setSearchMethod] = useState('Sequence'); // sequence md5sum Uniprot Gene ID or UniprotId
     const [proteinSequence,setProteinSequence] = useState(''); // .trim() the sequence to remove white spaces
     const [inputMD5Sum , setInputMD5Sum] = useState('');
     const [inputGeneId, setInputGeneId] = useState('');
@@ -94,11 +94,11 @@ function SearchBox(){
           </div>
       )
   }
-  else if(searchMethod === 'geneId'){
+  else if(searchMethod === 'Uniprot Gene ID'){
     textBoxField = (
         <div style={{ margin:'0rem auto'}}>
             <h4> 
-                Enter the Uniprot ID of the gene
+                Enter the Uniprot Gene ID for the sequence
             </h4>
             <input 
             style={{height:'1rem', width:'25rem' }}
@@ -110,11 +110,11 @@ function SearchBox(){
         </div>
     )
   }
-  else if(searchMethod === 'uniprotId'){
+  else if(searchMethod === 'Uniprot Accession ID'){
     textBoxField = (
         <div style={{ margin:'0rem auto'}}>
             <h4> 
-                Enter the Uniprot ID accession of the sequence
+                Enter the Uniprot Accession ID of the sequence
             </h4>
             <input 
             style={{height:'1rem', width:'25rem' }}
@@ -170,12 +170,12 @@ function SearchBox(){
         }
         callApiMD5Sum(final_md5Sum);
       }
-      else if (searchMethod === 'geneId' || searchMethod === 'uniprotId' ) { 
+      else if (searchMethod === 'Uniprot Gene ID' || searchMethod === 'Uniprot Accession ID' ) { 
         let userInputId;
-        if (searchMethod === 'geneId'){
+        if (searchMethod === 'Uniprot Gene ID'){
           userInputId = inputGeneId;
         }
-        if(searchMethod === 'uniprotId'){
+        if(searchMethod === 'Uniprot Accession ID'){
           userInputId = inputUniprotId;
         }
         callApiById(searchMethod, userInputId)
@@ -206,20 +206,20 @@ function SearchBox(){
           MD5Sum
         </button>
         <button
-          onClick={() => setSearchMethod("geneId")}
+          onClick={() => setSearchMethod("Uniprot Gene ID")}
           style={
-            searchMethod === "geneId" ? { color: "green" } : { color: "red" }
+            searchMethod === "Uniprot Gene ID" ? { color: "green" } : { color: "red" }
           }
         >
-          GeneID
+          Uniprot Gene ID
         </button>
         <button
-          onClick={() => setSearchMethod("uniprotId")}
+          onClick={() => setSearchMethod("Uniprot Accession ID")}
           style={
-            searchMethod === "uniprotId" ? { color: "green" } : { color: "red" }
+            searchMethod === "Uniprot Accession ID" ? { color: "green" } : { color: "red" }
           }
         >
-          UniprotID
+          Uniprot Accession ID
         </button>
         {textBoxField}
         {errorMessage.length !== 0 && (

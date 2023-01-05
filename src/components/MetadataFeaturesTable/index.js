@@ -1,6 +1,6 @@
 import React, {useState} from "react";
 import MetadataFeatureLane from "./MetadataFeatureLane";
-import { laneHeight, laneWidth, filtered_categories } from "../../config/config";
+import { laneHeight, laneWidth, filtered_categories,c_palettes } from "../../config/config";
 
 
 
@@ -11,19 +11,16 @@ function MetadataFeaturesTable({ allFeaturesArray, sequenceLength, scaleAndOrigi
   // const [scaleAndOriginX,setScaleAndOriginX] = useState({scale:1,originX:0});
   const [isDown,setIsDown] = useState(false);
   const [panningStartX,setPanningStartX] = useState(0);
-  const [currentTooltipFeature, setCurrentTooltipFeature] = useState('invisible'); // will be either invisible (won't dispaly)
+  const [currentTooltip, setCurrentTooltipFeature] = useState({feature:'invisible', mouseX:0, mouseY:0, color:'#FFFFFF'}); // will be either invisible (won't dispaly)
   // or it will be an element of the "features" array in the metadata
-  const [mousePosXY, setMousePosXY] = useState({x:0, y:0})
-  // const [mousePosX, setMousePosX] = useState(0);
-  // const [mousePosY, setMousePosY] = useState(0);
 
-  const changeTooltipFeature = (new_feature,new_mouse_posX,new_mouse_posY) => {
-    if (currentTooltipFeature === 'invisible' && new_feature === 'invisible'){
+
+  const changeTooltipFeature = (new_feature,new_mouse_posX,new_mouse_posY,new_color) => {
+    if (currentTooltip.feature === 'invisible' && new_feature === 'invisible'){
       return; // to reduce the number of redraws, return without 'setState' in this case
       // not really necessary probably, as its perforamnce wasn't a problem without this "optimization"
     }
-    setCurrentTooltipFeature(new_feature);
-    setMousePosXY({x:new_mouse_posX, y:new_mouse_posY});
+    setCurrentTooltipFeature({feature: new_feature, mouseX: new_mouse_posX, mouseY: new_mouse_posY, color: new_color});
    
     
   }
@@ -31,6 +28,7 @@ function MetadataFeaturesTable({ allFeaturesArray, sequenceLength, scaleAndOrigi
   // onMouseUp in tooltip div;
   const onMouseUpHelper = () => {
     if(isDown){
+      console.log("qq");
       setIsDown(prev => false);
     }
   }
@@ -106,8 +104,8 @@ function MetadataFeaturesTable({ allFeaturesArray, sequenceLength, scaleAndOrigi
   //   }
   // ]
 
-  const currentTooltipFeatureJSX = Object.keys(currentTooltipFeature)?.filter(ftrKey => {
-    if(currentTooltipFeature[ftrKey].length === 0 ){
+  const currentTooltipFeatureJSX = Object.keys(currentTooltip.feature)?.filter(ftrKey => {
+    if(currentTooltip.feature[ftrKey].length === 0 ){
       return false;
     }
     if(filtered_categories.indexOf(ftrKey) !== -1 ){
@@ -116,11 +114,11 @@ function MetadataFeaturesTable({ allFeaturesArray, sequenceLength, scaleAndOrigi
     return true; // value for key exists, and it is not one of the to be filterd categories
   }).map( ftrKey => {
     // console.log(ftrKey);
-    if (typeof(currentTooltipFeature[ftrKey]) === 'string' )
+    if (typeof(currentTooltip.feature[ftrKey]) === 'string' )
     {
       return(
         <li key={ftrKey}>
-          {ftrKey} : {currentTooltipFeature[ftrKey]}
+          {ftrKey} : {currentTooltip.feature[ftrKey]}
         </li>
       )
     }
@@ -130,7 +128,7 @@ function MetadataFeaturesTable({ allFeaturesArray, sequenceLength, scaleAndOrigi
         <li key={"evidences"}>
           evidences :
           <ul style={{ listStyleType: "none", paddingInlineStart: "1rem" }}>
-            {currentTooltipFeature["evidences"]?.map((evidence, index) => {
+            {currentTooltip.feature["evidences"]?.map((evidence, index) => {
               return (
                 <li key={index}>
                   {index + 1}:{helperFeatureEvidenceParser(evidence)}
@@ -143,7 +141,7 @@ function MetadataFeaturesTable({ allFeaturesArray, sequenceLength, scaleAndOrigi
     }
     return( // will write for the case of ligand, probably;
       <li key={ftrKey}>
-        {ftrKey} : {JSON.stringify(currentTooltipFeature[ftrKey])} 
+        {ftrKey} : {JSON.stringify(currentTooltip.feature[ftrKey])} 
       </li>)
   } )
   
@@ -203,6 +201,7 @@ function MetadataFeaturesTable({ allFeaturesArray, sequenceLength, scaleAndOrigi
             panningStartX={panningStartX}
             setPanningStartX={setPanningStartX}
             changeTooltipFeature={changeTooltipFeature}
+            colorPalette = {c_palettes[idx % c_palettes.length]}
           />
         </div>,
       ];
@@ -221,30 +220,53 @@ function MetadataFeaturesTable({ allFeaturesArray, sequenceLength, scaleAndOrigi
       >
         {featureCategoriesAndColumnsJsx}
       </div>
-      {currentTooltipFeature !== "invisible" && ( // if Panning starts currentToolTipFeature will turn into 'invisible'
-        <div
-          onMouseUp={onMouseUpHelper}
-          style={{
-            position: "absolute",
-            left: String(mousePosXY.x) + "px",
-            top: String(mousePosXY.y) + "px",
-            zIndex: 1000,
-            backgroundColor: "lavender",
-            maxHeight: "50vh",
-            overflowY: "auto",
-          }}
-        >
-          {/* <p> {JSON.stringify(currentTooltipFeature)} </p> */}
-          <ul
+
+      {/* #triangle-up {
+      width: 0;
+      height: 0;
+      border-left: 50px solid transparent;
+      border-right: 50px solid transparent;
+      border-bottom: 100px solid red;
+    } */}
+      {currentTooltip.feature !== "invisible" && ( // if Panning starts currentToolTipFeature will turn into 'invisible'
+        <div onMouseUp={onMouseUpHelper}>
+          <div
             style={{
-              listStyleType: "none",
-              paddingInlineStart: "3rem",
-              paddingInlineEnd: "3rem",
+              // the little triangle that indicates what we are pointing at
+              position: "absolute",
+              left: String(currentTooltip.mouseX - 10) + "px",
+              top: String(currentTooltip.mouseY) + "px",
+              zIndex: 1001,
+              width: 0,
+              height: 0,
+              borderLeft: "10px solid transparent",
+              borderRight: "10px solid transparent",
+              borderBottom: "20px solid lavender",
+            }}
+          ></div>
+          <div
+            style={{
+              position: "absolute",
+              left: String(currentTooltip.mouseX - 20) + "px", // double width of the triangle
+              top: String(currentTooltip.mouseY + 15) + "px", // 3/4  height of the triangle
+              zIndex: 1000,
+              // backgroundColor: currentTooltip.color,
+              backgroundColor: 'lavender',
+              maxHeight: "50vh",
+              overflowY: "auto",
             }}
           >
-            {" "}
-            {currentTooltipFeatureJSX}{" "}
-          </ul>
+            <ul
+              style={{
+                listStyleType: "none",
+                paddingInlineStart: "3rem",
+                paddingInlineEnd: "3rem",
+              }}
+            >
+              {" "}
+              {currentTooltipFeatureJSX}{" "}
+            </ul>
+          </div>
         </div>
       )}
     </>
