@@ -67,6 +67,7 @@ function Heatmap( props ){
   const [prevTime, setPrevTime] = useState( () => Date.now() ); // limit number of drawings per second, must have for resizing window
 
   // handles NaN
+  // i starts from 1
   const calculateMedianOfPosition = (i,input_protein_data,tool_parameters) => {
     let cur_pos_array = [];
     let ref_flag = true;
@@ -797,7 +798,7 @@ function Heatmap( props ){
     const original_aminoacid_idx = Math.max(Math.ceil(real_xcor/cell_width),1) // real_xcor 0 to cell_wid = 0th aminoacid; realxcor cell_width to 2*cell_width = 1st aminoacid; // +1 because our scores start from 1;
     if (currentPredictionToolParameters.toolname_json !== 'AggregatorLocal'){
       const original_aminoacid = proteinData[original_aminoacid_idx].ref;
-      const cur_pos_median = calculateMedianOfPosition(original_aminoacid_idx-1,proteinData,currentPredictionToolParameters);
+      const cur_pos_median = calculateMedianOfPosition(original_aminoacid_idx,proteinData,currentPredictionToolParameters);
       // for every risk assessment, make a list of which aminoacids are deleterious, which of them are benign for that position;
       let risk_assessment_buckets = {};
       for (let i = 0; i < tool_parameters.score_ranges.length; i++) 
