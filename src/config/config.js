@@ -17,6 +17,7 @@ export const heatmapAminoAcidCharactersNumRows = 2;
 export const heatmapTotalNumRows = 20 + heatmapSpaceBtwnSummaryNumRows + heatmapSummaryNumRows + heatmapAminoAcidCharactersNumRows; // 20 cells rows for each aa + summary + space between heatmap and summary, (previous 2 rows)
 export const heatmapWidth = "80vw"; 
 export const aminoAcidLegendWidth = "10vw";
+export const heatmapTooltipFontMultiplier = 1.35;
 export const max_zoom_visible_aa_count = 10; // to determine maximum zoom value
 export const aa_position_notches_threshold = 9; // while drawing positions of the heatmap if step size of positions are smaller than threshold, draw small notches between the positions (like a ruler (cetvel)) 
 export const aa_visible_width_ratio = 0.8; // between 1 and 0; if size of aminoacid character is smaller than ratio * cellwidth, then draw;
@@ -42,7 +43,7 @@ const testcp3_4 = ["#f9c74f", "#f9844a", "#f8961e", "#f3722c", "#f94144","#277da
 export const c_palettes = [testcp3_1, testcp3_2, testcp3_3, testcp3_4];
 export const top_margin_sl_coef= 4;
 export const top_margin_ml_coef = 8;
-export const sub_lane_divider_coef = 2; // used to be divided by top margin, now divided by sub_lane height;
+export const sub_lane_divider_coef = 4; // used to be divided by top margin, now divided by sub_lane height;
 // features tooltip
 export const filtered_categories = ['category','sub_lane'];  // sub_lane is calculated by us;
 

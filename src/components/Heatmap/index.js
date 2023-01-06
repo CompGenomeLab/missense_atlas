@@ -16,6 +16,7 @@ import {
   heatmapAminoAcidCharactersNumRows,
   all_prediction_tools_array,
   tools_negative_synonyms,
+  heatmapTooltipFontMultiplier,
   // tools_positive_synonyms
 } from "../../config/config";
 // const aminoAcidLegendWidth = 120;
@@ -68,6 +69,7 @@ function Heatmap( props ){
 
   // handles NaN
   // i starts from 1
+  // returns string representation with 3 decimal places.
   const calculateMedianOfPosition = (i,input_protein_data,tool_parameters) => {
     let cur_pos_array = [];
     let ref_flag = true;
@@ -109,8 +111,8 @@ function Heatmap( props ){
   // handles NaN;
   const calculateRiskAssessment = (mutation_risk_raw_value, tool_parameters) => {
 
-    if (mutation_risk_raw_value === "Missing value"){
-      return "Missing value";
+    if (mutation_risk_raw_value === "Missing Value"){
+      return "Missing Value";
     }
     if (isNaN(mutation_risk_raw_value)){ // typeof(mutation_risk_raw_value) !== 'number'
       //NaN
@@ -150,9 +152,8 @@ function Heatmap( props ){
       current_score = currentPredictionToolParameters.ref_value;
     }
     else{
-      // doesn't exist and is not reference, similar to NaN value but harder to find, isn't as obvious, more insidious;
-      // temp_heatmapColorsMatrix[i][j] = "#add8e6";
-      return "Missin Value";
+     
+      return "Missing Value";
     }    
     return current_score;
   },[currentPredictionToolParameters.ref_value]);
@@ -233,7 +234,8 @@ function Heatmap( props ){
     {
       let cur_pos_median;
       if (currentPredictionToolParameters.toolname_json !== 'AggregatorLocal'){
-        cur_pos_median = calculateMedianOfPosition(i+1,proteinData,currentPredictionToolParameters); // i+1, because proteinData.scores' index starts from 1;
+        // parseFloat because calculateMedianOfPosition returns a string representation actually
+        cur_pos_median = parseFloat(calculateMedianOfPosition(i+1,proteinData,currentPredictionToolParameters)); // i+1, because proteinData.scores' index starts from 1;
       }
       else{
         let negative_count = 0;
@@ -250,7 +252,7 @@ function Heatmap( props ){
       if (isNaN(cur_pos_median)){ // NaN value checking, it will be NaN if something went wrong (missing values or NaN values)
         temp_heatmapMeanColors[i] = "#add8e6";
       }
-      else{        
+      else{       
         let color_index;  
         let range_start;
         let range_end;
@@ -672,22 +674,22 @@ function Heatmap( props ){
   useEffect(() => { // redraw on resize
       const handleResize = () => { // reset canvasScaleOrigin reference and draw in roughly 30 fps
           // console.log("handleresize");
-          const cur_time = Date.now();
-          if (cur_time - prevTime < 32) // 1000/40 = 25 fps
-          {
-          return;
-          }
+          // const cur_time = Date.now();
+          // if (cur_time - prevTime < 32) // 1000/40 = 25 fps
+          // {
+          // return;
+          // }
           
           // giving canvas scale a new reference so that drawing heatmap runs once again;
           setScaleAndOriginX( prev => { return( {scale: prev.scale , originX: prev.originX } ) } )
           // drawHeatmap2(); // causes flickering , no idea why; instead I need to use setCanvasScaleAndOrigin and setPrevtime
-          setPrevTime(prev => cur_time); // if removed, flickering will happen, no idea why?? May not be the case anymore
+          // setPrevTime(prev => cur_time); // if removed, flickering will happen, no idea why?? May not be the case anymore
       }
       window.addEventListener("resize" , handleResize )
 
       return () => {window.removeEventListener("resize" , handleResize)}; // cleanup
 
-  },[prevTime,setScaleAndOriginX]) // draw heatmap again on resize //drawHeatmap2
+  },[setScaleAndOriginX]) // draw heatmap again on resize //drawHeatmap2
   
   
   
@@ -697,8 +699,9 @@ function Heatmap( props ){
     ctx.textBaseline = "top";
     ctx.textAlign = "center";
     let font_size = 16;
-    if ((window.innerHeight * heatmapCellHeight * 0.95 / 100) > 15  ){
-      font_size = (window.innerHeight * heatmapCellHeight * 0.95 / 100);
+    let font_size_candidate  = (window.innerHeight / 100) * heatmapCellHeight * 0.95 * heatmapTooltipFontMultiplier
+    if ( font_size_candidate > font_size  ){
+      font_size = font_size_candidate
     } 
     ctx.font = String(font_size) + "px Arial" ;
     //heatmap ref variables
@@ -727,10 +730,13 @@ function Heatmap( props ){
       const original_aminoacid = proteinData[original_aminoacid_idx].ref;
       const mutation_risk_raw_value = helperGetPositionScore(original_aminoacid_idx -1 ,mutated_aminoacid_idx,proteinData); 
       const mutation_risk_assessment = calculateRiskAssessment(mutation_risk_raw_value, currentPredictionToolParameters); // handles NaN
-      // console.log(mutation_risk_assessment);
-      
+      let mutation_risk_raw_value_string  = mutation_risk_raw_value;
+      // 3 decimal points
+      if ( !isNaN(mutation_risk_raw_value)){
+        mutation_risk_raw_value_string = mutation_risk_raw_value.toFixed(3);
+      }    
       // const text = String(original_aminoacid_idx) + ". " + String(original_aminoacid) + " --> " + String(mutated_aminoacid) + " " + String(mutation_risk_raw_value) + " " + String(mutation_risk_assessment); 
-      const position_string = String(original_aminoacid_idx) + ". " + String(original_aminoacid) + " --> " + String(mutated_aminoacid) + " " + mutation_risk_raw_value.toFixed(3);
+      const position_string = String(original_aminoacid_idx) + ". " + String(original_aminoacid) + " --> " + String(mutated_aminoacid) + " " + mutation_risk_raw_value_string;
       const risk_string =  String(mutation_risk_assessment);
       const strings_max_width = Math.max(ctx.measureText(position_string).width , ctx.measureText(risk_string).width);
       const strings_max_height = Math.max(
@@ -778,8 +784,9 @@ function Heatmap( props ){
     ctx.textBaseline = "top";
     ctx.textAlign = "center"; 
     let font_size = 16;
-    if ((window.innerHeight * heatmapCellHeight * 0.95 / 100) > 15  ){
-      font_size = (window.innerHeight * heatmapCellHeight * 0.95 / 100);
+    let font_size_candidate  = (window.innerHeight / 100) * heatmapCellHeight * 0.95 * heatmapTooltipFontMultiplier 
+    if ( font_size_candidate > font_size  ){
+      font_size = font_size_candidate
     } 
     ctx.font = String(font_size) + "px Arial" ;
     //heatmap ref variables
@@ -829,7 +836,7 @@ function Heatmap( props ){
       let risk_strings = [];
       let risk_strings_colors = [];
       
-      const median_value_string = "Median of values = " + cur_pos_median.toFixed(3);
+      const median_value_string = "Median of values = " + cur_pos_median;
       let risk_strings_max_width = ctx.measureText(median_value_string).width;
       let risk_strings_max_height = ctx.measureText(median_value_string).actualBoundingBoxAscent + ctx.measureText(median_value_string).actualBoundingBoxDescent;
       for(let i = 0; i< tool_parameters.score_ranges.length; i++){
