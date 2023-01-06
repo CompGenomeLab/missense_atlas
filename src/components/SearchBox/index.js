@@ -22,22 +22,21 @@ function SearchBox(){
     
     // doesn't actually need to take sequence as input, as proteinSequence is reachable 
     // asd D  ARNDC Q E G H I J K L M N
+    // !(a != 1 &&  a != 2)
     const helper_protein_sequence_trimmer = () => {
       let trimmedSequence = "";
       let string_lines = proteinSequence.split('\n');
       for(let line of string_lines){
         let cur_line = line.trim();
         let is_sequence_line_flag = true;
+        if(cur_line?.[0] === '>' || cur_line?.[0] === ';'){
+          is_sequence_line_flag = false;
+        }
         let cur_line_aminoacids = "";
         for (let char of cur_line){
-          if(char !== ' '){// ignoring whitesapces
-            if (aminoacid_ordering.indexOf(char) === -1) // not an aminoacid symbol
-            {
-              is_sequence_line_flag = false;
-            }
-            else{ 
-              cur_line_aminoacids += char;
-            }
+          if (aminoacid_ordering.includes(char)) 
+          {
+            cur_line_aminoacids += char;
           }
         }
         if (is_sequence_line_flag){
@@ -45,11 +44,6 @@ function SearchBox(){
         }
       }
       return trimmedSequence;
-      // for(let i = 0; i < proteinSequence.length ; i++)
-      // {
-      //   if(proteinSequence[i] === '\n')
-      //   console.log(i, proteinSequence[i]);
-      // }
     }
 
     trimmedProteinSequence = helper_protein_sequence_trimmer();
