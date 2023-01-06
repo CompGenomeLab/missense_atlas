@@ -730,7 +730,7 @@ function Heatmap( props ){
       // console.log(mutation_risk_assessment);
       
       // const text = String(original_aminoacid_idx) + ". " + String(original_aminoacid) + " --> " + String(mutated_aminoacid) + " " + String(mutation_risk_raw_value) + " " + String(mutation_risk_assessment); 
-      const position_string = String(original_aminoacid_idx) + ". " + String(original_aminoacid) + " --> " + String(mutated_aminoacid) + " " + String(mutation_risk_raw_value);
+      const position_string = String(original_aminoacid_idx) + ". " + String(original_aminoacid) + " --> " + String(mutated_aminoacid) + " " + mutation_risk_raw_value.toFixed(3);
       const risk_string =  String(mutation_risk_assessment);
       const strings_max_width = Math.max(ctx.measureText(position_string).width , ctx.measureText(risk_string).width);
       const strings_max_height = Math.max(
@@ -829,7 +829,7 @@ function Heatmap( props ){
       let risk_strings = [];
       let risk_strings_colors = [];
       
-      const median_value_string = "Median of values = " + String(cur_pos_median);
+      const median_value_string = "Median of values = " + cur_pos_median.toFixed(3);
       let risk_strings_max_width = ctx.measureText(median_value_string).width;
       let risk_strings_max_height = ctx.measureText(median_value_string).actualBoundingBoxAscent + ctx.measureText(median_value_string).actualBoundingBoxDescent;
       for(let i = 0; i< tool_parameters.score_ranges.length; i++){
