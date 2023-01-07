@@ -359,7 +359,11 @@ function MetadataFeatureLane({
       // find the feature that corresponds to that position
       const feature = helper_find_feature(current_aminoacid_position,mouse_ycor,lane_height);
       const ftr_color = typesAndColors[feature.type];
-      changeTooltipFeature(feature,e.pageX, e.pageY,ftr_color);
+      let position_left = true;
+      if (e.clientX > window.innerWidth/2){
+        position_left = false;;
+      }
+      changeTooltipFeature(feature,e.pageX, e.pageY,ftr_color,position_left);
       setIsDown(true);
       setPanningStartX(prev => mouse_xcor);
     }

@@ -6,6 +6,7 @@ import OpenInNewIcon from "@mui/icons-material/OpenInNew";
 import Heatmap from "../components/Heatmap";
 import MetadataFeaturesTable from "../components/MetadataFeaturesTable";
 import ColorRangesLegend from "../components/ColorRangesLegend";
+import Select from 'react-select'
 import {
   database_url,
   all_prediction_tools_array,
@@ -13,22 +14,6 @@ import {
   number_of_colors,
   color_mix_mode
 } from "../config/config";
-
-// const https = require('https');
-
-// http://10.3.2.13:8080/database/efin/8a8c1b6c6d5e7589f18afd6455086c82
-// http://10.3.2.13:8080/database/sift/8a8c1b6c6d5e7589f18afd6455086c82
-// http://10.3.2.13:8080/database/provean/8a8c1b6c6d5e7589f18afd6455086c82 // what is del?; also has negative values; be careful;
-// http://10.3.2.13:8080/database/lists2/8a8c1b6c6d5e7589f18afd6455086c82
-
-// const md5sum = "8a8c1b6c6d5e7589f18afd6455086c82"; // for our current protein; // will be passed as a prop ?
-// const protein_name = "Q5SRN2"; // can also be passed as a prop or taken from metadata?
-
-
-
-//????
-
-
 
 const ProteinPage = () => {
   // add ?q=1, to the url to get uniprot metadata
@@ -43,23 +28,7 @@ const ProteinPage = () => {
   const [currentPredictionToolParameters, setCurrentPredictionToolParameters] = useState();
   // shared between heatmap and metadataFeatureTable
   const [scaleAndOriginX, setScaleAndOriginX] = useState({scale:1, originX:0});
-  // const colorRangesLegendRef = useRef(null);
-
-  // , {headers:{'Access-Control-Allow-Origin' : '*',}}
-  // const request_url = "polyphen/8a8c1b6c6d5e7589f18afd6455086c82"
-  // const findHumanIndex = (input_metadata) => {
-  //   let i = 0;
-  //   while (input_metadata[i]?.organism?.taxonomy !== 9606) {
-  //     i += 1;
-  //     if (i > 2000) {
-  //       // to make sure we don't get an infinite loop
-  //       console.log("Couldn't find the human protein in metadata");
-  //       return -1;
-  //     }
-  //   }
-  //   return i;
-  // };
-  // find accessions with features Instead
+    
   const findMetadataHumanAccAndIndices = (input_metadata) => { 
     let temp_indices = input_metadata?.reduce( ( cur_list ,cur_metadata,index) => {
       if(cur_metadata?.organism?.taxonomy === 9606 && cur_metadata.features?.length > 0){
@@ -69,7 +38,7 @@ const ProteinPage = () => {
     }, [] ) || []
     return temp_indices;
   }
-  const metadataHumanAccAndIndices = findMetadataHumanAccAndIndices(metadata);
+  const metadataAccessionAndIndices = findMetadataHumanAccAndIndices(metadata);
   const color_lists_array = useMemo(() => {
     //color lists to use in drawing heatmap
     let temp_color_lists_array = []; // generate 30 colors between the score ranges
@@ -106,107 +75,14 @@ const ProteinPage = () => {
     return temp_color_lists_array;
   }, [currentPredictionToolParameters]);
 
-  useEffect(() => {
-    // to fetch protein data 
-    // const axios_config = {
-    //   // httpsAgent: new https.Agent({ rejectUnauthorized: false })
-      
-    //     rejectUnauthorized: false,
-    //     requestCert: false,
-    //     agent: false,
-    // }
-    // const agent = new https.Agent({  
-    //     rejectUnauthorized: false,
-    //     requestCert: false,
-    //     agent: false,
-    //  });
-  //   } const agent = new https.Agent({
-  //     rejectUnauthorized: false,
-  //     requestCert: false,
-  //     agent: false,
-  //  });
-    
-    let request_url = "";
-    console.log(searchMethod);
-    if(searchMethod.toLowerCase() === 'md5sum'){
-      request_url = "all_scores/md5sum/" + String(searchString);
-      setMd5sum(searchString);
-    }
-    if (searchMethod.toLowerCase() === 'uniprotid'){
-      request_url = "all_scores/uniprotid/" + String(searchString)
-    }
-    if (searchMethod.toLowerCase() === 'geneid'){
-      request_url = "all_scores/geneid/" + String(searchString);
-    }
-    // just making sure request url exists
-    if (request_url.length > 2){
-      axios
-        .get((database_url + request_url)) // cors policy
-        .then(function (response) {
-          // console.log(response);
-          // add a function to calculate a data format for "tools combined", then add this to response.data;
-          // testing;
-          // delete response.data.Sift;
-          // delete response.data.Lists2;
-          const first_available_tool = all_prediction_tools_array.filter((tool) =>
-            Object.hasOwn(response.data, tool.toolname_json)
-          )[0];
-          setCurrentPredictionToolParameters(first_available_tool);
-          setAllProteinData(response.data);
-          setProteinDataLoadingStatus("Protein data loaded successfully");
-          setMd5sum(response.data?.md5sum)
-          // console.log("pdata = ");
-          // console.log(response.data);
-        })
-        .catch(function (error) {
-          // handle error
-          console.log(error);
-          setProteinDataLoadingStatus("Error loading protein data");
-        })
-        .then(function () {
-          console.log("api called for " + database_url + request_url);
-          // always executed
-        });
-    }
-    
-  }, [searchMethod, searchString]);
 
- 
-  useEffect(() => {
-    const fetchMetadata = () => {
-      axios
-        .get( // &organism=Homo%20sapiens to only get the results for human proteins
-          "https://www.ebi.ac.uk/proteins/api/proteins?offset=0&size=100&organism=Homo%20sapiens&md5=" +
-            md5sum
-        )
-        .then(function (response) {
-          setMetadata(response.data);
-          console.log(response.data);
-          // setCurMetadataHumanIndex(findHumanIndex(response.data));
-          // we need to run the function on the input of API, can't use a constant value calculated before the api call
-          // can't use metadataHumanAccAndIndices variable
-          // setCurMetadataHumanIndex(findMetadataHumanAccAndIndices(response.data)[0].index);
-          const temp_human_index = findMetadataHumanAccAndIndices(response.data)[0]?.index; 
-          setCurMetadataHumanIndex(temp_human_index); // as the api only returns metadata for human;
-          // IMPORTANT 0'th entry might not have features, SO find the first entry that has features?
-          // else write no features exist for this entry;
-        })
-        .catch(function (error) {
-          console.log(error);
-        })
-        .then(function () {
-          console.log("api called to fetfch metadata");
-        });
-    };
-    if (md5sum.length === 32){
-      fetchMetadata();
-    }
-  }, [md5sum]);
-
-  const helper_switch_tool_find_minmax_median_of_tool_scores_provean = (prediction_tool_parameters) => {
+  const switchTool = (prediction_tool_parameters, all_protein_data) => {
+    // Probably no need to use prev => prediction_tool_parameters
+    // iterate over data and find minimum and maximum values
+    const helper_find_minmax_median_of_provean = () => {
       let minimum_value = 100;
       let maximum_value = -40;
-      const current_tool_protein_data = allProteinData[prediction_tool_parameters.toolname_json];
+      const current_tool_protein_data = all_protein_data[prediction_tool_parameters.toolname_json];
       let i = 1;
       let benign_scores_array = []; 
       let deleterious_scores_array = [];
@@ -249,12 +125,9 @@ const ProteinPage = () => {
       median_deleterious = deleterious_scores_array.sort()[median_index_deleterious];
       median_benign = benign_scores_array.sort()[median_index_benign];
       return {min_value: minimum_value, max_value: maximum_value,median_deleterious : median_deleterious ,median_benign : median_benign};
-  }
-  const switchTool = (e, prediction_tool_parameters) => {
-    // Probably no need to use prev => prediction_tool_parameters
-    // iterate over data and find minimum and maximum values
+    }
     if (prediction_tool_parameters.toolname_json === 'provean'){ 
-      const {min_value,max_value,median_deleterious, median_benign} = helper_switch_tool_find_minmax_median_of_tool_scores_provean(prediction_tool_parameters);
+      const {min_value,max_value,median_deleterious, median_benign} = helper_find_minmax_median_of_provean();
      
       
       // -2.5 is the transition value between benign and deleterius
@@ -270,8 +143,10 @@ const ProteinPage = () => {
       })
     }
     else if (prediction_tool_parameters.toolname_json === 'AggregatorLocal'){
-      // ugly,code but correct; nested objecet setting state, count number of buttons shown == number of tools
-      setCurrentPredictionToolParameters( {...prediction_tool_parameters, score_ranges: [{...prediction_tool_parameters.score_ranges[0] , end: changePredictionToolButtons.length -1  }]} );
+      const number_of_available_tools = all_prediction_tools_array.filter(
+        (tool) => Object.hasOwn(all_protein_data, tool.toolname_json)
+      ).length;
+      setCurrentPredictionToolParameters( {...prediction_tool_parameters, score_ranges: [{...prediction_tool_parameters.score_ranges[0] , end: number_of_available_tools }]} );
     }
     else{
       setCurrentPredictionToolParameters(prediction_tool_parameters);
@@ -279,26 +154,107 @@ const ProteinPage = () => {
     // setCurrentPredictionToolParameters((prev) => prediction_tool_parameters);
     // drawColorRangesLegend();
   };
+
+  useEffect(() => {
+    // to fetch protein data 
+    // const axios_config = {
+    //   // httpsAgent: new https.Agent({ rejectUnauthorized: false })
+      
+    //     rejectUnauthorized: false,
+    //     requestCert: false,
+    //     agent: false,
+    // }
+    // const agent = new https.Agent({  
+    //     rejectUnauthorized: false,
+    //     requestCert: false,
+    //     agent: false,
+    //  });
+  //   } const agent = new https.Agent({
+  //     rejectUnauthorized: false,
+  //     requestCert: false,
+  //     agent: false,
+  //  });
+    
+    let request_url = "";
+    console.log(searchMethod);
+    if(searchMethod.toLowerCase() === 'md5sum'){
+      request_url = "all_scores/md5sum/" + String(searchString);
+      setMd5sum(searchString);
+    }
+    if (searchMethod.toLowerCase() === 'uniprotid'){
+      request_url = "all_scores/uniprotid/" + String(searchString)
+    }
+    if (searchMethod.toLowerCase() === 'geneid'){
+      request_url = "all_scores/geneid/" + String(searchString);
+    }
+    // just making sure request url exists
+    if (request_url.length > 2){
+      axios
+        .get((database_url + request_url)) // cors policy
+        .then(function (response) {
+          // console.log(response);
+          // const first_available_tool = all_prediction_tools_array.filter((tool) =>
+          //   Object.hasOwn(response.data, tool.toolname_json)
+          // )[0];
+          // setCurrentPredictionToolParameters(first_available_tool);
+          setAllProteinData(response.data);
+          // default tool is the
+          switchTool(all_prediction_tools_array[0], response.data)
+
+          setProteinDataLoadingStatus("Protein data loaded successfully");
+          setMd5sum(response.data?.md5sum)
+          // console.log("pdata = ");
+          // console.log(response.data);
+        })
+        .catch(function (error) {
+          // handle error
+          console.log(error);
+          setProteinDataLoadingStatus("Error loading protein data");
+        })
+        .then(function () {
+          console.log("api called for " + database_url + request_url);
+          // always executed
+        });
+    }
+    
+  }, [searchMethod, searchString]);
+
+ 
+  useEffect(() => {
+    const fetchMetadata = () => {
+      axios
+        .get( // &organism=Homo%20sapiens to only get the results for human proteins
+          "https://www.ebi.ac.uk/proteins/api/proteins?offset=0&size=100&organism=Homo%20sapiens&md5=" +
+            md5sum
+        )
+        .then(function (response) {
+          setMetadata(response.data);
+          console.log(response.data);
+          // setCurMetadataHumanIndex(findHumanIndex(response.data));
+          // we need to run the function on the input of API, can't use a constant value calculated before the api call
+          // can't use metadataAccessionAndIndices variable
+          // setCurMetadataHumanIndex(findMetadataHumanAccAndIndices(response.data)[0].index);
+          const temp_human_index = findMetadataHumanAccAndIndices(response.data)[0]?.index; 
+          setCurMetadataHumanIndex(temp_human_index); // as the api only returns metadata for human;
+          // IMPORTANT 0'th entry might not have features, SO find the first entry that has features?
+          // else write no features exist for this entry;
+        })
+        .catch(function (error) {
+          console.log(error);
+        })
+        .then(function () {
+          console.log("api called to fetfch metadata");
+        });
+    };
+    if (md5sum.length === 32){
+      fetchMetadata();
+    }
+  }, [md5sum]);
+
   
-  // const synonymsListJsx = metadata[curMetadataHumanIndex]?.gene?.[0]?.synonyms?.map(
-  //   (syn, idx) => {
-  //     return (
-  //       // in first element add '(' to beggining in last element add ')' to the end instead of ','
-  //       <li key = {syn?.value}>
-  //         <h4>
-  //           {idx === 0 && "("}
-  //           {syn?.value}
-  //           {idx !==
-  //           metadata[curMetadataHumanIndex]?.gene?.[0]?.synonyms.length - 1
-  //             ? ","
-  //             : ")"}
-  //         </h4>
-  //       </li>
-  //     );
-  //   }
-  // );
-  // const uniprotId = metadata[curMetadataHumanIndex]?.accession;
-  const proteinNameJsx = (
+  
+  
+  const proteinNameJSX = (
     <div /*style={{ display: "flex", alignItems: "center" }}*/>
       <h1>
         { // the structure is different in some proteins, What to do? 
@@ -307,26 +263,46 @@ const ProteinPage = () => {
       </h1>
     </div>
   );
+  const geneName = metadata[curMetadataHumanIndex]?.gene?.[0]?.name?.value;
+    // undefined if no synonyms exist
 
-  const uniprotIdsJSX = (
+  const synonymsListJsx = metadata[
+    curMetadataHumanIndex
+  ]?.gene?.[0]?.synonyms?.map((syn, idx) => {
+    return (
+      // in first element add '(' to beggining in last element add ')' to the end instead of ','
+      <li key={syn?.value}>
+        <h4>
+          {idx === 0 && "("}
+          {syn?.value}
+          {idx !==
+          metadata[curMetadataHumanIndex]?.gene?.[0]?.synonyms.length - 1
+            ? ","
+            : ")"}
+        </h4>
+      </li>
+    );
+  });
+
+  const uniprotIdsJSX = metadataAccessionAndIndices.length > 0 && (
     <div style={{ display: "flex" }}>
       <h3 style={{ marginBlockStart: "0rem" }}>Uniprot ID :</h3>
-
       <ul
         style={{
           listStyleType: "none",
           display: "flex",
           gap: "0.5rem",
           paddingInlineStart: "0.5rem",
-          marginBlockStart:'0rem'
+          marginBlockStart:'0rem',
+          marginBlockEnd:'0rem'
         }}
       >
-        {metadataHumanAccAndIndices?.map((accAndIndex) => {
+        {metadataAccessionAndIndices?.map((accAndIndex) => {
           return (
             <li key={accAndIndex.accession} style={{ display: "flex" }}>
               <h3 style={{ marginBlockStart: "0rem" }}>
                 {accAndIndex.accession}
-                {/* {accAndIndex.index !== metadataHumanAccAndIndices.length - 1 && // is not the last element
+                {/* {accAndIndex.index !== metadataAccessionAndIndices.length - 1 && // is not the last element
                 ","}  */}
               </h3>
               <a
@@ -346,90 +322,9 @@ const ProteinPage = () => {
     </div>
   );
 
-
-
-
-  const sequenceKeywordsJsx = metadata[curMetadataHumanIndex]?.keywords?.map(
-    (keyword) => {
-      return <li key={keyword.value}>{keyword.value}</li>;
-    }
-  );
-  const geneName = metadata[curMetadataHumanIndex]?.gene?.[0]?.name?.value;
-  // index 0 = aggregator
-  const changePredictionToolButtons = all_prediction_tools_array
-    .filter((tool , idx) => ( idx === 0 || Object.hasOwn(allProteinData, tool.toolname_json) ))
-    .map((tool) => {
-      let cur_button_color = "white";
-      if (
-        tool.toolname_json === currentPredictionToolParameters?.toolname_json
-      ) {
-        cur_button_color = "green";
-      }
-      return (
-        <li key={tool.toolname_json}>
-          <button
-            style={{ backgroundColor: cur_button_color }}
-            onClick={(e) => switchTool(e, tool)}
-          >
-            {tool.toolname}
-          </button>
-        </li>
-      );
-    });
-
-  const changeMetadataButtons = (
-    <ul
-      style={{
-        listStyleType: "none",
-        display: "flex",
-        gap: "0.25rem",
-        paddingInlineStart: "0rem",
-      }}
-    >
-      {metadataHumanAccAndIndices.map((accession) => {
-        let cur_button_color = "white";
-        if (
-          metadata[curMetadataHumanIndex]?.accession === accession.accession
-        ) {
-          cur_button_color = "green";
-        }
-        return (
-          <li key={accession.accession}>
-            <button
-              style={{ backgroundColor: cur_button_color }}
-              onClick={() => {
-                setCurMetadataHumanIndex(accession.index);
-              }}
-            >
-              {accession.accession}
-            </button>
-          </li>
-        );
-      })}
-    </ul>
-  );
+    
   
-  // undefined if no synonyms exist
-  const synonymsListJsx = metadata[curMetadataHumanIndex]?.gene?.[0]?.synonyms?.map(
-    (syn, idx) => {
-      return (
-        // in first element add '(' to beggining in last element add ')' to the end instead of ','
-        <li key = {syn?.value}>
-          <h4>
-            {idx === 0 && "("}
-            {syn?.value}
-            {idx !==
-            metadata[curMetadataHumanIndex]?.gene?.[0]?.synonyms.length - 1
-              ? ","
-              : ")"}
-          </h4>
-        </li>
-      );
-    }
-  );
-  
-
-
+ 
   let heatmapProteinDataProp;
   if (currentPredictionToolParameters?.toolname_json === 'AggregatorLocal' ){
     heatmapProteinDataProp = allProteinData;
@@ -438,88 +333,139 @@ const ProteinPage = () => {
     heatmapProteinDataProp = allProteinData[currentPredictionToolParameters?.toolname_json] || {};
   }
 
+  // idx === 0 => aggregator
+  const selectorPredictionToolsOptions = all_prediction_tools_array
+    .filter(
+      (tool, idx) =>
+        idx === 0 || Object.hasOwn(allProteinData, tool.toolname_json)
+    )
+    .map((tool) => {
+      return { value: tool, label: tool.toolname };
+    });
+
+  const selectorPredictionTools = (
+    <div style={{ width: "15rem" }}>
+      <Select
+        value={{
+          value: currentPredictionToolParameters,
+          label: currentPredictionToolParameters?.toolname,
+        }}
+        onChange={(new_option) => switchTool(new_option.value, allProteinData)}
+        options={selectorPredictionToolsOptions}
+        styles={{
+          menuPortal: (provided) => ({ ...provided, zIndex: 9999 }),
+          menu: (provided) => ({ ...provided, zIndex: 9999 }),
+        }}
+      />
+    </div>
+  );
+
+  const selectorMetadataAccessionOptions = metadataAccessionAndIndices.map(
+    (accAndIndex) => {
+      return { value: accAndIndex.index, label: accAndIndex.accession };
+    }
+  );
+
+  const selectorMetadataAccession = (
+    <div style={{ width: "9vw", marginLeft: "1vw", marginBottom: "1rem" }}>
+      <Select
+        value={{
+          value: curMetadataHumanIndex,
+          label:
+            metadataAccessionAndIndices?.[curMetadataHumanIndex]?.accession,
+        }}
+        onChange={(new_option) => setCurMetadataHumanIndex(new_option.value)}
+        options={selectorMetadataAccessionOptions}
+      ></Select>
+    </div>
+  );
+
+  const sequenceKeywordsJsx = metadata[curMetadataHumanIndex]?.keywords?.map(
+    (keyword) => {
+      return <li key={keyword.value}>{keyword.value}</li>;
+    }
+  );
+
   return (
     <>
-      {proteinNameJsx}
-      {uniprotIdsJSX}
-
-      <div>
-        {/* style={{width:1400 , height:900,overflow:"scroll"  }}*/}
-        <div>
-          <ul
-            style={{ listStyleType: "none", display: "flex", gap: "0.25rem" }}
-          >
-            {" "}
-            {currentPredictionToolParameters && changePredictionToolButtons}{" "}
-          </ul>
-          {currentPredictionToolParameters && (
-            <div
+      {proteinNameJSX}
+      {geneName && (
+        <div style={{ display: "flex" }}>
+          <h3>Gene name:</h3>
+          <h4 style={{ paddingLeft: "0.25rem" }}> {geneName}</h4>
+          {synonymsListJsx && (
+            <ul
               style={{
+                listStyleType: "none",
                 display: "flex",
-                gap: "30px",
-                justifyContent: "flex-end",
-                marginRight: "0px",
+                marginTop: "0px",
+                marginLeft: "0px",
+                paddingLeft: "0.25rem",
+                marginBlockEnd: "0px",
+                marginBlockStart: "0px",
               }}
             >
-              <h2 style={{ marginLeft: "0px", marginRight: "auto" }}>
-                Current tool : {currentPredictionToolParameters.toolname}
-              </h2>
-              <ColorRangesLegend
-                currentPredictionToolParameters={
-                  currentPredictionToolParameters
-                }
-                color_lists_array={color_lists_array}
-              />
-              {/* <canvas
+              {synonymsListJsx}
+            </ul>
+          )}
+        </div>
+      )}
+      {uniprotIdsJSX}
+
+      {currentPredictionToolParameters && <div>{selectorPredictionTools}</div>}
+
+      {currentPredictionToolParameters && (
+        <div
+          style={{
+            display: "flex",
+            gap: "30px",
+            justifyContent: "flex-end",
+            marginRight: "0px",
+          }}
+        >
+          <h2 style={{ marginLeft: "0px", marginRight: "auto" }}>
+            Current tool : {currentPredictionToolParameters.toolname}
+          </h2>
+          <ColorRangesLegend
+            currentPredictionToolParameters={currentPredictionToolParameters}
+            color_lists_array={color_lists_array}
+          />
+          {/* <canvas
               id="color_ranges_legend"
               ref={colorRangesLegendRef}
               height={"85"}
               style={{width:'calc(30vw + 50px)', height:"85px"}}
             ></canvas> */}
-            </div>
-          )}
         </div>
-        <div style={{ marginBottom: "1rem" }}>
-          {currentPredictionToolParameters ? (
-            <Heatmap
-              currentPredictionToolParameters={currentPredictionToolParameters}
-              // adding "|| {}" so that proteinData is never undefined, instead it is an empty object
-              proteinData={heatmapProteinDataProp}
-              // proteinData={proteinData} // if we want to fetch one by one;
-              color_lists_array={color_lists_array}
-              number_of_colors={number_of_colors}
-              scaleAndOriginX={scaleAndOriginX}
-              setScaleAndOriginX={setScaleAndOriginX}
-            />
-          ) : (
-            <div
-              style={{
-                height: "400px",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-              }}
-            >
-              <h1> {proteinDataLoadingStatus}</h1>
-            </div>
-          )}
-        </div>
-      </div>
-      {
-        // show switching buttons only if there exists more than 1 metadata for humans
-        metadataHumanAccAndIndices.length > 1 && (
-          <ul
+      )}
+      <div style={{ marginBottom: "1rem" }}>
+        {currentPredictionToolParameters ? (
+          <Heatmap
+            currentPredictionToolParameters={currentPredictionToolParameters}
+            // adding "|| {}" so that proteinData is never undefined, instead it is an empty object
+            proteinData={heatmapProteinDataProp}
+            // proteinData={proteinData} // if we want to fetch one by one;
+            color_lists_array={color_lists_array}
+            number_of_colors={number_of_colors}
+            scaleAndOriginX={scaleAndOriginX}
+            setScaleAndOriginX={setScaleAndOriginX}
+          />
+        ) : (
+          <div
             style={{
-              listStyleType: "none",
+              height: "400px",
               display: "flex",
-              gap: "0.25rem",
-              paddingInlineStart: "0rem",
+              alignItems: "center",
+              justifyContent: "center",
             }}
           >
-            {changeMetadataButtons}
-          </ul>
-        )
-      }
+            <h1> {proteinDataLoadingStatus}</h1>
+          </div>
+        )}
+      </div>
+      {/* {metadataAccessionAndIndices?.length > 0 && changeMetadataButtons} */}
+      {metadataAccessionAndIndices?.length > 0 && selectorMetadataAccession}
+
       <MetadataFeaturesTable
         allFeaturesArray={metadata[curMetadataHumanIndex]?.features}
         sequenceLength={metadata[curMetadataHumanIndex]?.sequence.length}
@@ -533,216 +479,70 @@ const ProteinPage = () => {
         </div>
       )}
 
-      {
-        // synonymsListJsx && uncomment to Remove gene Name title if no gene name part exists
-        <div style={{ display: "flex" }}>
-          <h3>Gene name:</h3>
-          <h4 style={{ paddingLeft: "0.25rem" }}> {geneName}</h4>
-          {synonymsListJsx && (
-            <ul
-              style={{
-                listStyleType: "none",
-                display: "flex",
-                marginTop: "0px",
-                marginLeft: "0px",
-                paddingLeft: "0.25rem",
-              }}
-            >
-              {synonymsListJsx}
-            </ul>
-          )}
-        </div>
-      }
-
-      <br />
-
       {/* <div>{featuresJsx}</div> */}
     </>
   );
 };
 export default ProteinPage;
 
-// const find_feature_categories = (input) => {
-//   let temp_keys = new Set();
-//   if (!input) {
-//     return 0;
-//   } else {
-//     for (let i = 0; i < input.length; i++) {
-//       temp_keys.add(input[i].category);
-//     }
-//   }
-//   return temp_keys;
-// };
-// const feature_categories = find_feature_categories(metadata[curMetadataHuman]?.features);
-// for(let i = 0; i< feature_arr.length; i++){ // is erroneous
-//   if (feature_arr[i].category !== cur_category){
-//     continue;
-//   }
-//   let temp_overlap_count = 0;
-//   let temp_range_start = parseInt(feature_arr[i].begin);
-//   let temp_range_end = parseInt(feature_arr[i].end);
-//   for(let j = 0; j < feature_arr.length; j++){ // count range overlaps for temp range;
-//     let compare_range_start = parseInt(feature_arr[j].begin);
-//     let compare_range_end = parseInt(feature_arr[j].end);
-//     if ((compare_range_start <= temp_range_end && compare_range_end >= temp_range_start ) && cur_category === feature_arr[j].category ) // overlaps with temp_range
-//     {
-
-      
-//       temp_overlap_count += 1;
-//     }
-//   }
-//   if(temp_overlap_count > maximum_overlap_count){
-//     maximum_overlap_count = temp_overlap_count;
-//   }
-// }
-// return maximum_overlap_count;
-// {Object.hasOwn( // make this into a list.map() function
-//             allProteinData,
-//             polyphen2_parameters_humdiv.toolname_json
-//           ) && (
-//             <button onClick={(e) => switchTool(e, polyphen2_parameters_humdiv)}>
-//               Polyphen2 {/*polyphen2_parameters.toolname */}
-//             </button>
-//           )}
-//           {Object.hasOwn(allProteinData, sift_parameters_swissprot.toolname_json) && (
-//             <button onClick={(e) => switchTool(e, sift_parameters_swissprot)}>
-//               Sift {/* sift_parameters.toolname */}
-//             </button>
-//           )}
-//           {Object.hasOwn(allProteinData, lists2_parameters.toolname_json) && (
-//             <button onClick={(e) => switchTool(e, lists2_parameters)}>
-//               LIST-S2 {/* lists2_parameters.toolname */}
-//             </button>
-//           )}
-  // useEffect( () => { // to fetch for tools data one by one;
-  //   const request_url = currentPredictionToolParameters.toolname_api + "/" + md5sum
-  //   axios.get(database_url + request_url ) // cors policy
-  //   .then(function (response) {
-  //     // handle success
-  //     // console.log(response);
-  //     setAllProteinData(response.data);
-  //     will need a variable for heatmap tool params, so that while waiting for the data of
-  //     new tool, we don't redraw heatmap, with the scores of the previous tool
-  //     setHeatmapPredictionToolParameters(currentPredictionToolParameters);
-  //   })
-  //   .catch(function (error) {
-  //     // handle error
-  //     console.log(error);
-  //   })
-  //   .then(function () {
-  //     console.log("api called for " + database_url + request_url);
-  //     // always executed
-  //   });
-  // },[currentPredictionToolParameters,md5sum] );
-  // let minimum_value = 100;
-  // let maximum_value = -40;
-  // const current_tool_protein_data = allProteinData[prediction_tool_parameters.toolname_json];
-  // let i = 1;
-  // while(Object.hasOwn( current_tool_protein_data , i )){ // each position
-  //   for(let j = 0; j<20; j++){ // each aminoacid for that position
-  //     let current_score = "NaN"; // default value
-  //     const cur_amino_acid = aminoacid_ordering[j]
-  //     if (Object.hasOwn( current_tool_protein_data[i], cur_amino_acid ) ){
-  //       current_score = parseFloat(current_tool_protein_data[i][cur_amino_acid]);
-  //       if ( ! isNaN(current_score)){// not NaN
-  //         if (maximum_value < current_score){
-  //           maximum_value = current_score;
-  //         }
-  //         if (minimum_value > current_score){
-  //           minimum_value = current_score;
-  //         }
-  //       } 
-  //     }
-  //   }
-  //   i+= 1;
-  // }
-   // useEffect(() => {
-  //   // draw color ranges legend
-  //   const drawColorRangesLegend = () => {
-  //     // can become a component; input = toolparams , colorlist
-  //     // console.log("ranges redraw");
-  //      // width of each color in the gradient;
-  //     const c = colorRangesLegendRef.current;
-  //     if (!c) {
-  //       return;
-  //     }
-  //     const ctx = c.getContext("2d");
-  //     const width_vw = currentPredictionToolParameters.score_ranges.length * 15;
-  //     const vw_string = String(width_vw) + "vw";
-  //     c.style.width = "calc("+ vw_string + " + 50px)";
-  //     // width is dynamic; based on predicion tool
-
-  //     const color_ranges_legend_rect = c.getBoundingClientRect();
-  //     const h = color_ranges_legend_rect.height; // is always the same
-  //     c.style.height = h + "px";
-  //     // const w = color_ranges_legend_rect.width;
-  //     // const h = color_ranges_legend_rect.height;
-  //     const w = color_ranges_legend_rect.width;
-  //     console.log("w= " + w );
-  //     // const w =
-  //     //   currentPredictionToolParameters.score_ranges.length *
-  //     //     (number_of_colors + 1) *
-  //     //     step_size +
-  //     //   50; // 25 from beggining and end to make sure last number isn't cut short
-  //     // *31, to account for black lines , + 15 to account for current_x starting from 15, and + 15 to make sure last number isn't cut short;
-  //     const ratio = window.devicePixelRatio;
-  //     c.width = w * ratio;
-  //     c.height = h * ratio;
-  //     ctx.scale(ratio, ratio);
-  //     // buffer for 50, and number_of_rectangles (including black divider ones);
-  //     const step_size = (w-50)/(((number_of_colors + 1) * currentPredictionToolParameters.score_ranges.length) + 1 ) ;
-  //     // w = 500; 450/(30*3) = 5, 
-  //     // ctx.fillRect(0,h/4,w,h/2);
-  //     let current_x = 25;
-  //     ctx.fillStyle = "black";
-  //     ctx.fillRect(current_x, h / 4, Math.ceil(step_size) + 1, h / 2); //(x: number, y: number, w: number, h: number): void
-  //     ctx.textAlign = "center";
-  //     ctx.font = "16px Arial";
-  //     ctx.fillText(
-  //       currentPredictionToolParameters.score_ranges[0].start.toFixed(2),
-  //       current_x,
-  //       15,
-  //       50
-  //     );
-  //     current_x += step_size;
-
-  //     for (let i = 0; i < currentPredictionToolParameters.score_ranges.length; i++) {
-  //       // i = 0,1
-  //       for (let j = 0; j < color_lists_array[i].length; j++) {
-  //         ctx.fillStyle = color_lists_array[i][j];
-  //         ctx.fillRect(current_x, h / 4, Math.ceil(step_size) + 1  , h / 2);
-  //         current_x += step_size;
-  //         if (j === Math.floor(color_lists_array[i].length / 2)) {
-  //           // middle element
-  //           ctx.fillText(
-  //             currentPredictionToolParameters.score_ranges[i].risk_assessment,
-  //             current_x,
-  //             15,
-  //             (number_of_colors * step_size - 50)
-  //           ); // 30 = number of colors
-  //         }
-         
-  //         // normal color line;
-         
+ // const changeMetadataButtons = (
+  //   <ul
+  //     style={{
+  //       listStyleType: "none",
+  //       display: "flex",
+  //       gap: "0.25rem",
+  //       paddingInlineStart: "1rem",
+  //     }}
+  //   >
+  //     {metadataAccessionAndIndices.map((accession) => {
+  //       let cur_button_color = "white";
+  //       if (
+  //         metadata[curMetadataHumanIndex]?.accession === accession.accession
+  //       ) {
+  //         cur_button_color = "green";
   //       }
-  //       // empty black line
-  //       ctx.fillStyle = "black";
-  //       ctx.fillRect(current_x, h / 4, step_size, h / 2); // last rect, won't use Math.ceil()
-  //       // in previous rects we deliberately draw a bit more than enough to make sure there aren't any gaps between them;
-  //       current_x += step_size;
-  //       ctx.fillText(
-  //         currentPredictionToolParameters.score_ranges[i].end.toFixed(2),
-  //         current_x,
-  //         15,
-  //         50
+  //       return (
+  //         <li key={accession.accession}>
+  //           <button
+  //             style={{ backgroundColor: cur_button_color }}
+  //             onClick={() => {
+  //               setCurMetadataHumanIndex(accession.index);
+  //             }}
+  //           >
+  //             {accession.accession}
+  //           </button>
+  //         </li>
   //       );
+  //     })}
+  //   </ul>
+  // );
+
+
+
+  // const changePredictionToolButtons = all_prediction_tools_array
+  //   .filter((tool , idx) => ( idx === 0 || Object.hasOwn(allProteinData, tool.toolname_json) ))
+  //   .map((tool) => {
+  //     let cur_button_color = "white";
+  //     if (
+  //       tool.toolname_json === currentPredictionToolParameters?.toolname_json
+  //     ) {
+  //       cur_button_color = "green";
   //     }
-      
-  //     return;
-  //   };
-  //   drawColorRangesLegend();
-  // }, [currentPredictionToolParameters, color_lists_array]); // resizeCount Added to drawColorRangesLegend
- // const temp_list = chroma
-      //   .scale([current_range_start_color, current_range_end_color])
-      //   .mode("lch")
-      //   .colors(number_of_colors); // 30 is the number of colors, if you change 30 here, you must change it in drawheatmap color determination based on tool's value
+  //     return (
+  //       <li key={tool.toolname_json}>
+  //         <button
+  //           style={{ backgroundColor: cur_button_color }}
+  //           onClick={() => switchTool(tool,allProteinData)}
+  //         >
+  //           {tool.toolname}
+  //         </button>
+  //       </li>
+  //     );
+  //   });
+
+
+ 
+
+
+
+

@@ -15,20 +15,17 @@ function MetadataFeaturesTable({ allFeaturesArray, sequenceLength, scaleAndOrigi
   // or it will be an element of the "features" array in the metadata
 
 
-  const changeTooltipFeature = (new_feature,new_mouse_posX,new_mouse_posY,new_color) => {
+  const changeTooltipFeature = (new_feature,new_posX,new_posY,new_color,position_left) => {
     if (currentTooltip.feature === 'invisible' && new_feature === 'invisible'){
       return; // to reduce the number of redraws, return without 'setState' in this case
       // not really necessary probably, as its perforamnce wasn't a problem without this "optimization"
     }
-    setCurrentTooltipFeature({feature: new_feature, mouseX: new_mouse_posX, mouseY: new_mouse_posY, color: new_color});
-   
-    
+    setCurrentTooltipFeature({feature: new_feature, posX: new_posX, posY: new_posY, color: new_color,positionLeft: position_left});
   }
 
   // onMouseUp in tooltip div;
   const onMouseUpHelper = () => {
     if(isDown){
-      console.log("qq");
       setIsDown(prev => false);
     }
   }
@@ -43,7 +40,7 @@ function MetadataFeaturesTable({ allFeaturesArray, sequenceLength, scaleAndOrigi
   // if currentTooltipFeature is 'invisible' it doesn't give an error, so it is fine now;
 
 
-  // 
+  // LIGANDS PARSING IS MISSING
   const helperFeatureEvidenceParser = (cur_evidence) => {
     return (
       <ul style= {{listStyleType:'none',paddingInlineStart:'1rem'}} > 
@@ -104,6 +101,7 @@ function MetadataFeaturesTable({ allFeaturesArray, sequenceLength, scaleAndOrigi
   //   }
   // ]
 
+  // ADD LIGANDS PARSING
   const currentTooltipFeatureJSX = Object.keys(currentTooltip.feature)?.filter(ftrKey => {
     if(currentTooltip.feature[ftrKey].length === 0 ){
       return false;
@@ -145,6 +143,7 @@ function MetadataFeaturesTable({ allFeaturesArray, sequenceLength, scaleAndOrigi
       </li>)
   } )
   
+
   const featureCategoriesAndColumnsJsx = Array.from(featureCategories).flatMap(
     (category, idx) => {
       // const cur_ftr = metadata[metadataHumanIndex]?.features.map( (ftr) => {
@@ -207,6 +206,61 @@ function MetadataFeaturesTable({ allFeaturesArray, sequenceLength, scaleAndOrigi
       ];
     }
   );
+  let currentTooltipJSX;
+  if (currentTooltip.positionLeft) {
+    currentTooltipJSX = (
+      <div
+        onMouseUp={onMouseUpHelper}
+        style={{
+          position: "absolute",
+          left: String(currentTooltip.posX - 20) + "px",
+          top: String(currentTooltip.posY + 15) + "px",
+          zIndex: 1000,
+          // backgroundColor: currentTooltip.color,
+          backgroundColor: "lavender",
+          maxHeight: "50vh",
+          overflowY: "auto",
+        }}
+      >
+        <ul
+          style={{
+            listStyleType: "none",
+            paddingInlineStart: "3rem",
+            paddingInlineEnd: "3rem",
+          }}
+        >
+          {currentTooltipFeatureJSX}
+        </ul>
+      </div>
+    );
+  } else {
+    currentTooltipJSX = (
+      <div
+        onMouseUp={onMouseUpHelper}
+        style={{
+          position: "absolute",
+          right: String(window.innerWidth - (currentTooltip.posX + 30)) + "px",
+          top: String(currentTooltip.posY + 15) + "px",
+          zIndex: 1000,
+          // backgroundColor: currentTooltip.color,
+          backgroundColor: "lavender",
+          maxHeight: "50vh",
+          overflowY: "auto",
+        }}
+      >
+        <ul
+          style={{
+            listStyleType: "none",
+            paddingInlineStart: "3rem",
+            paddingInlineEnd: "3rem",
+          }}
+        >
+          {currentTooltipFeatureJSX}
+        </ul>
+      </div>
+    );
+  }
+
   return (
     // can't give rowgap, because then the canvasses won't touch, and there will be dead zones for zoom, instead make canvas larger, and then not draw the figures to those areas
     <>
@@ -234,39 +288,18 @@ function MetadataFeaturesTable({ allFeaturesArray, sequenceLength, scaleAndOrigi
             style={{
               // the little triangle that indicates what we are pointing at
               position: "absolute",
-              left: String(currentTooltip.mouseX - 10) + "px",
-              top: String(currentTooltip.mouseY) + "px",
+              left: String(currentTooltip.posX - 10) + "px",
+              top: String(currentTooltip.posY) + "px",
               zIndex: 1001,
               width: 0,
               height: 0,
               borderLeft: "10px solid transparent",
               borderRight: "10px solid transparent",
               borderBottom: "20px solid lavender",
+              pointerEvents:'none'
             }}
           ></div>
-          <div
-            style={{
-              position: "absolute",
-              left: String(currentTooltip.mouseX - 20) + "px", // double width of the triangle
-              top: String(currentTooltip.mouseY + 15) + "px", // 3/4  height of the triangle
-              zIndex: 1000,
-              // backgroundColor: currentTooltip.color,
-              backgroundColor: 'lavender',
-              maxHeight: "50vh",
-              overflowY: "auto",
-            }}
-          >
-            <ul
-              style={{
-                listStyleType: "none",
-                paddingInlineStart: "3rem",
-                paddingInlineEnd: "3rem",
-              }}
-            >
-              {" "}
-              {currentTooltipFeatureJSX}{" "}
-            </ul>
-          </div>
+          {currentTooltipJSX}
         </div>
       )}
     </>
