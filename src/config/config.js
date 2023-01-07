@@ -45,7 +45,7 @@ export const top_margin_sl_coef= 4;
 export const top_margin_ml_coef = 8;
 export const sub_lane_divider_coef = 4; // used to be divided by top margin, now divided by sub_lane height;
 // features tooltip
-export const filtered_categories = ['category','sub_lane'];  // sub_lane is calculated by us;
+// export const filtered_categories = ['category','sub_lane'];  // sub_lane is calculated by us;
 
 export const colorRangesLegendRangeWidthCoef = 10; // each range will be this variable 'vw';
 // export const colorRangesLegendHeight = '85px';

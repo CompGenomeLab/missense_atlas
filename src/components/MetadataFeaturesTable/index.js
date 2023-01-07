@@ -1,6 +1,6 @@
-import React, {useState} from "react";
+import React, {useEffect, useState} from "react";
 import MetadataFeatureLane from "./MetadataFeatureLane";
-import { laneHeight, laneWidth, filtered_categories,c_palettes } from "../../config/config";
+import { laneHeight, laneWidth,c_palettes } from "../../config/config";
 
 
 
@@ -15,6 +15,8 @@ function MetadataFeaturesTable({ allFeaturesArray, sequenceLength, scaleAndOrigi
   // or it will be an element of the "features" array in the metadata
 
 
+  
+  // color is unused right now
   const changeTooltipFeature = (new_feature,new_posX,new_posY,new_color,position_left) => {
     if (currentTooltip.feature === 'invisible' && new_feature === 'invisible'){
       return; // to reduce the number of redraws, return without 'setState' in this case
@@ -22,6 +24,12 @@ function MetadataFeaturesTable({ allFeaturesArray, sequenceLength, scaleAndOrigi
     }
     setCurrentTooltipFeature({feature: new_feature, posX: new_posX, posY: new_posY, color: new_color,positionLeft: position_left});
   }
+
+  // to remove tooltip when zoomed on heatmap
+  useEffect( () => {
+    setCurrentTooltipFeature({feature:'invisible',posX:0,posY:0,color:'#FFFFFF',positionLeft:true})
+  },[scaleAndOriginX] )
+
 
   // onMouseUp in tooltip div;
   const onMouseUpHelper = () => {
@@ -40,52 +48,6 @@ function MetadataFeaturesTable({ allFeaturesArray, sequenceLength, scaleAndOrigi
   // if currentTooltipFeature is 'invisible' it doesn't give an error, so it is fine now;
 
 
-  // LIGANDS PARSING IS MISSING
-  const helperFeatureEvidenceParser = (cur_evidence) => {
-    return (
-      <ul style= {{listStyleType:'none',paddingInlineStart:'1rem'}} > 
-        {
-          Object.keys(cur_evidence)?.map((cur_evidence_key,index) => {
-            if (typeof(cur_evidence[cur_evidence_key]) === 'string' ) // code or label
-            {
-              return(
-                <li key={cur_evidence_key}>
-                  {cur_evidence_key} : {cur_evidence[cur_evidence_key]}
-                </li>
-              )
-            }
-            // source object
-            return( 
-            <li key={cur_evidence_key}>
-              source : 
-                <ul style= {{listStyleType:'none',paddingInlineStart:'1rem'}} > {
-                Object.keys(cur_evidence['source'])?.map(src_key => {
-                  if(src_key === 'url' || src_key === 'alternativeUrl'){ // Link,
-                    return (
-                      <li key={src_key}>
-                        {src_key} :{" "}
-                        <a href={cur_evidence["source"][src_key]}>
-                          {cur_evidence["source"][src_key]}{" "}
-                        </a>
-                      </li>
-                    );
-                  }
-                  return( // not a link
-                    <li key={src_key}> 
-                        {src_key} : {cur_evidence['source'][src_key]}
-                    </li>
-                  )
-                })
-              }
-              </ul>
-            </li>)
-          })
-        }
-      </ul>
-    )
-  }
-    //{/* {cur_evidence_key} : {JSON.stringify(cur_evidence[cur_evidence_key])}  */}
-
   // "evidences": [
   //   {
   //     "code": "string",
@@ -101,48 +63,126 @@ function MetadataFeaturesTable({ allFeaturesArray, sequenceLength, scaleAndOrigi
   //   }
   // ]
 
+
+  // LIGANDS PARSING IS MISSING
+  // const helperFeatureEvidenceParser = (cur_evidence) => {
+  //   return (
+  //     <ul style= {{listStyleType:'none',paddingInlineStart:'1rem'}} > 
+  //       {
+  //         Object.keys(cur_evidence)?.map((cur_evidence_key,index) => {
+  //           if (typeof(cur_evidence[cur_evidence_key]) === 'string' ) // code or label
+  //           {
+  //             return(
+  //               <li key={cur_evidence_key}>
+  //                 {cur_evidence_key} : {cur_evidence[cur_evidence_key]}
+  //               </li>
+  //             )
+  //           }
+  //           // source object
+  //           return( 
+  //           <li key={cur_evidence_key}>
+  //             source : 
+  //               <ul style= {{listStyleType:'none',paddingInlineStart:'1rem'}} > {
+  //               Object.keys(cur_evidence['source'])?.map(src_key => {
+  //                 if(src_key === 'url' || src_key === 'alternativeUrl'){ // Link,
+  //                   return (
+  //                     <li key={src_key}>
+  //                       {src_key} :{" "}
+  //                       <a href={cur_evidence["source"][src_key]}>
+  //                         {cur_evidence["source"][src_key]}{" "}
+  //                       </a>
+  //                     </li>
+  //                   );
+  //                 }
+  //                 return( // not a link
+  //                   <li key={src_key}> 
+  //                       {src_key} : {cur_evidence['source'][src_key]}
+  //                   </li>
+  //                 )
+  //               })
+  //             }
+  //             </ul>
+  //           </li>)
+  //         })
+  //       }
+  //     </ul>
+  //   )
+  // }
+    //{/* {cur_evidence_key} : {JSON.stringify(cur_evidence[cur_evidence_key])}  */}
+
   // ADD LIGANDS PARSING
-  const currentTooltipFeatureJSX = Object.keys(currentTooltip.feature)?.filter(ftrKey => {
-    if(currentTooltip.feature[ftrKey].length === 0 ){
-      return false;
-    }
-    if(filtered_categories.indexOf(ftrKey) !== -1 ){
-      return false; // the key is included in categories to be filtered;
-    }
-    return true; // value for key exists, and it is not one of the to be filterd categories
-  }).map( ftrKey => {
-    // console.log(ftrKey);
-    if (typeof(currentTooltip.feature[ftrKey]) === 'string' )
-    {
-      return(
-        <li key={ftrKey}>
-          {ftrKey} : {currentTooltip.feature[ftrKey]}
-        </li>
-      )
-    }
-    if (ftrKey === "evidences") {
-      // evidences
-      return (
-        <li key={"evidences"}>
-          evidences :
-          <ul style={{ listStyleType: "none", paddingInlineStart: "1rem" }}>
-            {currentTooltip.feature["evidences"]?.map((evidence, index) => {
-              return (
-                <li key={index}>
-                  {index + 1}:{helperFeatureEvidenceParser(evidence)}
-                </li>
-              );
-            })}
-          </ul>
-        </li>
-      );
-    }
-    return( // will write for the case of ligand, probably;
-      <li key={ftrKey}>
-        {ftrKey} : {JSON.stringify(currentTooltip.feature[ftrKey])} 
-      </li>)
-  } )
+  // const currentTooltipFeatureJSX2 = Object.keys(currentTooltip.feature)?.filter(ftrKey => {
+  //   if(currentTooltip.feature[ftrKey].length === 0 ){
+  //     return false;
+  //   }
+  //   if(filtered_categories.indexOf(ftrKey) !== -1 ){
+  //     return false; // the key is included in categories to be filtered;
+  //   }
+  //   return true; // value for key exists, and it is not one of the to be filterd categories
+  // }).map( ftrKey => {
+  //   // console.log(ftrKey);
+  //   if (typeof(currentTooltip.feature[ftrKey]) === 'string' )
+  //   {
+  //     return(
+  //       <li key={ftrKey}>
+  //         {ftrKey} : {currentTooltip.feature[ftrKey]}
+  //       </li>
+  //     )
+  //   }
+  //   if (ftrKey === "evidences") {
+  //     // evidences
+  //     return (
+  //       <li key={"evidences"}>
+  //         evidences :
+  //         <ul style={{ listStyleType: "none", paddingInlineStart: "1rem" }}>
+  //           {currentTooltip.feature["evidences"]?.map((evidence, index) => {
+  //             return (
+  //               <li key={index}>
+  //                 {index + 1}:{helperFeatureEvidenceParser(evidence)}
+  //               </li>
+  //             );
+  //           })}
+  //         </ul>
+  //       </li>
+  //     );
+  //   }
+  //   return( // will write for the case of ligand, probably;
+  //     <li key={ftrKey}>
+  //       {ftrKey} : {JSON.stringify(currentTooltip.feature[ftrKey])} 
+  //     </li>)
+  // } )
   
+
+  const currentTooltipFeatureJSX = (
+    <div>
+      <div style={{ display: "flex", justifyContent:'center',gap: "0.5rem", marginTop:'0.25rem' }}>
+        <p style={{margin:'0px'}}>{currentTooltip.feature.type}</p>
+        <p style={{margin:'0px'}}>
+          {currentTooltip.feature.begin}-{currentTooltip.feature.end}
+        </p>
+      </div>
+      {currentTooltip.feature.description && (
+        <div style={{ display: "flex",flexDirection:'column' ,alignItems:'center', gap:'0.5rem', marginTop:'1rem'}}><p style={{margin:'0px'}}> description:</p> <p style={{margin:'0px'}}> {currentTooltip.feature.description}</p> </div>
+      )}
+      {currentTooltip.feature?.ftId && (
+        <div style={{ display: "flex",flexDirection:'column' ,alignItems:'center', gap:'0.5rem', marginTop:'1rem'}}><p style={{margin:'0px'}}> Uniprot Feature ID:</p> <p style={{margin:'0px'}}> {currentTooltip.feature.ftId}</p> </div>
+      )}
+      { currentTooltip.feature?.evidences?.length > 0 &&
+      <ul style={{ textAlign:'center', listStyleType: "none", marginTop: "1rem", paddingInlineStart:'0px' }}>
+        {currentTooltip.feature.evidences.filter(ev => ev.source?.url !== undefined).map( (evidence,idx) => {
+          return(
+            <li key={idx}>
+              <a href={evidence.source.url}>
+                evidence{idx + 1}   
+              </a>
+              
+            </li>
+          )
+        } )}
+      </ul>
+      }
+    </div>
+  );
 
   const featureCategoriesAndColumnsJsx = Array.from(featureCategories).flatMap(
     (category, idx) => {
@@ -222,15 +262,7 @@ function MetadataFeaturesTable({ allFeaturesArray, sequenceLength, scaleAndOrigi
           overflowY: "auto",
         }}
       >
-        <ul
-          style={{
-            listStyleType: "none",
-            paddingInlineStart: "3rem",
-            paddingInlineEnd: "3rem",
-          }}
-        >
-          {currentTooltipFeatureJSX}
-        </ul>
+        {currentTooltipFeatureJSX}
       </div>
     );
   } else {
@@ -275,13 +307,7 @@ function MetadataFeaturesTable({ allFeaturesArray, sequenceLength, scaleAndOrigi
         {featureCategoriesAndColumnsJsx}
       </div>
 
-      {/* #triangle-up {
-      width: 0;
-      height: 0;
-      border-left: 50px solid transparent;
-      border-right: 50px solid transparent;
-      border-bottom: 100px solid red;
-    } */}
+     
       {currentTooltip.feature !== "invisible" && ( // if Panning starts currentToolTipFeature will turn into 'invisible'
         <div onMouseUp={onMouseUpHelper}>
           <div

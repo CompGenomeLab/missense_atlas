@@ -244,7 +244,7 @@ function MetadataFeatureLane({
       lane_originX_next = lane_originX_next / lane_width; // !!QZY
       if (lane_scale_next !== lane_scale_prev) {
         e.preventDefault();
-        changeTooltipFeature('invisible',0,0,'#FFFFFF');
+        // changeTooltipFeature('invisible',0,0,'#FFFFFF');
         setScaleAndOriginX({
           scale: lane_scale_next,
           originX: lane_originX_next,
@@ -253,7 +253,7 @@ function MetadataFeatureLane({
 
       }
     },
-    [prevTime, setScaleAndOriginX,setIsDown,changeTooltipFeature,sequenceLength]
+    [prevTime, setScaleAndOriginX,setIsDown,sequenceLength]
   );
   
   // zoom listener registration
@@ -301,7 +301,7 @@ function MetadataFeatureLane({
     lane_originX_next = Math.min(lane_originX_next, (lane_width - lane_width/lane_scale)); // origin not larger than heatmap rightmost point;
     if (lane_originX_next !== lane_originX_prev ){
       lane_originX_next = lane_originX_next / lane_width; // QZY To make it in the correct format 
-      changeTooltipFeature('invisible',0,0,'#FFFFFF') // resetting tooltip so that it doesn't point to a different part;
+      // changeTooltipFeature('invisible',0,0,'#FFFFFF') // resetting tooltip so that it doesn't point to a different part;
       setScaleAndOriginX(prev => {
         return (  
           {scale: lane_scale ,originX: lane_originX_next }
@@ -392,7 +392,7 @@ function MetadataFeatureLane({
   const onDoubleClickHelper = () => {
     if(scaleAndOriginX.scale !== 1){
       setScaleAndOriginX({ scale: 1, originX: 0 })
-      changeTooltipFeature('invisible',0,0,'black') // remove tooltip because it will point to a location that is not the mouse;
+      // changeTooltipFeature('invisible',0,0,'black') // remove tooltip because it will point to a location that is not the mouse;
     }
   }
 
