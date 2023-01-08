@@ -1,7 +1,7 @@
 
 export const aminoacid_ordering = ['A','R','N','D','C','Q','E','G','H','I','L','K','M','F','P','S','T','W','Y','V'];
 
-export const number_of_colors = 90; // legend colors
+export const number_of_colors = 90; // legend colors // also indirectly affects the black divider width between ranges because of the current implementation
 export const color_mix_mode = "lch";
 export const database_url = "https://10.3.2.13:8080/database/"; // database base url
 
@@ -17,7 +17,7 @@ export const heatmapAminoAcidCharactersNumRows = 2;
 export const heatmapTotalNumRows = 20 + heatmapSpaceBtwnSummaryNumRows + heatmapSummaryNumRows + heatmapAminoAcidCharactersNumRows; // 20 cells rows for each aa + summary + space between heatmap and summary, (previous 2 rows)
 export const heatmapWidth = "80vw"; 
 export const aminoAcidLegendWidth = "10vw";
-export const heatmapTooltipFontMultiplier = 1.35;
+export const heatmapTooltipFontMultiplier = 1.35; // colorRangesLegend can also use the same;
 export const max_zoom_visible_aa_count = 10; // to determine maximum zoom value
 export const aa_position_notches_threshold = 9; // while drawing positions of the heatmap if step size of positions are smaller than threshold, draw small notches between the positions (like a ruler (cetvel)) 
 export const aa_visible_width_ratio = 0.8; // between 1 and 0; if size of aminoacid character is smaller than ratio * cellwidth, then draw;

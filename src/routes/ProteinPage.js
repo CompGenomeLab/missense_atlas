@@ -178,17 +178,17 @@ const ProteinPage = () => {
     let request_url = "";
     console.log(searchMethod);
     if(searchMethod.toLowerCase() === 'md5sum'){
-      request_url = "all_scores/md5sum/" + String(searchString);
+      request_url = "all_scores/md5sum/" + String(searchString.toLowerCase());
       setMd5sum(searchString);
     }
     if (searchMethod.toLowerCase() === 'uniprotid'){
-      request_url = "all_scores/uniprotid/" + String(searchString)
+      request_url = "all_scores/uniprotid/" + String(searchString.toUpperCase())
     }
     if (searchMethod.toLowerCase() === 'geneid'){
-      request_url = "all_scores/geneid/" + String(searchString);
+      request_url = "all_scores/geneid/" + String(searchString.toUpperCase());
     }
     // just making sure request url exists
-    if (request_url.length > 2){
+    if (request_url.length > 0){
       axios
         .get((database_url + request_url)) // cors policy
         .then(function (response) {
@@ -209,7 +209,7 @@ const ProteinPage = () => {
         .catch(function (error) {
           // handle error
           console.log(error);
-          setProteinDataLoadingStatus("Error loading protein data");
+          setProteinDataLoadingStatus("Error loading sequence data");
         })
         .then(function () {
           console.log("api called for " + database_url + request_url);
@@ -256,7 +256,7 @@ const ProteinPage = () => {
   
   const proteinNameJSX = (
     <div /*style={{ display: "flex", alignItems: "center" }}*/>
-      <h1>
+      <h1 style={{fontSize:'3.2vh'}}>
         { // the structure is different in some proteins, What to do? 
           metadata[curMetadataHumanIndex]?.protein?.recommendedName?.fullName?.value
         }
@@ -266,13 +266,13 @@ const ProteinPage = () => {
   const geneName = metadata[curMetadataHumanIndex]?.gene?.[0]?.name?.value;
     // undefined if no synonyms exist
 
-  const synonymsListJsx = metadata[
+  const synonymsListJSX = metadata[
     curMetadataHumanIndex
   ]?.gene?.[0]?.synonyms?.map((syn, idx) => {
     return (
       // in first element add '(' to beggining in last element add ')' to the end instead of ','
       <li key={syn?.value}>
-        <h4>
+        <h4 style={{fontSize:'1.6vh'}}>
           {idx === 0 && "("}
           {syn?.value}
           {idx !==
@@ -284,9 +284,35 @@ const ProteinPage = () => {
     );
   });
 
+  const geneNameJSX = geneName && (
+    <div style={{ display: "flex", alignItems: "center" }}>
+      <h3 style={{ fontSize: "1.8vh" }}>Uniprot Gene ID :</h3>
+      <h4 style={{ paddingLeft: "0.5rem", fontSize: "1.6vh" }}>
+        {geneName}
+      </h4>
+      {synonymsListJSX && (
+        <ul
+          style={{
+            listStyleType: "none",
+            display: "flex",
+            marginTop: "0px",
+            marginLeft: "0px",
+            paddingLeft: "0.25rem",
+            marginBlockEnd: "0px",
+            marginBlockStart: "0px",
+          }}
+        >
+          {synonymsListJSX}
+        </ul>
+      )}
+    </div>
+  );
+  
+  
+
   const uniprotIdsJSX = metadataAccessionAndIndices.length > 0 && (
     <div style={{ display: "flex" }}>
-      <h3 style={{ marginBlockStart: "0rem" }}>Uniprot ID :</h3>
+      <h3 style={{ marginBlockStart: "0rem", fontSize:'1.8vh' }}>Uniprot Sequence ID :</h3>
       <ul
         style={{
           listStyleType: "none",
@@ -300,7 +326,7 @@ const ProteinPage = () => {
         {metadataAccessionAndIndices?.map((accAndIndex) => {
           return (
             <li key={accAndIndex.accession} style={{ display: "flex" }}>
-              <h3 style={{ marginBlockStart: "0rem" }}>
+              <h3 style={{ marginBlockStart: "0rem", fontSize:'1.8vh' }}>
                 {accAndIndex.accession}
                 {/* {accAndIndex.index !== metadataAccessionAndIndices.length - 1 && // is not the last element
                 ","}  */}
@@ -309,11 +335,11 @@ const ProteinPage = () => {
                 href={
                   "https://www.uniprot.org/uniprot/" + accAndIndex.accession
                 }
-                style={{ textDecoration: "none" }}
+                style={{ textDecoration: "none", fontSize:'1.8vh' }}
                 target="_blank"
                 rel="noopener noreferrer"
               >
-                <OpenInNewIcon />
+                <OpenInNewIcon fontSize="inherit"/>
               </a>
             </li>
           );
@@ -344,7 +370,7 @@ const ProteinPage = () => {
     });
 
   const selectorPredictionTools = (
-    <div style={{ width: "15rem" }}>
+    <div style={{ width: "30vh" }}>
       <Select
         value={{
           value: currentPredictionToolParameters,
@@ -352,9 +378,12 @@ const ProteinPage = () => {
         }}
         onChange={(new_option) => switchTool(new_option.value, allProteinData)}
         options={selectorPredictionToolsOptions}
+        maxMenuHeight={window.innerHeight}
         styles={{
-          menuPortal: (provided) => ({ ...provided, zIndex: 9999 }),
-          menu: (provided) => ({ ...provided, zIndex: 9999 }),
+          menuPortal: (provided) => ({ ...provided, zIndex: 9999, }),
+          menu: (provided) => ({ ...provided, zIndex: 9999, fontSize:'1.8vh' }),
+          control: (provided) => ({...provided, fontSize:'1.8vh'})
+          
         }}
       />
     </div>
@@ -372,72 +401,64 @@ const ProteinPage = () => {
         value={{
           value: curMetadataHumanIndex,
           label:
-            metadataAccessionAndIndices?.[curMetadataHumanIndex]?.accession,
+            metadata?.[curMetadataHumanIndex]?.accession,
         }}
         onChange={(new_option) => setCurMetadataHumanIndex(new_option.value)}
         options={selectorMetadataAccessionOptions}
+        styles={{
+          menuPortal: (provided) => ({ ...provided, zIndex: 9999, }),
+          menu: (provided) => ({ ...provided, zIndex: 9999, fontSize:'1.8vh' }),
+          control: (provided) => ({...provided, fontSize:'1.8vh'}),
+
+        }}
       ></Select>
     </div>
   );
 
-  const sequenceKeywordsJsx = metadata[curMetadataHumanIndex]?.keywords?.map(
+  const sequenceKeywordsJSX = metadata[curMetadataHumanIndex]?.keywords?.map(
     (keyword) => {
-      return <li key={keyword.value}>{keyword.value}</li>;
+      return <li key={keyword.value}><p style={{fontSize:'1.3vh'}}> {keyword.value}</p></li>;
     }
   );
 
+  
   return (
     <>
-      {proteinNameJSX}
-      {geneName && (
-        <div style={{ display: "flex" }}>
-          <h3>Gene name:</h3>
-          <h4 style={{ paddingLeft: "0.25rem" }}> {geneName}</h4>
-          {synonymsListJsx && (
-            <ul
+      <div style={{ marginLeft: "1vw", marginRight: "1vw" }}>
+        {proteinNameJSX}
+        {geneNameJSX}
+        {uniprotIdsJSX}
+
+        {currentPredictionToolParameters && (
+          <div>{selectorPredictionTools}</div>
+        )}
+
+        {currentPredictionToolParameters && (
+          <div
+            style={{
+              display: "flex",
+              gap: "30px",
+              justifyContent: "flex-end",
+              marginRight: "0px",
+              alignContent:'end'
+            }}
+          >
+            <h2
               style={{
-                listStyleType: "none",
-                display: "flex",
-                marginTop: "0px",
                 marginLeft: "0px",
-                paddingLeft: "0.25rem",
-                marginBlockEnd: "0px",
-                marginBlockStart: "0px",
+                marginRight: "auto",
+                fontSize: "2.4vh",
               }}
             >
-              {synonymsListJsx}
-            </ul>
-          )}
-        </div>
-      )}
-      {uniprotIdsJSX}
-
-      {currentPredictionToolParameters && <div>{selectorPredictionTools}</div>}
-
-      {currentPredictionToolParameters && (
-        <div
-          style={{
-            display: "flex",
-            gap: "30px",
-            justifyContent: "flex-end",
-            marginRight: "0px",
-          }}
-        >
-          <h2 style={{ marginLeft: "0px", marginRight: "auto" }}>
-            Current tool : {currentPredictionToolParameters.toolname}
-          </h2>
-          <ColorRangesLegend
-            currentPredictionToolParameters={currentPredictionToolParameters}
-            color_lists_array={color_lists_array}
-          />
-          {/* <canvas
-              id="color_ranges_legend"
-              ref={colorRangesLegendRef}
-              height={"85"}
-              style={{width:'calc(30vw + 50px)', height:"85px"}}
-            ></canvas> */}
-        </div>
-      )}
+              Current tool : {currentPredictionToolParameters.toolname}
+            </h2>
+            <ColorRangesLegend
+              currentPredictionToolParameters={currentPredictionToolParameters}
+              color_lists_array={color_lists_array}
+            />
+          </div>
+        )}
+      </div>
       <div style={{ marginBottom: "1rem" }}>
         {currentPredictionToolParameters ? (
           <Heatmap
@@ -464,22 +485,21 @@ const ProteinPage = () => {
         )}
       </div>
       {/* {metadataAccessionAndIndices?.length > 0 && changeMetadataButtons} */}
-      {metadataAccessionAndIndices?.length > 0 && selectorMetadataAccession}
-
-      <MetadataFeaturesTable
-        allFeaturesArray={metadata[curMetadataHumanIndex]?.features}
-        sequenceLength={metadata[curMetadataHumanIndex]?.sequence.length}
-        scaleAndOriginX={scaleAndOriginX}
-        setScaleAndOriginX={setScaleAndOriginX}
-      />
-      {sequenceKeywordsJsx && (
-        <div>
-          <h3>Sequence Keywords:</h3>
-          <ul style={{ listStyleType: "none" }}>{sequenceKeywordsJsx} </ul>
+      {metadataAccessionAndIndices?.length > 1 && selectorMetadataAccession}
+      {metadataAccessionAndIndices?.length > 0 && (
+        <MetadataFeaturesTable
+          allFeaturesArray={metadata[curMetadataHumanIndex]?.features}
+          sequenceLength={metadata[curMetadataHumanIndex]?.sequence.length}
+          scaleAndOriginX={scaleAndOriginX}
+          setScaleAndOriginX={setScaleAndOriginX}
+        />
+      )}
+      {sequenceKeywordsJSX && (
+        <div style={{ marginLeft: "1vw", marginRight: "1vw" }}>
+          <h3 style={{ fontSize: "1.8vh" }}>Sequence Keywords:</h3>
+          <ul style={{ listStyleType: "none" }}>{sequenceKeywordsJSX} </ul>
         </div>
       )}
-
-      {/* <div>{featuresJsx}</div> */}
     </>
   );
 };

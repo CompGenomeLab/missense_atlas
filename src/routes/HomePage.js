@@ -1,15 +1,11 @@
 import React from "react";
-import { Link } from "react-router-dom";
 import SearchBox from "../components/SearchBox";
 
 const HomePage = () => {
   return (
-    <>
-      <h1>
-        Welcome
-        <Link to="/protein/md5sum/8a8c1b6c6d5e7589f18afd6455086c82">
-          go to TSBP1
-        </Link>
+    <div>
+      <h1 style={{textAlign:'center'}}>
+        Welcome to Missense Atlas
       </h1>
       <div style={{ margin: "2rem" }}>
         <SearchBox />
@@ -25,7 +21,7 @@ const HomePage = () => {
 
                 </textarea>
             </div> */}
-    </>
+    </div>
   );
 };
 
