@@ -342,7 +342,7 @@ const aggregator_parameters = {
     {
       start: 0.0,
       end: 1, // is assigend to number of tools in the button
-      risk_assessment: "deleterious",
+      risk_assessment: "",
       start_color: "green",
       end_color: "red",
       gradient_ratio:0.5
