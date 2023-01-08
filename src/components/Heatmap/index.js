@@ -1014,7 +1014,6 @@ function Heatmap( props ){
   const currentVisibleWindowHeightJSX = String(heatmapCellHeight * currentViewWindowNumRows) + 'vh'
   return (
       <>
-       
           <div style={{marginBottom: String(heatmapCellHeight) + 'vh'}}>  
             <canvas id="current_view_window" ref={currentViewWindowRef}
                         style= {{marginLeft:"calc(" + aminoAcidLegendWidth + " - 40px" , width:'calc(80vw + 100px)', height:currentVisibleWindowHeightJSX}}  > 
