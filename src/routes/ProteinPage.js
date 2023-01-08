@@ -459,7 +459,7 @@ const ProteinPage = () => {
           </div>
         )}
       </div>
-      <div style={{ marginBottom: "1rem" }}>
+      <div style={{ marginBottom: "1.6vh", marginTop:'1.6vh' }}>
         {currentPredictionToolParameters ? (
           <Heatmap
             currentPredictionToolParameters={currentPredictionToolParameters}
