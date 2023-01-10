@@ -287,11 +287,11 @@ function SearchBox(){
         {textBoxField}
         {errorMessage.length !== 0 && (
           <div
-            style={{ display: "flex", marginTop: "0rem", marginBottom: "0px" }}
+            style={{ display: "flex", marginTop: "0rem", marginBottom: "0px", }}
           >
-            <p style={{ color: "red", fontSize:h4_font_size }}> {errorMessage}</p>
-            <IconButton onClick={() => setErrorMessage("")}>
-              <CloseIcon fontSize="small" />
+            <p style={{ color: "red",fontSize:h4_font_size  }}> {errorMessage}</p>
+            <IconButton onClick={() => setErrorMessage("") } sx={{fontSize:h4_font_size}}>
+              <CloseIcon fontSize="inherit" />
             </IconButton>
           </div>
         )}
