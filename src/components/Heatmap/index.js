@@ -67,6 +67,7 @@ function Heatmap( props ){
 
   const [prevTime, setPrevTime] = useState( () => Date.now() ); // limit number of drawings per second, must have for resizing window
 
+  const [tooltipTest, setTooltipTest] = useState({pageX:100, pageY:300, lines:[{color:'white',text:'a'},{color:'white',text:'b'},]});
   // handles NaN
   // i starts from 1
   // returns string representation with 3 decimal places.
@@ -409,7 +410,7 @@ function Heatmap( props ){
     const num_visible = sequence_length/canvas_scale;
     const browser_resize_ratio = (window.innerWidth/window.screen.availWidth); // max value is 1
     // the constant 20 in step_size calculation will be included in config.js
-    const step_size = Math.max(Math.floor(num_visible/ ( 20  *  browser_resize_ratio )),1); // so that step_size isn't smaller than 1; // if stepsize becomes 0 I get infinite loop;
+    const step_size = Math.max(Math.round(num_visible/ ( 20  *  browser_resize_ratio )),1); // so that step_size isn't smaller than 1; // if stepsize becomes 0 I get infinite loop;
     ctx.scale(ratio,ratio); // important don't forget this
     ctx.scale(canvas_scale,1); 
     ctx.translate(-canvas_originX,0); 
@@ -693,39 +694,26 @@ function Heatmap( props ){
   
   
   
-  const drawTooltipHeatmapMain = (c,cHeatmap,e,x_offset,y_offset) => {
-    // tooltip ref variables
-    const ctx = c.getContext("2d");      
-    ctx.textBaseline = "top";
-    ctx.textAlign = "center";
-    let font_size = 16;
-    let font_size_candidate  = (window.innerHeight / 100) * heatmapCellHeight * 0.95 * heatmapTooltipFontMultiplier
-    if ( font_size_candidate > font_size  ){
-      font_size = font_size_candidate
-    } 
-    ctx.font = String(font_size) + "px Arial" ;
-    //heatmap ref variables
-    const heatmapRect = cHeatmap.getBoundingClientRect();  // !! get boundaries of the heatmap//console.log(rect);
+  const drawTooltipHeatmapMain = (mouse_xcor,mouse_ycor,heatmapRect) => {
+      
     const heatmapRect_height = heatmapRect.height;
     const heatmapRect_width = heatmapRect.width;
-    const mouse_xcor = e.clientX - heatmapRect.left;//console.log("hover mouse_xcor = " + mouse_xcor); // console.log(heatmapRect.width);
-    const mouse_ycor = e.clientY - heatmapRect.top; // scale doen't affect this, so this is the real_ycoordinate //console.log("hover mouse_ycor = " + mouse_ycor);// console.log(heatmapRect.height-50); // -50 space for position indexes;
-
+    
     const cell_height = heatmapRect_height /heatmapTotalNumRows ;  //!! must be same in drawheatmap // 300/20 = 15 ,  number 20 is same for all 
     const cell_width = (heatmapRect_width/sequence_length); //!! must be same in drawheatmap // if we use floor, it will result in 0 cell width when protein length is larger than c.width;
     
     const canvas_scale = scaleAndOriginX.scale; // value of zoom before scroll event
     const canvas_originX_prev = scaleAndOriginX.originX * heatmapRect_width; // QZY
     
-    
-
-
     //const canvas_originX_prev = scaleAndOriginX.originX;
     let real_xcor =  canvas_originX_prev + (mouse_xcor/canvas_scale); // real x coordinate of the mouse pointer, this line and the if else block is reused in tooltip function
     //  | | | | => 0,1,2;
     const original_aminoacid_idx = Math.max(Math.ceil(real_xcor/cell_width),1) ;
     const mutated_aminoacid_idx = Math.min(Math.floor(mouse_ycor/cell_height),19);
-    const mutated_aminoacid = aminoacid_ordering[mutated_aminoacid_idx]; // the resulting aminoacid from SNP mutation    
+    const mutated_aminoacid = aminoacid_ordering[mutated_aminoacid_idx]; // the resulting aminoacid from SNP mutation
+    let ttLines = []; // tooltip lines array, element format = {color:'white', text:'asd'} 
+    let position_string;
+    let risk_string;
     if (currentPredictionToolParameters.toolname_json !== 'AggregatorLocal'){
       const original_aminoacid = proteinData[original_aminoacid_idx].ref;
       const mutation_risk_raw_value = helperGetPositionScore(original_aminoacid_idx -1 ,mutated_aminoacid_idx,proteinData); 
@@ -735,65 +723,32 @@ function Heatmap( props ){
       if ( !isNaN(mutation_risk_raw_value)){
         mutation_risk_raw_value_string = mutation_risk_raw_value.toFixed(3);
       }    
-      // const text = String(original_aminoacid_idx) + ". " + String(original_aminoacid) + " --> " + String(mutated_aminoacid) + " " + String(mutation_risk_raw_value) + " " + String(mutation_risk_assessment); 
-      const position_string = String(original_aminoacid_idx) + ". " + String(original_aminoacid) + " --> " + String(mutated_aminoacid) + " " + mutation_risk_raw_value_string;
-      const risk_string =  String(mutation_risk_assessment);
-      const strings_max_width = Math.max(ctx.measureText(position_string).width , ctx.measureText(risk_string).width);
-      const strings_max_height = Math.max(
-      (ctx.measureText(position_string).actualBoundingBoxAscent + ctx.measureText(position_string).actualBoundingBoxDescent ) ,
-      (ctx.measureText(risk_string).actualBoundingBoxAscent + ctx.measureText(risk_string).actualBoundingBoxDescent) );
-
-      ctx.fillStyle="black"
-      ctx.fillRect(mouse_xcor, mouse_ycor + y_offset - (4 * strings_max_height) -2  , strings_max_width + 10  , strings_max_height * 2 + 10 );
-
-      ctx.fillStyle = "white";
-      ctx.fillText(position_string, mouse_xcor + ((strings_max_width )/2) + 5 , mouse_ycor + y_offset -  (4 * strings_max_height) + 2 )
-      ctx.fillStyle = heatmapColors[original_aminoacid_idx -1 ][mutated_aminoacid_idx]; // -1 because of heatmapColors is 0 indexed;
-      ctx.fillText(risk_string ,mouse_xcor + ((strings_max_width )/2) + 5 , mouse_ycor + y_offset - (4 * strings_max_height) + strings_max_height + 4 );
+      position_string = String(original_aminoacid_idx) + ". " + String(original_aminoacid) + " --> " + String(mutated_aminoacid) + " " + mutation_risk_raw_value_string;
+      risk_string =  String(mutation_risk_assessment);
+      ttLines.push({color:'white',text:position_string})
+      ttLines.push({color:heatmapColors[original_aminoacid_idx -1 ][mutated_aminoacid_idx], text:risk_string})
     }
     else{
       // original_aminoacid can be split into multiplelnes
       const first_tool_name = available_tools_list[0]?.toolname_json;
       const original_aminoacid = proteinData?.[first_tool_name]?.[original_aminoacid_idx]?.ref;
       const num_negative_predictions = helperGetPositionAggregateScore(original_aminoacid_idx-1,mutated_aminoacid_idx).score;
-      const position_string = String(original_aminoacid_idx) + ". " + String(original_aminoacid) + " --> " + String(mutated_aminoacid);
-      const risk_string =  String(num_negative_predictions) + " out of " + String(available_tools_list.length) + " predicts pathogenic";
-      const strings_max_width = Math.max(ctx.measureText(position_string).width , ctx.measureText(risk_string).width);
-      const strings_max_height = Math.max(
-      (ctx.measureText(position_string).actualBoundingBoxAscent + ctx.measureText(position_string).actualBoundingBoxDescent ) ,
-      (ctx.measureText(risk_string).actualBoundingBoxAscent + ctx.measureText(risk_string).actualBoundingBoxDescent) );
-      ctx.fillStyle="black"
-      ctx.fillRect(mouse_xcor, mouse_ycor + y_offset - (4 * strings_max_height) -2  , strings_max_width + 10  , strings_max_height * 2 + 10 );
-
-      ctx.fillStyle = "white";
-      ctx.fillText(position_string, mouse_xcor + ((strings_max_width )/2) + 5 , mouse_ycor + y_offset -  (4 * strings_max_height) + 2 )
-      ctx.fillStyle = heatmapColors[original_aminoacid_idx -1 ][mutated_aminoacid_idx]; // -1 because of heatmapColors is 0 indexed;
-      ctx.fillText(risk_string ,mouse_xcor + ((strings_max_width )/2) + 5 , mouse_ycor + y_offset - (4 * strings_max_height) + strings_max_height + 4 );
+      position_string = String(original_aminoacid_idx) + ". " + String(original_aminoacid) + " --> " + String(mutated_aminoacid);
+      risk_string =  String(num_negative_predictions) + " out of " + String(available_tools_list.length) + " predicts pathogenic";
+      ttLines.push({color:'white',text:position_string})
+      ttLines.push({color:heatmapColors[original_aminoacid_idx -1 ][mutated_aminoacid_idx], text:risk_string})
     }
-    // console.log(ctx.measureText(text).width); // 260; 
-
-    // rect size = text size + 30,
-    // text starts from rect_begin + 30/2;
-    // console.log("text ending = " + (parseInt(mouse_xcor) + 120 + ctx.measureText(text).width) );      
+    setTooltipTest({pageX:mouse_xcor, pageY:heatmapRect_height - mouse_ycor + 30, lines:ttLines})
+   
   }
 
-  const drawTooltipHeatmapSummary = (c,cHeatmap,e,x_offset,y_offset) => { // to be completd
+  const drawTooltipHeatmapSummary = (mouse_xcor,mouse_ycor,heatmapRect) => { // to be completd
     const tool_parameters = currentPredictionToolParameters;
     // tooltip ref variables
-    const ctx = c.getContext("2d");     
-    ctx.textBaseline = "top";
-    ctx.textAlign = "center"; 
-    let font_size = 16;
-    let font_size_candidate  = (window.innerHeight / 100) * heatmapCellHeight * 0.95 * heatmapTooltipFontMultiplier 
-    if ( font_size_candidate > font_size  ){
-      font_size = font_size_candidate
-    } 
-    ctx.font = String(font_size) + "px Arial" ;
+   
     //heatmap ref variables
-    const heatmapRect = cHeatmap.getBoundingClientRect();  // !! get boundaries of the heatmap//console.log(rect);
     const heatmapRect_width = heatmapRect.width;
-    const mouse_xcor = e.clientX - heatmapRect.left;//console.log("hover mouse_xcor = " + mouse_xcor); // console.log(heatmapRect.width);
-    const mouse_ycor = e.clientY - heatmapRect.top;
+    const heatmapRect_height = heatmapRect.height;
     const cell_width = (heatmapRect_width/sequence_length); //!! must be same in drawheatmap // if we use floor, it will result in 0 cell width when protein length is larger than c.width;
     const canvas_scale = scaleAndOriginX.scale; // value of zoom before scroll event
     const canvas_originX_prev = scaleAndOriginX.originX * heatmapRect_width; // QZY
@@ -803,9 +758,11 @@ function Heatmap( props ){
     let real_xcor =  canvas_originX_prev + (mouse_xcor/canvas_scale); // real x coordinate of the mouse pointer, this line and the if else block is reused in tooltip function
     
     const original_aminoacid_idx = Math.max(Math.ceil(real_xcor/cell_width),1) // real_xcor 0 to cell_wid = 0th aminoacid; realxcor cell_width to 2*cell_width = 1st aminoacid; // +1 because our scores start from 1;
+    let ttLines = [];
     if (currentPredictionToolParameters.toolname_json !== 'AggregatorLocal'){
       const original_aminoacid = proteinData[original_aminoacid_idx].ref;
-      const cur_pos_median = calculateMedianOfPosition(original_aminoacid_idx,proteinData,currentPredictionToolParameters);
+      const position_string = String(original_aminoacid_idx) + ". " + String(original_aminoacid); // definitely smaller than median value string; so I didn't add it into calculation of risk_strings;
+      ttLines.push({color:'white',text:position_string});
       // for every risk assessment, make a list of which aminoacids are deleterious, which of them are benign for that position;
       let risk_assessment_buckets = {};
       for (let i = 0; i < tool_parameters.score_ranges.length; i++) 
@@ -833,49 +790,21 @@ function Heatmap( props ){
         const mutation_risk_assessment = calculateRiskAssessment(mutation_risk_raw_value, currentPredictionToolParameters);
         risk_assessment_buckets[mutation_risk_assessment].add(mutated_aminoacid);
       }
-      let risk_strings = [];
-      let risk_strings_colors = [];
-      
-      const median_value_string = "Median of values = " + cur_pos_median;
-      let risk_strings_max_width = ctx.measureText(median_value_string).width;
-      let risk_strings_max_height = ctx.measureText(median_value_string).actualBoundingBoxAscent + ctx.measureText(median_value_string).actualBoundingBoxDescent;
       for(let i = 0; i< tool_parameters.score_ranges.length; i++){
         const cur_assessment = tool_parameters.score_ranges[i].risk_assessment;
         const num_of_cur_assessment = risk_assessment_buckets[cur_assessment].size;
         const cur_string = "" + cur_assessment + " : " + String(num_of_cur_assessment);
-        risk_strings.push(cur_string);
         const cur_risk_string_color = String(color_lists_array[i][Math.floor(number_of_colors/2)]); 
-        risk_strings_colors.push(cur_risk_string_color);
-        const cur_string_metrics = ctx.measureText(cur_string);
-        const cur_string_width = cur_string_metrics.width;
-        const cur_string_height = cur_string_metrics.actualBoundingBoxAscent + cur_string_metrics.actualBoundingBoxDescent;
-
-        if (cur_string_width > risk_strings_max_width){
-          risk_strings_max_width = cur_string_width ;
-        }
-        if (cur_string_height > risk_strings_max_height){
-          risk_strings_max_height = cur_string_height;
-        }
+        ttLines.push({color:cur_risk_string_color,text:cur_string});
       }
-      risk_strings.push(median_value_string);
-      risk_strings_colors.push(heatmapMeanColors[original_aminoacid_idx -1 ]); // because original_aminoacid_idx starts from 1 and heatmapMeancolors start from 0; 
-      // risk_strings.push(median_value_string)
-
-      ctx.fillStyle="black"
-      ctx.fillRect((mouse_xcor),( mouse_ycor + y_offset - 85) , (risk_strings_max_width + 10) , (risk_strings_max_height * (risk_strings.length + 1) + 10 ) ); // cell_width*40,cell_height*5 250 for sift, 300 for polyphen
-      // ctx.fillRect(mouse_xcor + x_offset , mouse_ycor + y_offset ,100 , 100); // cell_width*40,cell_height*5 250 for sift, 300 for polyphen
-      ctx.fillStyle = "white";
-      const position_string = String(original_aminoacid_idx) + ". " + String(original_aminoacid); // definitely smaller than median value string; so I didn't add it into calculation of risk_strings;
-      ctx.fillText(position_string, mouse_xcor + ((risk_strings_max_width + 10)/2) , mouse_ycor + y_offset -80 )
-      for(let i = 0; i < risk_strings.length; i++)
-      {
-        ctx.fillStyle = risk_strings_colors[i];
-        ctx.fillText( risk_strings[i] , (mouse_xcor + ((risk_strings_max_width + 10)/2) ) , mouse_ycor + y_offset - 80 + risk_strings_max_height  + (i * risk_strings_max_height) );
-      }
+      const cur_pos_median = calculateMedianOfPosition(original_aminoacid_idx,proteinData,currentPredictionToolParameters);
+      const median_value_string = "Median of values = " + cur_pos_median;
+      ttLines.push({color:heatmapMeanColors[original_aminoacid_idx -1], text:median_value_string})
+      
+      
     }
     // else aggregator
     else{
-      
       const first_tool_name = available_tools_list[0]?.toolname_json; // doesn't matter which tool we are looking at, the sequence is the same
       const original_aminoacid = proteinData[first_tool_name][original_aminoacid_idx].ref;
       // get aggregation results for each index;
@@ -886,26 +815,14 @@ function Heatmap( props ){
       }
       const median_of_aggregates = aggregate_scores_array.sort()[10]; // 0'th index is 0, so 10 is the median of the 19 values
       const position_string =  String(original_aminoacid_idx) + ". " + String(original_aminoacid);
+      ttLines.push({color:'white',text:position_string});
       const median_string_title = "Position aggregation median:"
+      ttLines.push({color:'white',text:median_string_title});
       const median_string_result = String(median_of_aggregates) + " out of " + String(available_tools_list.length) + " predicts pathogenic";
-      const strings_max_width = Math.max(ctx.measureText(position_string).width , ctx.measureText(median_string_title).width,ctx.measureText(median_string_result).width);
-      const strings_max_height = Math.max(
-      (ctx.measureText(position_string).actualBoundingBoxAscent + ctx.measureText(position_string).actualBoundingBoxDescent ) ,
-      (ctx.measureText(median_string_title).actualBoundingBoxAscent + ctx.measureText(median_string_title).actualBoundingBoxDescent),
-      (ctx.measureText(median_string_result).actualBoundingBoxAscent + ctx.measureText(median_string_result).actualBoundingBoxDescent));
-
-      ctx.fillStyle="black"
-      ctx.fillRect(mouse_xcor, mouse_ycor + y_offset - (6 * strings_max_height) -2  , strings_max_width + 10  , strings_max_height * 3 + 10 );
-
-      ctx.fillStyle = "white";
-      ctx.fillText(position_string, mouse_xcor + ((strings_max_width )/2) + 5 , mouse_ycor + y_offset -  (6 * strings_max_height) + 2 );
-      ctx.fillText(median_string_title ,mouse_xcor + ((strings_max_width )/2) + 5 , mouse_ycor + y_offset - (6 * strings_max_height) + strings_max_height + 4 );
-      const range_size = available_tools_list.length;
-      const aggregate_color_index = Math.min( Math.floor((median_of_aggregates) * (1/ range_size) * number_of_colors ) ,number_of_colors - 1 ) // copied and simplified from heatmapCOlors;
-      ctx.fillStyle = color_lists_array[0][aggregate_color_index]; // -1 because of heatmapColors is 0 indexed;
-      ctx.fillText(median_string_result ,mouse_xcor + ((strings_max_width )/2) + 5 , mouse_ycor + y_offset - (6 * strings_max_height) + strings_max_height * 2  + 4 );
-
+      ttLines.push({text:median_string_result, color: heatmapMeanColors[original_aminoacid_idx-1] })
+      
     }
+    setTooltipTest({pageX:mouse_xcor, pageY:heatmapRect_height - mouse_ycor + 30, lines:ttLines});
     
   }
 
@@ -946,21 +863,30 @@ function Heatmap( props ){
     const canvas_originX_prev = scaleAndOriginX.originX * heatmapRect_width; // QZY
     
     // const aminoacid_legend_width = aminoAcidLegendRef.current.getBoundingClientRect().width;
-    const x_offset = heatmapRect.left - tooltipRect.left;
-    const y_offset = heatmapRect.top - tooltipRect.top;
+    // const x_offset = heatmapRect.left - tooltipRect.left;
+    // const y_offset = heatmapRect.top - tooltipRect.top;
   
 
     if (mouse_xcor > heatmapRect_width || mouse_xcor < 0 || mouse_ycor <= 0 || mouse_ycor >= (heatmapRect_height)) 
     { // boundary check for heatmap, -50 is for the space left for position indices
       // bigger or equal to, so that index finders don't go out of bounds, as maxwidth/cell_width = an index 1 bigger than the sequence length
       setIsDown(prev => false);// so that panning point resets when mouse goes out of bounds;
+      if (tooltipTest?.status !== 'invisible'){
+        setTooltipTest({status:'invisible',pageX:0,pageY:0,lines:[]})
+      }
       return
+
     }
     else if ( mouse_ycor >= (cell_height* (20 + heatmapSpaceBtwnSummaryNumRows) ) ){ // inside summary part
-      drawTooltipHeatmapSummary(c,cHeatmap,e,x_offset,y_offset);
+      drawTooltipHeatmapSummary(mouse_xcor,mouse_ycor,heatmapRect);
     }
     else if (mouse_ycor <= ( cell_height * 20 )){ // inside main heatmap
-      drawTooltipHeatmapMain(c,cHeatmap,e,x_offset,y_offset);
+      drawTooltipHeatmapMain(mouse_xcor,mouse_ycor,heatmapRect);
+    }
+    else{
+      if (tooltipTest?.status !== 'invisible'){
+        setTooltipTest({status:'invisible',pageX:0,pageY:0,lines:[]})
+      }
     }
     
     if (isDown) // panning the canvas if mouse down is down;
@@ -984,7 +910,9 @@ function Heatmap( props ){
     }
     //ctx.resetTransform(); no need
   }
-      
+  
+  
+
   const onMouseDownHelper = (e) =>{
       const c = heatmapRef.current;
       const rect = c.getBoundingClientRect()
@@ -1008,22 +936,52 @@ function Heatmap( props ){
   const onMouseUpHelper = (e) => {
       setIsDown(false);
   }
+  //left:'100px', bottom:'300px', 
+//left:tooltipTest.pageX +'px' ,bottom:(tooltipTest.pageY-120) + 'px',
+  const tooltipJSX =tooltipTest?.status !== 'invisible' &&   (
+    <div
+      style={{
+        position: "absolute",
+        left: tooltipTest.pageX + "px",
+        bottom: tooltipTest.pageY + "px",
+        backgroundColor: "black",
+        pointerEvents: "none",
+        zIndex: 1000,
+        display: "flex",
+        flexDirection: "column",
+        alignItems: "center",
+        userSelect:'none'
+      }}
+    >
+      {tooltipTest.lines.map((line) => {
+        let font_size = 16;
+        let font_size_candidate  = (window.innerHeight / 100) * heatmapCellHeight * 0.95 * heatmapTooltipFontMultiplier
+        if ( font_size_candidate > font_size  ){
+          font_size = font_size_candidate
+        }
+        const font_style = String(font_size) + 'px Arial' 
+        return <div key={line.text} > <span style={{color:line.color, font:font_style}} >{line.text}  </span>  </div>;
+      })}
+    </div>
+  );
 
-  const heatmapHeightJSX = String(heatmapCellHeight * heatmapTotalNumRows) + 'vh';
+  const heatmapHeightStyle = String(heatmapCellHeight * heatmapTotalNumRows) + 'vh';
   // const heatmapPlusCurrentViewWindowHeightJSX = String(heatmapCellHeight * (heatmapTotalNumRows + currentViewWindowNumRows)) + 'vh'
-  const currentVisibleWindowHeightJSX = String(heatmapCellHeight * currentViewWindowNumRows) + 'vh'
+  const currentVisibleWindowHeightStyle = String(heatmapCellHeight * currentViewWindowNumRows) + 'vh'
   return (
       <>
           <div style={{marginBottom: String(heatmapCellHeight) + 'vh'}}>  
             <canvas id="current_view_window" ref={currentViewWindowRef}
-                        style= {{marginLeft:"calc(" + aminoAcidLegendWidth + " - 40px" , width:'calc(80vw + 100px)', height:currentVisibleWindowHeightJSX}}  > 
+                        style= {{marginLeft:"calc(" + aminoAcidLegendWidth + " - 40px" , width:'calc(80vw + 100px)', height:currentVisibleWindowHeightStyle}}  > 
             </canvas>
           </div>
           {/* Height of asds must be the same as max(amino_acid_legend,heatmap_canvas) */}
           {/* canvas width width ={window.innerwidth} is only for the initialization, then we change by reassigning the canvas width inside functions */}
           {/* asds is only there because canvas positions are absolute, So it acts as a filler, so that subsequent elements and canvases don't overlap */}
-          <div id="asds" style={{ width:"calc(-200px + 100vw)", height:heatmapHeightJSX, position:'relative'}}> 
-                  <canvas  id="heatmap_canvas" ref={heatmapRef} style = {{position:"absolute",top:"0px", left:"calc("+ aminoAcidLegendWidth +  " + 10px)" , zIndex:1, width:'80vw', height:heatmapHeightJSX}}
+          {/* asds must have the same height as heatmap, for the ttolipt, and they must start at the same pos */}
+          <div id="asds" style={{ width:"calc(-25px + 100vw)", height:heatmapHeightStyle, position:'relative'}}> 
+                  { tooltipJSX}
+                  <canvas  id="heatmap_canvas" ref={heatmapRef} style = {{position:"absolute",top:"0px", left:"calc("+ aminoAcidLegendWidth +  " + 10px)" , zIndex:1, width:'80vw', height:heatmapHeightStyle}}
                   // onClick={(e) => console.log("asfasfasfasfs")}
                   // onclick or other functions don't work here as the topmost layers is the canvas below
                   >
@@ -1031,10 +989,10 @@ function Heatmap( props ){
                   <canvas  id="positions_canvas" ref={positionsRef} style = {{position:"absolute",top:String(heatmapCellHeight *20)+'vh' , left:"calc("+ aminoAcidLegendWidth +  " - 20px)" , zIndex:2, width:'calc(80vw + 60px)', height: String(heatmapCellHeight * heatmapSpaceBtwnSummaryNumRows) + 'vh' }}
                   >
                   </canvas>
-                  <canvas id="amino_acid_legend" ref={aminoAcidLegendRef} style={{position:"absolute",top:"0px", left:"10px",width:aminoAcidLegendWidth, height: heatmapHeightJSX ,zIndex:1 }}>
+                  <canvas id="amino_acid_legend" ref={aminoAcidLegendRef} style={{position:"absolute",top:"0px", left:"10px",width:aminoAcidLegendWidth, height: heatmapHeightStyle ,zIndex:1 }}>
                   </canvas>
 
-                  <canvas  id="heatmap_tooltip_canvas" ref={tooltipRef}  style = {{position:"absolute",top:"-80px", left:"0px" , zIndex:50, height:"calc(" + heatmapHeightJSX + " + 85px)", width:"calc(100vw - 20px)"  }} 
+                  <canvas  id="heatmap_tooltip_canvas" ref={tooltipRef}  style = {{position:"absolute",top:"-80px", left:"0px" , zIndex:50, height:"calc(" + heatmapHeightStyle + " + 85px)", width:"calc(100vw - 20px)"  }} 
                       // onClick = {clickLogger} 
                       // onWheel={wheelZoom} added event listener in UseEffect, because "Unable to preventDefault inside passive event listener invocation."height:"calc(" + heatmapHeight + "85px)"
                       onMouseMove = {(e) => drawTooltipOrPan2(e)}

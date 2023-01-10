@@ -252,13 +252,18 @@ const ProteinPage = () => {
   }, [md5sum]);
 
   
-  
+  const proteinName =
+    metadata[curMetadataHumanIndex]?.protein?.recommendedName?.fullName
+      ?.value ??
+    metadata[curMetadataHumanIndex]?.protein?.submittedName?.[0]?.fullName
+      ?.value;
+
   
   const proteinNameJSX = (
     <div /*style={{ display: "flex", alignItems: "center" }}*/>
       <h1 style={{fontSize:'3.2vh'}}>
         { // the structure is different in some proteins, What to do? 
-          metadata[curMetadataHumanIndex]?.protein?.recommendedName?.fullName?.value
+          proteinName
         }
       </h1>
     </div>
@@ -463,7 +468,6 @@ const ProteinPage = () => {
         {currentPredictionToolParameters ? (
           <Heatmap
             currentPredictionToolParameters={currentPredictionToolParameters}
-            // adding "|| {}" so that proteinData is never undefined, instead it is an empty object
             proteinData={heatmapProteinDataProp}
             // proteinData={proteinData} // if we want to fetch one by one;
             color_lists_array={color_lists_array}
