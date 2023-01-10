@@ -27,7 +27,7 @@ export const heatmapWidth = "80vw";
 export const aminoAcidLegendWidth = "10vw";
 export const heatmapTooltipFontMultiplier = 1.35; // colorRangesLegend can also use the same;
 export const max_zoom_visible_aa_count = 10; // to determine maximum zoom value
-export const aa_position_notches_threshold = 9; // while drawing positions of the heatmap if step size of positions are smaller than threshold, draw small notches between the positions (like a ruler (cetvel)) 
+export const aa_position_notches_threshold = 10; // while drawing positions of the heatmap if step size of positions are smaller than threshold, draw small notches between the positions (like a ruler (cetvel)) 
 export const aa_visible_width_ratio = 0.8; // between 1 and 0; if size of aminoacid character is smaller than ratio * cellwidth, then draw;
 
 // export const aa_visible_threshold = 999; // the threshold under which aminoacids become visible

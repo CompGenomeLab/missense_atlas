@@ -260,6 +260,7 @@ function MetadataFeaturesTable({ allFeaturesArray, sequenceLength, scaleAndOrigi
           backgroundColor: "lavender",
           maxHeight: "50vh",
           overflowY: "auto",
+          padding:'0.25rem 0.25rem'
         }}
       >
         {currentTooltipFeatureJSX}
@@ -278,6 +279,7 @@ function MetadataFeaturesTable({ allFeaturesArray, sequenceLength, scaleAndOrigi
           backgroundColor: "lavender",
           maxHeight: "50vh",
           overflowY: "auto",
+          padding:'0.25rem 0.25rem'
         }}
       >
         <ul
@@ -322,7 +324,8 @@ function MetadataFeaturesTable({ allFeaturesArray, sequenceLength, scaleAndOrigi
               borderLeft: "10px solid transparent",
               borderRight: "10px solid transparent",
               borderBottom: "20px solid lavender",
-              pointerEvents:'none'
+              pointerEvents:'none',
+              
             }}
           ></div>
           {currentTooltipJSX}

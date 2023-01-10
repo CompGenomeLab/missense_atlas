@@ -428,7 +428,7 @@ function Heatmap( props ){
         ctx.moveTo(cell_width * (i+0.5) * canvas_scale , cell_height *  heatmapSpaceBtwnSummaryNumRows * (0.55)  );    // Move the pen to (30, 50)
         ctx.lineTo(cell_width * (i+0.5) * canvas_scale , cell_height* heatmapSpaceBtwnSummaryNumRows );  // Draw a line to (150, 100)
         ctx.stroke(); 
-        if ( step_size < aa_position_notches_threshold && step_size > 1){
+        if ( step_size <= aa_position_notches_threshold && step_size > 1){
           for (let j = i +1 ; (j < i + step_size) && j < rightmost_visible_index ; j++){
             ctx.beginPath();       // Start a new path
             ctx.moveTo(cell_width * (j+0.5) * canvas_scale , cell_height *  heatmapSpaceBtwnSummaryNumRows * (0.75)  );    // Move the pen to (30, 50)
@@ -436,8 +436,8 @@ function Heatmap( props ){
             ctx.stroke();
           }
         }
-        // drawing notches for the leftmost position
-        if ( step_size < aa_position_notches_threshold &&  (i - step_size < leftmost_visible_index)){ 
+        // drawing notches for the left of the leftmost position
+        if ( step_size <= aa_position_notches_threshold &&  (i - step_size < leftmost_visible_index)){ 
           for(let j = i-1; j >= leftmost_visible_index; j--){
             ctx.beginPath();       // Start a new path
             ctx.moveTo(cell_width * (j+0.5) * canvas_scale , cell_height *  heatmapSpaceBtwnSummaryNumRows * (0.75)  );    // Move the pen to (30, 50)
