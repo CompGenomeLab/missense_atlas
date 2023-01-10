@@ -10,7 +10,7 @@ export const database_url = "https://10.3.2.13:8080/database/"; // database base
 
 export const h1_font_size = '3.2vh';
 export const h2_font_size = '2.4vh';
-export const h3_font_size = '1.8vh';
+export const h3_font_size = '1.8vh'; // selectors also use this fontsize
 export const h4_font_size = '1.6vh';
 
 

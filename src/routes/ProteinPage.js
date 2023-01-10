@@ -375,7 +375,7 @@ const ProteinPage = () => {
     });
 
   const selectorPredictionTools = (
-    <div style={{ width: "30vh" }}>
+    <div style={{display:'flex'}}>
       <Select
         value={{
           value: currentPredictionToolParameters,
@@ -385,8 +385,8 @@ const ProteinPage = () => {
         options={selectorPredictionToolsOptions}
         maxMenuHeight={window.innerHeight}
         styles={{
-          menuPortal: (provided) => ({ ...provided, zIndex: 9999, }),
-          menu: (provided) => ({ ...provided, zIndex: 9999, fontSize:h3_font_size }),
+          menuPortal: (provided) => ({ ...provided, zIndex: 9999 }),
+          menu: (provided) => ({ ...provided, zIndex: 9999, fontSize:h3_font_size}),
           control: (provided) => ({...provided, fontSize:h3_font_size})
           
         }}
@@ -408,11 +408,12 @@ const ProteinPage = () => {
           label:
             metadata?.[curMetadataHumanIndex]?.accession,
         }}
+        maxMenuHeight={window.innerHeight}
         onChange={(new_option) => setCurMetadataHumanIndex(new_option.value)}
         options={selectorMetadataAccessionOptions}
         styles={{
           menuPortal: (provided) => ({ ...provided, zIndex: 9999, }),
-          menu: (provided) => ({ ...provided, zIndex: 9999, fontSize: h3_font_size }),
+          menu: (provided) => ({ ...provided, zIndex: 9999, fontSize: h3_font_size}),
           control: (provided) => ({...provided, fontSize: h3_font_size}),
 
         }}
