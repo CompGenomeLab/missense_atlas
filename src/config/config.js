@@ -7,7 +7,15 @@ export const database_url = "https://10.3.2.13:8080/database/"; // database base
 
 // heatmap
 //aminoacidlegend colorrangeslegend and heatmap fonts are tied to heatmapCellHeight
-export const heatmapCellHeight = 1.6 // "2vh" will turn into vh in heatmap component;
+
+export const h1_font_size = '3.2vh';
+export const h2_font_size = '2.4vh';
+export const h3_font_size = '1.8vh';
+export const h4_font_size = '1.6vh';
+
+
+
+export const heatmapCellHeight = 1.6 // "2h" will turn into vh in heatmap component;
 export const currentViewWindowNumRows = 2.5;
 export const colorRangesLegendNumRows = 2.5;
 

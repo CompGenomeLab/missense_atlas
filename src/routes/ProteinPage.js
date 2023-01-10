@@ -12,7 +12,7 @@ import {
   all_prediction_tools_array,
   aminoacid_ordering,
   number_of_colors,
-  color_mix_mode
+  color_mix_mode,h1_font_size,h2_font_size,h3_font_size,h4_font_size
 } from "../config/config";
 
 const ProteinPage = () => {
@@ -261,7 +261,7 @@ const ProteinPage = () => {
   
   const proteinNameJSX = (
     <div /*style={{ display: "flex", alignItems: "center" }}*/>
-      <h1 style={{fontSize:'3.2vh'}}>
+      <h1 style={{fontSize:h1_font_size}}>
         { // the structure is different in some proteins, What to do? 
           proteinName
         }
@@ -277,7 +277,7 @@ const ProteinPage = () => {
     return (
       // in first element add '(' to beggining in last element add ')' to the end instead of ','
       <li key={syn?.value}>
-        <h4 style={{fontSize:'1.6vh'}}>
+        <h4 style={{fontSize:h4_font_size}}>
           {idx === 0 && "("}
           {syn?.value}
           {idx !==
@@ -291,8 +291,8 @@ const ProteinPage = () => {
 
   const geneNameJSX = geneName && (
     <div style={{ display: "flex", alignItems: "center" }}>
-      <h3 style={{ fontSize: "1.8vh" }}>Uniprot Gene ID :</h3>
-      <h4 style={{ paddingLeft: "0.5rem", fontSize: "1.6vh" }}>
+      <h3 style={{ fontSize: h3_font_size }}>Uniprot Gene ID :</h3>
+      <h4 style={{ paddingLeft: "0.5rem", fontSize: h4_font_size }}>
         {geneName}
       </h4>
       {synonymsListJSX && (
@@ -317,7 +317,7 @@ const ProteinPage = () => {
 
   const uniprotIdsJSX = metadataAccessionAndIndices.length > 0 && (
     <div style={{ display: "flex" }}>
-      <h3 style={{ marginBlockStart: "0rem", fontSize:'1.8vh' }}>Uniprot Sequence ID :</h3>
+      <h3 style={{ marginBlockStart: "0rem", fontSize: h3_font_size }}>Uniprot Sequence ID :</h3>
       <ul
         style={{
           listStyleType: "none",
@@ -331,7 +331,7 @@ const ProteinPage = () => {
         {metadataAccessionAndIndices?.map((accAndIndex) => {
           return (
             <li key={accAndIndex.accession} style={{ display: "flex" }}>
-              <h3 style={{ marginBlockStart: "0rem", fontSize:'1.8vh' }}>
+              <h3 style={{ marginBlockStart: "0rem", fontSize:h3_font_size }}>
                 {accAndIndex.accession}
                 {/* {accAndIndex.index !== metadataAccessionAndIndices.length - 1 && // is not the last element
                 ","}  */}
@@ -386,8 +386,8 @@ const ProteinPage = () => {
         maxMenuHeight={window.innerHeight}
         styles={{
           menuPortal: (provided) => ({ ...provided, zIndex: 9999, }),
-          menu: (provided) => ({ ...provided, zIndex: 9999, fontSize:'1.8vh' }),
-          control: (provided) => ({...provided, fontSize:'1.8vh'})
+          menu: (provided) => ({ ...provided, zIndex: 9999, fontSize:h3_font_size }),
+          control: (provided) => ({...provided, fontSize:h3_font_size})
           
         }}
       />
@@ -412,8 +412,8 @@ const ProteinPage = () => {
         options={selectorMetadataAccessionOptions}
         styles={{
           menuPortal: (provided) => ({ ...provided, zIndex: 9999, }),
-          menu: (provided) => ({ ...provided, zIndex: 9999, fontSize:'1.8vh' }),
-          control: (provided) => ({...provided, fontSize:'1.8vh'}),
+          menu: (provided) => ({ ...provided, zIndex: 9999, fontSize: h3_font_size }),
+          control: (provided) => ({...provided, fontSize: h3_font_size}),
 
         }}
       ></Select>
@@ -452,7 +452,7 @@ const ProteinPage = () => {
               style={{
                 marginLeft: "0px",
                 marginRight: "auto",
-                fontSize: "2.4vh",
+                fontSize: h2_font_size,
               }}
             >
               Current tool : {currentPredictionToolParameters.toolname}
@@ -500,7 +500,7 @@ const ProteinPage = () => {
       )}
       {sequenceKeywordsJSX && (
         <div style={{ marginLeft: "1vw", marginRight: "1vw" }}>
-          <h3 style={{ fontSize: "1.8vh" }}>Sequence Keywords:</h3>
+          <h3 style={{ fontSize: h3_font_size }}>Sequence Keywords:</h3>
           <ul style={{ listStyleType: "none" }}>{sequenceKeywordsJSX} </ul>
         </div>
       )}

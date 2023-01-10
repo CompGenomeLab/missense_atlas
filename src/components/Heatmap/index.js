@@ -58,7 +58,6 @@ function Heatmap( props ){
   const positionsRef = useRef(null); // for showing heatmap indices between the heatmap's 20 aminoacids and heatmap summary
 
   const aminoAcidLegendRef = useRef(null);
-  const tooltipRef = useRef(null); // ref for the tooltip layer on top of the heatmap
 
   const currentViewWindowRef = useRef(null);
   const [isDown,setIsDown] = useState(false);
@@ -67,7 +66,7 @@ function Heatmap( props ){
 
   const [prevTime, setPrevTime] = useState( () => Date.now() ); // limit number of drawings per second, must have for resizing window
 
-  const [tooltipTest, setTooltipTest] = useState({pageX:100, pageY:300, lines:[{color:'white',text:'a'},{color:'white',text:'b'},]});
+  const [tooltip, setTooltip] = useState({status:'invisible',pageX:100, pageY:300, lines:[{color:'white',text:'a'},{color:'white',text:'b'},]});
   // handles NaN
   // i starts from 1
   // returns string representation with 3 decimal places.
@@ -637,25 +636,20 @@ function Heatmap( props ){
   useEffect(()=>{ 
       // console.log("zlistener");
       
-      // tooltipRef.current.addEventListener("wheel" , (e) => wheelZoom(e,topCanvasScalePrevRef)); // to cancel scrolling while on heatmap
       const zoomListener = (e) => wheelZoom2(e,scaleAndOriginX);
-      let ttRefValue = null;
-      if (tooltipRef.current ){
-        tooltipRef.current.addEventListener("wheel", zoomListener);
-        ttRefValue = tooltipRef.current; // to cancel scrolling while on heatmap
+      let hMapRefValue = null;
+     
+      if (heatmapRef.current ){
+        heatmapRef.current.addEventListener("wheel", zoomListener);
+        hMapRefValue = heatmapRef.current; // to cancel scrolling while on heatmap
       }
 
       return () => {
         // console.log("cleanup runs");
-        if (ttRefValue){
-          ttRefValue.removeEventListener('wheel', zoomListener);
+        if (hMapRefValue){
+          hMapRefValue.removeEventListener('wheel', zoomListener);
         }
       }
-
-      // return () => { //probably no need to cleanup, as heatmapref.current becomes null;
-      //   console.log('cleanup runs');        
-      //   console.log("heatmapref cur = " + heatmapRef.current);
-      // };
     },[wheelZoom2,scaleAndOriginX]);
   
   // redraw on scale or origin change (zoom or pan)
@@ -738,7 +732,7 @@ function Heatmap( props ){
       ttLines.push({color:'white',text:position_string})
       ttLines.push({color:heatmapColors[original_aminoacid_idx -1 ][mutated_aminoacid_idx], text:risk_string})
     }
-    setTooltipTest({pageX:mouse_xcor, pageY:heatmapRect_height - mouse_ycor + 30, lines:ttLines})
+    setTooltip({status:'ok',pageX:mouse_xcor, pageY:heatmapRect_height - mouse_ycor + 30, lines:ttLines})
    
   }
 
@@ -822,7 +816,7 @@ function Heatmap( props ){
       ttLines.push({text:median_string_result, color: heatmapMeanColors[original_aminoacid_idx-1] })
       
     }
-    setTooltipTest({pageX:mouse_xcor, pageY:heatmapRect_height - mouse_ycor + 30, lines:ttLines});
+    setTooltip({status:'ok',pageX:mouse_xcor, pageY:heatmapRect_height - mouse_ycor + 30, lines:ttLines});
     
   }
 
@@ -834,20 +828,7 @@ function Heatmap( props ){
     if (sequence_length === 0 ){
       return;
     }
-    const c = tooltipRef.current;
-    const ctx = c.getContext("2d");
-    const tooltipRect = c.getBoundingClientRect();
-    const tooltip_width = tooltipRect.width;// must be the same as in canvas width html element
-    const tooltip_height = tooltipRect.height;//must be the same as in canvas height html element
-    const ratio = window.devicePixelRatio;
-    c.width = tooltip_width * ratio;
-    c.height = tooltip_height * ratio;
-    // c.style.width = "calc(100vw - 20px)"; // will override the value in html, We have overflow-x: hidden in App.css;
-    // c.style.height = tooltip_height + "px";
-    // console.log("width =   "  + c.width);
-    ctx.scale(ratio,ratio);
-    ctx.clearRect(0,0,tooltip_width,tooltip_height);
-    
+  
     
     // const cHeatmap = ctxRef.current; // 
     const cHeatmap = heatmapRef.current;
@@ -871,8 +852,8 @@ function Heatmap( props ){
     { // boundary check for heatmap, -50 is for the space left for position indices
       // bigger or equal to, so that index finders don't go out of bounds, as maxwidth/cell_width = an index 1 bigger than the sequence length
       setIsDown(prev => false);// so that panning point resets when mouse goes out of bounds;
-      if (tooltipTest?.status !== 'invisible'){
-        setTooltipTest({status:'invisible',pageX:0,pageY:0,lines:[]})
+      if (tooltip?.status !== 'invisible'){
+        setTooltip({status:'invisible',pageX:0,pageY:0,lines:[]})
       }
       return
 
@@ -884,8 +865,8 @@ function Heatmap( props ){
       drawTooltipHeatmapMain(mouse_xcor,mouse_ycor,heatmapRect);
     }
     else{
-      if (tooltipTest?.status !== 'invisible'){
-        setTooltipTest({status:'invisible',pageX:0,pageY:0,lines:[]})
+      if (tooltip?.status !== 'invisible'){
+        setTooltip({status:'invisible',pageX:0,pageY:0,lines:[]})
       }
     }
     
@@ -912,7 +893,6 @@ function Heatmap( props ){
   }
   
   
-
   const onMouseDownHelper = (e) =>{
       const c = heatmapRef.current;
       const rect = c.getBoundingClientRect()
@@ -933,34 +913,51 @@ function Heatmap( props ){
       }
   }
 
+  const onMouseLeaveHelper = () => {
+    setIsDown(false);
+    setTooltip({status:'invisible',pageX:0,pageY:0,lines:[]})
+
+  }
+
   const onMouseUpHelper = (e) => {
       setIsDown(false);
   }
   //left:'100px', bottom:'300px', 
-//left:tooltipTest.pageX +'px' ,bottom:(tooltipTest.pageY-120) + 'px',
-  const tooltipJSX =tooltipTest?.status !== 'invisible' &&   (
+//left:tooltip.pageX +'px' ,bottom:(tooltip.pageY-120) + 'px',
+  const tooltipJSX = tooltip?.status !== "invisible" && (
     <div
       style={{
         position: "absolute",
-        left: tooltipTest.pageX + "px",
-        bottom: tooltipTest.pageY + "px",
+        left: tooltip.pageX + "px",
+        bottom: tooltip.pageY + "px",
         backgroundColor: "black",
         pointerEvents: "none",
         zIndex: 1000,
         display: "flex",
         flexDirection: "column",
         alignItems: "center",
-        userSelect:'none'
+        userSelect: "none",
+        padding:'0.25rem 0.25rem'
       }}
     >
-      {tooltipTest.lines.map((line) => {
+      {tooltip.lines.map((line) => {
         let font_size = 16;
-        let font_size_candidate  = (window.innerHeight / 100) * heatmapCellHeight * 0.95 * heatmapTooltipFontMultiplier
-        if ( font_size_candidate > font_size  ){
-          font_size = font_size_candidate
+        let font_size_candidate =
+          (window.innerHeight / 100) *
+          heatmapCellHeight *
+          0.95 *
+          heatmapTooltipFontMultiplier;
+        if (font_size_candidate > font_size) {
+          font_size = font_size_candidate;
         }
-        const font_style = String(font_size) + 'px Arial' 
-        return <div key={line.text} > <span style={{color:line.color, font:font_style}} >{line.text}  </span>  </div>;
+        const font_style = String(font_size) + "px Arial";
+        return (
+          <div key={line.text}>
+            <span style={{ color: line.color, font: font_style }}>
+              {line.text}
+            </span>
+          </div>
+        );
       })}
     </div>
   );
@@ -984,6 +981,11 @@ function Heatmap( props ){
                   <canvas  id="heatmap_canvas" ref={heatmapRef} style = {{position:"absolute",top:"0px", left:"calc("+ aminoAcidLegendWidth +  " + 10px)" , zIndex:1, width:'80vw', height:heatmapHeightStyle}}
                   // onClick={(e) => console.log("asfasfasfasfs")}
                   // onclick or other functions don't work here as the topmost layers is the canvas below
+                  onMouseMove = {(e) => drawTooltipOrPan2(e)}
+                  onMouseDown = {(e) => onMouseDownHelper(e)}
+                  onMouseUp= {(e) => onMouseUpHelper(e)}
+                  onDoubleClick= {(e) => setScaleAndOriginX({scale:1, originX:0})}
+                  onMouseLeave= {onMouseLeaveHelper} // a bit redundant, but nevertheless here just to make sure;
                   >
                   </canvas>
                   <canvas  id="positions_canvas" ref={positionsRef} style = {{position:"absolute",top:String(heatmapCellHeight *20)+'vh' , left:"calc("+ aminoAcidLegendWidth +  " - 20px)" , zIndex:2, width:'calc(80vw + 60px)', height: String(heatmapCellHeight * heatmapSpaceBtwnSummaryNumRows) + 'vh' }}
@@ -992,17 +994,6 @@ function Heatmap( props ){
                   <canvas id="amino_acid_legend" ref={aminoAcidLegendRef} style={{position:"absolute",top:"0px", left:"10px",width:aminoAcidLegendWidth, height: heatmapHeightStyle ,zIndex:1 }}>
                   </canvas>
 
-                  <canvas  id="heatmap_tooltip_canvas" ref={tooltipRef}  style = {{position:"absolute",top:"-80px", left:"0px" , zIndex:50, height:"calc(" + heatmapHeightStyle + " + 85px)", width:"calc(100vw - 20px)"  }} 
-                      // onClick = {clickLogger} 
-                      // onWheel={wheelZoom} added event listener in UseEffect, because "Unable to preventDefault inside passive event listener invocation."height:"calc(" + heatmapHeight + "85px)"
-                      onMouseMove = {(e) => drawTooltipOrPan2(e)}
-                      onMouseDown = {(e) => onMouseDownHelper(e)}
-                      onMouseUp= {(e) => onMouseUpHelper(e)}
-                      onDoubleClick= {(e) => setScaleAndOriginX({scale:1, originX:0})}
-                      onMouseLeave= {() => setIsDown(false)} // a bit redundant, but nevertheless here just to make sure;
-                      >
-                      
-                  </canvas>              
           </div>
           
       </>
