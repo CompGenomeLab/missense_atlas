@@ -60,8 +60,7 @@ function Heatmap( props ){
   const aminoAcidLegendRef = useRef(null);
 
   const currentViewWindowRef = useRef(null);
-  const [isDown,setIsDown] = useState(false);
-  const [panningStartX,setPanningStartX] = useState(0); 
+  // const [panningStartX,setPanningStartX] = useState(0); 
   // const [scaleAndOriginX,setScaleAndOriginX] = useState({scale:1,originX:0}); // so that we update both of them at the smae time instead of seperately,;
 
   const [prevTime, setPrevTime] = useState( () => Date.now() ); // limit number of drawings per second, must have for resizing window
@@ -321,15 +320,33 @@ function Heatmap( props ){
       const leftmost_visible_index = Math.max(Math.floor((canvas_originX/heatmap_width * sequence_length) -10 ), 0); 
       const rightmost_visible_index = Math.min(Math.floor( (canvas_originX/heatmap_width * sequence_length) + (sequence_length/canvas_scale) + 10) , sequence_length );   // + 10 just to make sure
       // math.min and max so that index doesn't go out of bounds
+      // drawing the colored rectangles
       for (let i = leftmost_visible_index; i< rightmost_visible_index; i++)// for every aminoacid
       {
         // if (i*cell_width >= canvas_originX && (i*cell_width <= (canvas_originX + heatmap_width/canvas_scale) ) ){ // currently viewing
           for( let j = 0 ; j < 20 ; j++ )// for every position
           {// sift value = protein_data_sift[i].data[j].y  //
             ctx.fillStyle = heatmapColors[i][j];
-            ctx.fillRect(i * cell_width ,j * cell_height ,cell_width  ,cell_height  )
+            ctx.fillRect(i * cell_width ,j * cell_height ,cell_width + 1  ,cell_height + 1  )
           }
+          // drawing the grid
       } 
+      // drawing the grid
+      // horizontal lines always drawn
+      ctx.fillStyle = "white"
+      for( let j = 1 ; j < 20 ; j++ )// for every position
+      {// sift value = protein_data_sift[i].data[j].y  //
+        ctx.fillRect(0,j * cell_height,heatmap_width,1/ratio);
+      }
+      // vertical lines drawn only when visible number of aminoacids are small
+      if ( (rightmost_visible_index - leftmost_visible_index) < 400){
+        for (let i = leftmost_visible_index; i< rightmost_visible_index; i++)// for every aminoacid
+        {        
+          ctx.fillRect(i * cell_width - (0 / (canvas_scale * ratio)) , 0, 1/(ratio * canvas_scale) , 20 * cell_height );
+        } 
+      }
+      // grid horizontal lines
+     
       // fill position median values below;
       for ( let i = leftmost_visible_index; i< rightmost_visible_index; i++) // alternative is to count greens/yellows, or take the average of their colors
       {
@@ -522,14 +539,8 @@ function Heatmap( props ){
     const c = heatmapRef.current;
     const rect = c.getBoundingClientRect()
     const heatmap_width = rect.width;
-    const heatmap_height = rect.height;
     const mouse_xcor = e.clientX - rect.left;
-    const mouse_ycor = e.clientY - rect.top;
 
-    if (mouse_xcor > heatmap_width || mouse_xcor < 0 || mouse_ycor < 0 || mouse_ycor > heatmap_height)// heatmap boundaries
-    { 
-      return
-    }
     if (cur_time - prevTime < 1500) {
       e.preventDefault(); // so that it doesn't scroll while zooming
       if (cur_time - prevTime < 32) // to limit fps;
@@ -539,25 +550,6 @@ function Heatmap( props ){
           return;
       }
     }
-    
-    // just to make sure, we are not panning while zooming, 
-    //moved here so that It doesn't block during returned (bcs of previous if block) zoom events
-    setIsDown(prev => false); 
-
-      // setPrevTime(prev => cur_time); // moved this to here;
-      // console.log("set time");
-      // console.log(String(cur_time - prevTime));
-
-      // console.log(cur_time - prevTime);
-      // console.log("prev_tiem O= " + prevTime);
-      // console.log("current time = " + cur_time);
-      // console.log("diff = " + String(cur_time - prevTime));
-    
-    //top_canvas_scale -= (e.deltaY/120); // zoom in if deltaY < 0 , zoom out if deltaY > 0
-    // console.log("topCanvasScalePrev_in zoom = " + top_canvas_scale_prev_ref.current); //1
-    //{scale:1,originX:0}
-    // const canvas_scale_prev = canvas_scale_and_originX_ref.current.scale; // value of zoom before scroll event
-    // const canvas_originX_prev = canvas_scale_and_originX_ref.current.originX;
     
     const canvas_scale_prev = canvas_scale_and_originX.scale; // value of zoom before scroll event
     const canvas_originX_prev = canvas_scale_and_originX.originX * heatmap_width; // QZY
@@ -584,10 +576,7 @@ function Heatmap( props ){
       setPrevTime(cur_time); // should it stay here or at the end??
 
     }
-    // setPrevTime(cur_time); // moved this to here;
-    // console.log("setted time");
-    // console.log(canvas_scale_prev);
-    // console.log("zoom end = " + String(cur_time - prevTime));
+ 
     
   },[prevTime,setScaleAndOriginX,sequence_length]);
   const drawAminoAcidLegend  = () => {  // will only run once on startup of useEffect
@@ -851,7 +840,7 @@ function Heatmap( props ){
     if (mouse_xcor > heatmapRect_width || mouse_xcor < 0 || mouse_ycor <= 0 || mouse_ycor >= (heatmapRect_height)) 
     { // boundary check for heatmap, -50 is for the space left for position indices
       // bigger or equal to, so that index finders don't go out of bounds, as maxwidth/cell_width = an index 1 bigger than the sequence length
-      setIsDown(prev => false);// so that panning point resets when mouse goes out of bounds;
+      // setIsDown(prev => false);// so that panning point resets when mouse goes out of bounds;
       if (tooltip?.status !== 'invisible'){
         setTooltip({status:'invisible',pageX:0,pageY:0,lines:[]})
       }
@@ -869,12 +858,11 @@ function Heatmap( props ){
         setTooltip({status:'invisible',pageX:0,pageY:0,lines:[]})
       }
     }
-    
-    if (isDown) // panning the canvas if mouse down is down;
+    const isDown = (e.buttons %2 === 1);
+    const notScrolling = (e.buttons%8 !== 4);
+    if (isDown && notScrolling) // panning the canvas if mouse down is down; left button is clicked & not scrolling
     {
-      // console.log("isdonwnnnn2");
-      const dx_normalized = (panningStartX - mouse_xcor) / canvas_scale; // change in X direction
-
+      const dx_normalized = (e.movementX * -1) / canvas_scale; // change in X direction
       let canvas_originX_next = canvas_originX_prev + dx_normalized;
       // console.log("temp_top_canvas_priginX_prev = " + temp_top_canvas_originX_prev);
       // console.log("tooltip panStartX , mouse_xcor , topcanvasscaleprev =  " + panningStartX + " " + mouse_xcor + " " + topCanvasScalePrev);
@@ -887,40 +875,17 @@ function Heatmap( props ){
           {scale: canvas_scale ,originX: canvas_originX_next }
         )
         } );
-      setPanningStartX(prev => mouse_xcor); 
+      // setPanningStartX(prev => mouse_xcor); 
     }
     //ctx.resetTransform(); no need
   }
   
   
-  const onMouseDownHelper = (e) =>{
-      const c = heatmapRef.current;
-      const rect = c.getBoundingClientRect()
-      const heatmap_width = rect.width;
-      const heatmap_height = rect.height;
-      const mouse_xcor = e.clientX - rect.left;
-      const mouse_ycor = e.clientY - rect.top;
-      //console.log("mouse xcor_point = " +mouse_xcor);
-      //console.log("mouse_ycor " + mouse_ycor);
-      if (mouse_xcor >= heatmap_width || mouse_xcor < 0 || mouse_ycor > heatmap_height || mouse_ycor <= 0 )  // heatmap boundaries;
-      {
-        return;
-      }
-      else // only if mouse points inside correct the heatmap
-      {
-        setIsDown(true);
-        setPanningStartX(prev => mouse_xcor);
-      }
-  }
+  
 
   const onMouseLeaveHelper = () => {
-    setIsDown(false);
     setTooltip({status:'invisible',pageX:0,pageY:0,lines:[]})
 
-  }
-
-  const onMouseUpHelper = (e) => {
-      setIsDown(false);
   }
   //left:'100px', bottom:'300px', 
 //left:tooltip.pageX +'px' ,bottom:(tooltip.pageY-120) + 'px',
@@ -961,7 +926,7 @@ function Heatmap( props ){
       })}
     </div>
   );
-
+  // positions canvas' Z index being bigger than heatmap canvas disables zooming and panning when over that canvas
   const heatmapHeightStyle = String(heatmapCellHeight * heatmapTotalNumRows) + 'vh';
   // const heatmapPlusCurrentViewWindowHeightJSX = String(heatmapCellHeight * (heatmapTotalNumRows + currentViewWindowNumRows)) + 'vh'
   const currentVisibleWindowHeightStyle = String(heatmapCellHeight * currentViewWindowNumRows) + 'vh'
@@ -981,9 +946,8 @@ function Heatmap( props ){
                   <canvas  id="heatmap_canvas" ref={heatmapRef} style = {{position:"absolute",top:"0px", left:"calc("+ aminoAcidLegendWidth +  " + 10px)" , zIndex:1, width:'80vw', height:heatmapHeightStyle}}
                   // onClick={(e) => console.log("asfasfasfasfs")}
                   // onclick or other functions don't work here as the topmost layers is the canvas below
+                  // scrolling is registered manually, so not given as props here
                   onMouseMove = {(e) => drawTooltipOrPan2(e)}
-                  onMouseDown = {(e) => onMouseDownHelper(e)}
-                  onMouseUp= {(e) => onMouseUpHelper(e)}
                   onDoubleClick= {(e) => setScaleAndOriginX({scale:1, originX:0})}
                   onMouseLeave= {onMouseLeaveHelper} // a bit redundant, but nevertheless here just to make sure;
                   >

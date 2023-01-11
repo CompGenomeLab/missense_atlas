@@ -9,8 +9,6 @@ function MetadataFeaturesTable({ allFeaturesArray, sequenceLength, scaleAndOrigi
   
   // these 3 are shared by all lanes
   // const [scaleAndOriginX,setScaleAndOriginX] = useState({scale:1,originX:0});
-  const [isDown,setIsDown] = useState(false);
-  const [panningStartX,setPanningStartX] = useState(0);
   const [currentTooltip, setCurrentTooltipFeature] = useState({feature:'invisible', mouseX:0, mouseY:0, color:'#FFFFFF'}); // will be either invisible (won't dispaly)
   // or it will be an element of the "features" array in the metadata
 
@@ -32,11 +30,7 @@ function MetadataFeaturesTable({ allFeaturesArray, sequenceLength, scaleAndOrigi
 
 
   // onMouseUp in tooltip div;
-  const onMouseUpHelper = () => {
-    if(isDown){
-      setIsDown(prev => false);
-    }
-  }
+ 
 
   const featureCategories =
     allFeaturesArray?.reduce((curSet, ftr) => {
@@ -235,10 +229,6 @@ function MetadataFeaturesTable({ allFeaturesArray, sequenceLength, scaleAndOrigi
             isFirstLane={idx === 0}
             scaleAndOriginX={scaleAndOriginX}
             setScaleAndOriginX={setScaleAndOriginX}
-            isDown={isDown}
-            setIsDown={setIsDown}
-            panningStartX={panningStartX}
-            setPanningStartX={setPanningStartX}
             changeTooltipFeature={changeTooltipFeature}
             colorPalette = {c_palettes[idx % c_palettes.length]}
           />
@@ -250,7 +240,6 @@ function MetadataFeaturesTable({ allFeaturesArray, sequenceLength, scaleAndOrigi
   if (currentTooltip.positionLeft) {
     currentTooltipJSX = (
       <div
-        onMouseUp={onMouseUpHelper}
         style={{
           position: "absolute",
           left: String(currentTooltip.posX - 20) + "px",
@@ -269,7 +258,6 @@ function MetadataFeaturesTable({ allFeaturesArray, sequenceLength, scaleAndOrigi
   } else {
     currentTooltipJSX = (
       <div
-        onMouseUp={onMouseUpHelper}
         style={{
           position: "absolute",
           right: String(window.innerWidth - (currentTooltip.posX + 30)) + "px",
@@ -311,7 +299,7 @@ function MetadataFeaturesTable({ allFeaturesArray, sequenceLength, scaleAndOrigi
 
      
       {currentTooltip.feature !== "invisible" && ( // if Panning starts currentToolTipFeature will turn into 'invisible'
-        <div onMouseUp={onMouseUpHelper}>
+        <div>
           <div
             style={{
               // the little triangle that indicates what we are pointing at

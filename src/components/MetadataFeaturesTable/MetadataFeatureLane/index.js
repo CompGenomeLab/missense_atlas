@@ -15,10 +15,6 @@ function MetadataFeatureLane({
   isFirstLane,
   scaleAndOriginX,
   setScaleAndOriginX,
-  isDown,
-  setIsDown,
-  panningStartX,
-  setPanningStartX,
   changeTooltipFeature,
   colorPalette
 }) {
@@ -222,7 +218,6 @@ function MetadataFeatureLane({
           return;
         }
       }
-      setIsDown((prev) => false);
 
       const lane_scale_prev = lane_scale_and_originX.scale; // value of zoom before scroll event
       const lane_originX_prev = lane_scale_and_originX.originX * lane_width;
@@ -253,7 +248,7 @@ function MetadataFeatureLane({
 
       }
     },
-    [prevTime, setScaleAndOriginX,setIsDown,sequenceLength]
+    [prevTime, setScaleAndOriginX,sequenceLength]
   );
   
   // zoom listener registration
@@ -283,17 +278,18 @@ function MetadataFeatureLane({
 
   
   const panLane = (e) => {
-    if (isDown === false)
+    const isScrolling = (e.buttons %8 === 4);
+    const isDown = (e.buttons %2 === 1);
+    if (isDown === false || isScrolling)
     {
       return;
     }
     const c = metadataFeatureLaneRef.current;
     const laneRect = c.getBoundingClientRect();  // !! get boundaries of the heatmap//console.log(rect);
     const lane_width = laneRect.width;
-    const mouse_xcor = e.clientX - laneRect.left;//console.log("hover mouse_xcor = " + mouse_xcor); // console.log(laneRect.width);
     const lane_scale = scaleAndOriginX.scale; // value of zoom before scroll event
     const lane_originX_prev = scaleAndOriginX.originX * lane_width; // QZY  
-    const dx_normalized = (panningStartX - mouse_xcor) / lane_scale; // change in X direction
+    const dx_normalized = (e.movementX * -1) / lane_scale; // change in X direction
 
     let lane_originX_next = lane_originX_prev + dx_normalized;
     
@@ -307,7 +303,6 @@ function MetadataFeatureLane({
           {scale: lane_scale ,originX: lane_originX_next }
         )
         } );
-      setPanningStartX(prev => mouse_xcor); 
     }
     
   };
@@ -364,30 +359,12 @@ function MetadataFeatureLane({
         position_left = false;;
       }
       changeTooltipFeature(feature,e.pageX, e.pageY,ftr_color,position_left);
-      setIsDown(true);
-      setPanningStartX(prev => mouse_xcor);
     }
   };
 
-  const onMouseLeaveHelper = (e) => {
-    const cLane = metadataFeatureLaneRef.current;
-    // !! get boundaries of the heatmap instead of the tooltip canvas, for the "rect" variable;
-    const laneRect = cLane.getBoundingClientRect();  // !! get boundaries of the heatmap//console.log(rect);
-    const lane_height = laneRect.height;
-    const lane_width = laneRect.width;
-    const mouse_xcor = e.clientX - laneRect.left;//console.log("hover mouse_xcor = " + mouse_xcor); // console.log(laneRect.width);
-    const mouse_ycor = e.clientY - laneRect.top;
-    // out of bounds from right or left, or topmost lanes's top, or bottom most lane's bottom
-    if ( (mouse_xcor > (lane_width -1 )  || mouse_xcor < 1 ) || (isFirstLane && mouse_ycor < 1) || (isLastLane && mouse_ycor > lane_height -1 )  ) 
-    { // boundary check for heatmap, -50 is for the space left for position indices
-      setIsDown(prev => false);// so that panning point resets when mouse goes out of bounds;
-      return
-    }
-  };
 
-  const onMouseUpHelper = (e) => {
-    setIsDown(false)
-  };
+
+
 
   const onDoubleClickHelper = () => {
     if(scaleAndOriginX.scale !== 1){
@@ -413,9 +390,7 @@ function MetadataFeatureLane({
             // zoom is added manually to prevent scrolling
             onDoubleClick={() => onDoubleClickHelper()}
             onMouseDown={(e) => onMouseDownHelper(e)}
-            onMouseUp={(e) => onMouseUpHelper(e)}
             onMouseMove={(e) => panLane(e)}
-            onMouseLeave = {(e) => onMouseLeaveHelper(e) }
           ></canvas>
 
           {/* <canvas
