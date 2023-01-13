@@ -933,14 +933,9 @@ function Heatmap( props ){
       }}
     >
       {tooltip.lines.map((line) => {
-        let font_size = 16;
-        let font_size_candidate =
-          (window.innerHeight / 100) *
-          heatmapCellHeight *
-          0.95 *
-          heatmapTooltipFontMultiplier;
-        if (font_size_candidate > font_size) {
-          font_size = font_size_candidate;
+        let font_size = 16;  // (window.innerHeight/ 100 *  heatmapCellHeight * heatmapTooltipFontMultiplier); //16
+        if (window.screen.width > 1920){
+          font_size = 24;
         }
         const font_style = String(font_size) + "px Arial";
         return (

@@ -6,7 +6,7 @@ const ColorRangesLegend = ({currentPredictionToolParameters, color_lists_array})
   const colorRangesLegendRef = useRef(null);
   const [resizeCount,setResizeCount] = useState(0);
   let font_size = 16;  // (window.innerHeight/ 100 *  heatmapCellHeight * heatmapTooltipFontMultiplier); //16
-  if (window.screen.height > 1920){
+  if (window.screen.width > 1920){
     font_size = 24;
   }
   const y_buffer_px = font_size * 2.2;
