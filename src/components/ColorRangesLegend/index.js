@@ -1,12 +1,15 @@
 import React, { useRef,useState,useEffect } from "react";
-import { number_of_colors,colorRangesLegendRangeWidthCoef,heatmapCellHeight, colorRangesLegendNumRows,heatmapTooltipFontMultiplier } from "../../config/config";
+import { number_of_colors,colorRangesLegendRangeWidthCoef,heatmapCellHeight, colorRangesLegendNumRows } from "../../config/config";
 
 const ColorRangesLegend = ({currentPredictionToolParameters, color_lists_array}) => {
 
   const colorRangesLegendRef = useRef(null);
   const [resizeCount,setResizeCount] = useState(0);
-  let font_size = (window.innerHeight/ 100 *  heatmapCellHeight * heatmapTooltipFontMultiplier); //16
-  const y_buffer_px = font_size * 2;
+  let font_size = 16;  // (window.innerHeight/ 100 *  heatmapCellHeight * heatmapTooltipFontMultiplier); //16
+  if (window.screen.height > 1920){
+    font_size = 24;
+  }
+  const y_buffer_px = font_size * 2.2;
   // let documentTotalHeight = document.body.scrollHeight; // force rerender when proteinmetadata loads
   useEffect(() => {
     // draw color ranges legend
@@ -20,10 +23,12 @@ const ColorRangesLegend = ({currentPredictionToolParameters, color_lists_array})
       }
       
       // width is dynamic; based on predicion tool
-      const x_buffer = 6
-      const x_buffer_px = window.innerWidth/100 * x_buffer; // in pixels
-      const width_vw = (currentPredictionToolParameters.score_ranges.length * colorRangesLegendRangeWidthCoef) + x_buffer; // 2vw is the x_buffer for writing scores
-      const vw_string = String(width_vw) + "vw";
+      const x_buffer = 3; //6
+      const x_buffer_px = font_size * x_buffer //window.innerWidth/100 * x_buffer; // in pixels
+      // const width_vw = (currentPredictionToolParameters.score_ranges.length * colorRangesLegendRangeWidthCoef) + x_buffer; // 2vw is the x_buffer for writing scores
+      // const vw_string = String(width_vw) + "vw";
+      const width_vw = String(currentPredictionToolParameters.score_ranges.length * colorRangesLegendRangeWidthCoef) + "vw" ; // 2vw is the x_buffer for writing scores
+      const vw_string = "calc(" + width_vw + " + " + x_buffer_px + "px)" ;
       c.style.width = vw_string;
 
       const color_ranges_legend_rect = c.getBoundingClientRect();
@@ -43,11 +48,13 @@ const ColorRangesLegend = ({currentPredictionToolParameters, color_lists_array})
       // w = 500; 450/(30*3) = 5, 
       // ctx.fillRect(0,h/4,w,h/2);
       let current_x = x_buffer_px/2;
-      ctx.fillStyle = "black";
-      ctx.fillRect(current_x, y_buffer_px/2, Math.ceil(step_size) + 1, h); //(x: number, y: number, w: number, h: number): void
+      ctx.fillStyle = "black";       
+      ctx.fillRect(current_x, Math.floor(y_buffer_px/2), Math.ceil(step_size) + 1, h); // draw the divider
       ctx.fillStyle = "white";
-      ctx.fillRect(current_x + step_size, y_buffer_px/2, w, y_buffer_px/2) // removing the overflowing blackness from Math.ceil(step_size)
-      ctx.fillStyle = "black"; // returning the fillstyle to previous after cleaning up the overflow
+      ctx.fillRect(current_x + step_size, Math.floor(y_buffer_px/2) , w, h) // clear the overflow by using all the height;
+
+      ctx.fillStyle = "black";  // returning fillstyle to p
+
       ctx.fillText(
         currentPredictionToolParameters.score_ranges[0].start.toFixed(2),
         current_x,
@@ -71,18 +78,11 @@ const ColorRangesLegend = ({currentPredictionToolParameters, color_lists_array})
             ); // 30 = number of colors
           }
         }
-        // empty black line
-        ctx.fillStyle = "black";
-        if (i !== (currentPredictionToolParameters.score_ranges.length -1) )
-        {
-          ctx.fillRect(current_x, y_buffer_px/2, Math.ceil(step_size) + 1, h);
-          ctx.fillStyle = "white";
-          ctx.fillRect(current_x + step_size, y_buffer_px/2, w, y_buffer_px/2) // removing the overflowing blackness from Math.ceil(step_size)
-          ctx.fillStyle = "black"; // returning the fillstyle to previous after cleaning up the overflow
-        }
-        else{ // last line
-          ctx.fillRect(current_x, y_buffer_px/2, (step_size), h); // last rect, won't need math.ceil, if we use ceil here it will overflow a bit
-        }
+        ctx.fillStyle = "black";       
+        ctx.fillRect(current_x, Math.floor(y_buffer_px/2), Math.ceil(step_size) + 1, h); // draw the divider
+        ctx.fillStyle = "white";
+        ctx.fillRect(current_x + step_size, Math.floor(y_buffer_px/2) , w, h) // clear the overflow by using all the height;
+        ctx.fillStyle = "black"; 
         // in previous rects we deliberately draw a bit more than enough to make sure there aren't any gaps between them;
         current_x += step_size;
         ctx.fillText(
@@ -91,7 +91,26 @@ const ColorRangesLegend = ({currentPredictionToolParameters, color_lists_array})
           y_buffer_px/2
         );
       }
+      // if any of the fillText of risk assessments is too large, remove both the scores and risk assesments from the top;
+      let legend_text_flag = true;
+      let num_score_ranges = currentPredictionToolParameters.score_ranges.length;
+      const basis_text = "0.00"
+      const range_px = (w - x_buffer_px)/num_score_ranges
+      if ((ctx.measureText(basis_text).width ) >  (range_px / 3) )
+      {
+        // console.log(basis_text);
+        // console.log(ctx.measureText(cur_range_risk_assessment).width);
+        // console.log(w-x_buffer_px)
+        legend_text_flag = false;
+      }
       
+      if (legend_text_flag === false){
+        ctx.fillStyle = "white";
+        ctx.fillRect(0,0,w,y_buffer_px);
+      }
+
+
+
       return;
     };
     drawColorRangesLegend();
@@ -111,11 +130,12 @@ const ColorRangesLegend = ({currentPredictionToolParameters, color_lists_array})
 const height_vh = String(heatmapCellHeight * (colorRangesLegendNumRows))+ 'vh'
 const colorRangesLegendHeightJSX = "calc(" + height_vh + " + " + y_buffer_px + "px)" // +1 is for writing scores (y_buffer)
   return (
-    // margin right 1 vw from proteinPage, 3vw from x_buffer, to make it align with heatmap we need 10vw - (10px )
+    // margin right 1 vw from proteinPage, xbuffer_px/2 , to make it align with heatmap we need 10vw - (10px )
     // to account for scrollbar, because parent's margin is 1vw each side, parents size is 100% - 2vw; // scrollbarWidth = 100vw - 100% of the document
     // parents width is 100%(document) - 2vw, then 98 vw - parents width => 100vw - 100%(document)
     // if we use 100% in calc, it means the width of the parent (100% of document - 2vw), so 98vw - 100% => scrollbars width
     //  'calc(6vw - 10px - scrollbarWidth)' 
+    // this calculation will change,
     <canvas
       id="color_ranges_legend"
       ref={colorRangesLegendRef}
@@ -126,3 +146,18 @@ const colorRangesLegendHeightJSX = "calc(" + height_vh + " + " + y_buffer_px + "
 };
 
 export default ColorRangesLegend;
+
+ // if (i !== (currentPredictionToolParameters.score_ranges.length -1) )
+        // {
+        //   ctx.fillRect(current_x, y_buffer_px/2, Math.ceil(step_size) + 1, h);
+        //   ctx.fillStyle = "white";
+        //   ctx.fillRect(current_x + step_size, y_buffer_px/2, w, y_buffer_px/2) // removing the overflowing blackness from Math.ceil(step_size)
+        //   ctx.fillStyle = "black"; // returning the fillstyle to previous after cleaning up the overflow
+        // }
+        // else{ // last line
+        //   // ctx.fillStyle = "white";
+        //   ctx.fillRect(current_x, y_buffer_px/2, Math.ceil(step_size) + 1, h);
+        //   ctx.fillStyle = "white";
+        //   ctx.fillRect(current_x + step_size, y_buffer_px/2, w, h) // clear the overflow by using all the height;
+        //   ctx.fillStyle = "black"; // returning the fillstyle to previous after cleaning up the overflow
+        // }
