@@ -17,6 +17,8 @@ import {
   all_prediction_tools_array,
   tools_negative_synonyms,
   heatmapTooltipFontMultiplier,
+  heatmap_grid_draw_threshold,
+  heatmap_zooming_acceleration_coef
   // tools_positive_synonyms
 } from "../../config/config";
 // const aminoAcidLegendWidth = 120;
@@ -317,6 +319,7 @@ function Heatmap( props ){
       // cell width changes on resize, because heamtap_width also changes;
 
       // copied from currentviewWindow, minus 10 just to make sure, and no +1, because this won't be shown, only used as index of the array
+      // not the real left_most and right_most , they are approximations so that we guarantee drawing 
       const leftmost_visible_index = Math.max(Math.floor((canvas_originX/heatmap_width * sequence_length) -10 ), 0); 
       const rightmost_visible_index = Math.min(Math.floor( (canvas_originX/heatmap_width * sequence_length) + (sequence_length/canvas_scale) + 10) , sequence_length );   // + 10 just to make sure
       // math.min and max so that index doesn't go out of bounds
@@ -329,20 +332,36 @@ function Heatmap( props ){
             ctx.fillStyle = heatmapColors[i][j];
             ctx.fillRect(i * cell_width ,j * cell_height ,cell_width + 1  ,cell_height + 1  )
           }
-          // drawing the grid
+          
       } 
       // drawing the grid
-      // horizontal lines always drawn
-      ctx.fillStyle = "white"
-      for( let j = 1 ; j < 20 ; j++ )// for every position
-      {// sift value = protein_data_sift[i].data[j].y  //
-        ctx.fillRect(0,j * cell_height,heatmap_width,1/ratio);
-      }
+      
       // vertical lines drawn only when visible number of aminoacids are small
-      if ( (rightmost_visible_index - leftmost_visible_index) < 400){
+      const num_visible = sequence_length/canvas_scale;
+      if ( num_visible < heatmap_grid_draw_threshold){
+        const grid_base_color = "#FFFFFF" // white
+        const grid_alpha = "30"; // determined on zoom amount to make the borders seem smaller;
+        ctx.strokeStyle = grid_base_color + grid_alpha;
+        const browser_resize_ratio = (window.screen.availWidth/window.innerWidth); // min value is 1
+        ctx.lineWidth = 1 / (ratio * browser_resize_ratio) ; // no canvas scale needed as canvas scale is only for x direction;
+        // horizontal lines
+        for( let j = 1 ; j < 20 ; j++ )// for every position
+        {
+          //ctx.moveTo(0, Math.floor(j * cell_height) + (0.5 / ratio) ) ; 
+          // drawing at half the pixel to get a crisp line https://stackoverflow.com/questions/9311428/draw-single-pixel-line-in-html5-canvas
+          // decided not to draw at half line, because of Math.floor, fillRects may be cut prematurely
+          ctx.beginPath(); //  - (0.5/ (canvas_scale * ratio) )
+          ctx.moveTo(0, j * cell_height ) ; 
+          ctx.lineTo(heatmap_width, j * cell_height); 
+          ctx.stroke()
+        }
+        ctx.lineWidth = 1/(ratio * canvas_scale * browser_resize_ratio);
         for (let i = leftmost_visible_index; i< rightmost_visible_index; i++)// for every aminoacid
-        {        
-          ctx.fillRect(i * cell_width - (0 / (canvas_scale * ratio)) , 0, 1/(ratio * canvas_scale) , 20 * cell_height );
+        {      
+          ctx.beginPath(); 
+          ctx.moveTo(i* cell_width , 0) ;
+          ctx.lineTo(i* cell_width , 20* cell_height); 
+          ctx.stroke()
         } 
       }
       // grid horizontal lines
@@ -351,7 +370,7 @@ function Heatmap( props ){
       for ( let i = leftmost_visible_index; i< rightmost_visible_index; i++) // alternative is to count greens/yellows, or take the average of their colors
       {
         ctx.fillStyle = heatmapMeanColors[i];
-        ctx.fillRect(i * cell_width ,(20 + heatmapSpaceBtwnSummaryNumRows )  * cell_height ,cell_width , (cell_height* heatmapSummaryNumRows) );
+        ctx.fillRect(i * cell_width ,(20 + heatmapSpaceBtwnSummaryNumRows )  * cell_height ,cell_width + 1 , (cell_height* heatmapSummaryNumRows) );
       } 
       ctx.font = String(window.innerHeight * heatmapAminoAcidCharactersNumRows * 0.8 / 100) + "px Arial"
       const aa_character_text_metrics = ctx.measureText("M"); // widest character
@@ -424,16 +443,16 @@ function Heatmap( props ){
     // ctx.font = "0.8rem Arial"; // change based on device??????
     ctx.font = String(window.innerHeight * heatmapCellHeight * 0.95 / 100) + "px Arial" // 1.4 vh didn't work, so I had to resort to this
     const num_visible = sequence_length/canvas_scale;
-    const browser_resize_ratio = (window.innerWidth/window.screen.availWidth); // max value is 1
+    const browser_resize_ratio = (window.screen.availWidth/window.innerWidth); // min value is 1
     // the constant 20 in step_size calculation will be included in config.js
-    const step_size = Math.max(Math.round(num_visible/ ( 20  *  browser_resize_ratio )),1); // so that step_size isn't smaller than 1; // if stepsize becomes 0 I get infinite loop;
+    const step_size = Math.max(Math.round(num_visible/ ( 20  /  browser_resize_ratio )),1); // so that step_size isn't smaller than 1; // if stepsize becomes 0 I get infinite loop;
     ctx.scale(ratio,ratio); // important don't forget this
     ctx.scale(canvas_scale,1); 
     ctx.translate(-canvas_originX,0); 
     ctx.scale(1/canvas_scale,1);
     ctx.translate(30,0);
     ctx.textAlign ="center";
-   
+    ctx.strokeStyle = "black"
     for (let i = 0; i< rightmost_visible_index; i+= step_size) // without leftmost (let i = 0; i< sequence_length; i+= step_size) 
     {
       // let number_text = String(i+1);
@@ -482,6 +501,8 @@ function Heatmap( props ){
     c.width = w * ratio;
     c.height = h * ratio;
     ctx.scale(ratio,ratio);
+    ctx.clearRect(0,0,h,w);
+
     // 80vw + 100px;
     ctx.translate(50,0); // shift by the amount of buffer on the left (for the number index to render)
     // - 100 is IMPORTANT, THE OFFSET FROM LEFT AND RIGHT
@@ -494,24 +515,30 @@ function Heatmap( props ){
     const cell_width = (heatmapRect_width/sequence_length)
     const canvas_originX = scaleAndOriginX.originX * heatmapRect_width; //!!QZY
     const canvas_scale = scaleAndOriginX.scale;
+    const leftmost_visible_index = Math.round((canvas_originX/heatmapRect_width * sequence_length)) + 1;  // 0 based index
+    const rightmost_visible_index = Math.min(Math.round( (canvas_originX/heatmapRect_width * sequence_length) + (sequence_length/canvas_scale)) , sequence_length );// max = length of sequence
     for ( let i = 0; i< sequence_length; i++) // alternative is to count greens/yellows, or take the average of their colors
     {
-      if (i*cell_width >= canvas_originX && (i*cell_width <= (canvas_originX + heatmapRect_width/canvas_scale) ) ){ // currently viewing
+      // leftmost -1, because leftmost_visible_index is 1 based, not zero based;
+      if ( i >= (leftmost_visible_index -1)  && i <= rightmost_visible_index -1 ) { // currently viewing
         // left = origin, right = origin + current view size = width/scale;
         ctx.fillStyle = heatmapMeanColors[i];
-        ctx.fillRect(i * cell_width , h/2 , cell_width ,h/2 )
+        ctx.fillRect(i * cell_width , Math.ceil(h/2) + 1 , cell_width + 1  , h/2  )
       }
       else{
+        ctx.fillStyle = "white";
+        ctx.fillRect(i * cell_width , Math.ceil(h/2) + 1  , (cell_width) + 1   ,h/2  );
         ctx.fillStyle = heatmapMeanColors[i] + "30"; // last value is opacity
-        ctx.fillRect(i * cell_width , h/2 , cell_width ,h/2 )
+        ctx.fillRect(i * cell_width , Math.ceil(h/2) + 1  , (cell_width) + 1   ,h/2  );
+
+        
       }
 
     } 
     // // drawing indices;
     // const leftmost_visible_index = String(Math.floor((canvas_originX/heatmapRect_width * sequence_length) +1 ));
     // const rightmost_visible_index = String(Math.ceil((canvas_originX/heatmapRect_width * sequence_length) + (sequence_length/canvas_scale)));  
-    const leftmost_visible_index = Math.round((canvas_originX/heatmapRect_width * sequence_length)) + 1;  // 0 based index
-    const rightmost_visible_index = Math.min(Math.round( (canvas_originX/heatmapRect_width * sequence_length) + (sequence_length/canvas_scale)) , sequence_length );// max = length of sequence
+   
     ctx.fillStyle = 'black';
     ctx.textBaseline = 'top';
     ctx.font = String(window.innerHeight * heatmapCellHeight * 0.95 / 100) + "px Arial" // 1.4 vh didn't work, so I had to resort to this
@@ -558,8 +585,7 @@ function Heatmap( props ){
 
     // console.log("originX prev = ")
     let max_zoom_value = sequence_length/max_zoom_visible_aa_count;
-
-    let canvas_scale_next = (1 - (e.deltaY/180)) * canvas_scale_prev; //new value of zoom after scroll
+    let canvas_scale_next = (1 - (e.deltaY/ (sequence_length * heatmap_zooming_acceleration_coef) )) * canvas_scale_prev; //new value of zoom after scroll
 
 
     canvas_scale_next = Math.min(Math.max(1, canvas_scale_next), max_zoom_value); // 64 = max zoom value, calculation of zoom value should be based on protein size
@@ -599,6 +625,7 @@ function Heatmap( props ){
     ctx.font = String(window.innerHeight * heatmapCellHeight * 0.95 / 100) + "px Arial" // 1.4 vh didn't work, so I had to resort to this
     ctx.lineWidth = 1;
     ctx.textAlign = 'right';
+    ctx.strokeStyle = "black";
     for (let i = 0; i<20; i++)
     {
       ctx.fillText(aminoacid_ordering[i] , w -30  , (cell_height * (i+1)) );

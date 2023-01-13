@@ -308,6 +308,8 @@ function MetadataFeatureLane({
   };
 
 
+  // position_idx yerine raw pointerin valuesını yolla, brca2 gibi uzun sekanslarda 1 pozisyon uzunlugundaki feature'lar
+  // 1 pixel'den kucuk oldugu icin position_idx oldugu zaman hepsini secemiyor
   const helper_find_feature = (position_idx,mouse_ycor,lane_height) =>  {
 
     const {sub_lane_height , lane_top_margin, sub_lane_divider_height } = calculateLaneMarginDividerandHeight(lane_height);
@@ -351,6 +353,7 @@ function MetadataFeatureLane({
       //const canvas_originX_prev = scaleAndOriginX.originX;
       let real_xcor =  lane_originX_prev + (mouse_xcor/lane_scale);
       const current_aminoacid_position = Math.max(Math.ceil(real_xcor/cell_width),1) 
+
       // find the feature that corresponds to that position
       const feature = helper_find_feature(current_aminoacid_position,mouse_ycor,lane_height);
       const ftr_color = typesAndColors[feature.type];

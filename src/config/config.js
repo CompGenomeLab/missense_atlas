@@ -14,7 +14,7 @@ export const h3_font_size = '1.8vh'; // selectors also use this fontsize
 export const h4_font_size = '1.6vh';
 
 
-
+export const heatmap_zooming_acceleration_coef = 180/563;
 export const heatmapCellHeight = 1.6 // "2h" will turn into vh in heatmap component;
 export const currentViewWindowNumRows = 2.5;
 export const colorRangesLegendNumRows = 2.5;
@@ -29,7 +29,7 @@ export const heatmapTooltipFontMultiplier = 1.35; // colorRangesLegend can also 
 export const max_zoom_visible_aa_count = 10; // to determine maximum zoom value
 export const aa_position_notches_threshold = 10; // while drawing positions of the heatmap if step size of positions are smaller than threshold, draw small notches between the positions (like a ruler (cetvel)) 
 export const aa_visible_width_ratio = 0.8; // between 1 and 0; if size of aminoacid character is smaller than ratio * cellwidth, then draw;
-
+export const heatmap_grid_draw_threshold = 300;
 // export const aa_visible_threshold = 999; // the threshold under which aminoacids become visible
 // may not need this, as it can be based on if text fits,
 
