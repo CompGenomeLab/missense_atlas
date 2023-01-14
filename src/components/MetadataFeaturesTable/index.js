@@ -1,6 +1,6 @@
 import React, {useEffect, useState} from "react";
 import MetadataFeatureLane from "./MetadataFeatureLane";
-import { laneHeight, laneWidth,c_palettes, h4_font_size } from "../../config/config";
+import { laneHeight,c_palettes, h4_font_size } from "../../config/config";
 
 
 
@@ -220,7 +220,7 @@ function MetadataFeaturesTable({ allFeaturesArray, sequenceLength, scaleAndOrigi
         </div>,
         <div
           key={category + "metadataFeatureLane"}
-          style={{ height: String(laneHeight)+'vh', width: laneWidth }}
+          style={{ height: String(laneHeight)+'vh', width: "100%" }}
         >
           <MetadataFeatureLane
             featureArray={cur_category_features}
