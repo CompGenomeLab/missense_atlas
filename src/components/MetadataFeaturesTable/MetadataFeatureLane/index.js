@@ -11,8 +11,7 @@ import {
 function MetadataFeatureLane({
   featureArray,
   sequenceLength,
-  isLastLane,
-  isFirstLane,
+ 
   scaleAndOriginX,
   setScaleAndOriginX,
   changeTooltipFeature,
@@ -136,16 +135,19 @@ function MetadataFeatureLane({
 
     // ctx.fillRect(0,0,lane_width,lane_height/2);
     const cell_width = laneWidth / sequenceLength;
-    ctx.strokeStyle = "red";
+    ctx.strokeStyle = "maroon";
+    ctx.lineWidth = 2;
+
     ctx.beginPath();
     ctx.moveTo(0, 1);
     ctx.lineTo(laneWidth, 1);
     ctx.stroke();
-    if (isLastLane) {
-      ctx.moveTo(0, laneHeight - 1);
-      ctx.lineTo(laneWidth, laneHeight - 1);
-      ctx.stroke();
-    }
+
+    ctx.beginPath()
+    ctx.moveTo(0, laneHeight - 1);
+    ctx.lineTo(laneWidth, laneHeight - 1);
+    ctx.stroke();
+   
     
     const {sub_lane_height , lane_top_margin, sub_lane_divider_height } = calculateLaneMarginDividerandHeight(laneHeight);
 
@@ -186,7 +188,6 @@ function MetadataFeatureLane({
     extendedFeatureArray,
     sequenceLength,
     curCategory,
-    isLastLane,
     scaleAndOriginX,
     calculateLaneMarginDividerandHeight,
     typesAndColors

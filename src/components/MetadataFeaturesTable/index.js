@@ -1,6 +1,6 @@
 import React, {useEffect, useState} from "react";
 import MetadataFeatureLane from "./MetadataFeatureLane";
-import { laneHeight, laneWidth,c_palettes } from "../../config/config";
+import { laneHeight, laneWidth,c_palettes, h4_font_size } from "../../config/config";
 
 
 
@@ -196,26 +196,26 @@ function MetadataFeaturesTable({ allFeaturesArray, sequenceLength, scaleAndOrigi
         <div
           key={category}
           style={{
-            display: "flex",
-            // height: "4.5vh",
-            // backgroundColor: "lightblue",
-            // justifyContent:'end',
-            alignItems: "center",
+            // display: "flex",
+            // // height: "4.5vh",
+            // // backgroundColor: "lightblue",
+            // // justifyContent:'end',
+            // alignItems: "center",
           }}
         >
           <div
             style={{
-              display: "flex",
-              height: String(laneHeight*0.9) +'vh',
-              backgroundColor: "lightblue",
-              width: "100%",
-              justifyContent: "end",
-              alignItems: "center",
+              // display: "flex",
+              // height: String(laneHeight*0.9) +'vh',
+              // backgroundColor: "lightblue",
+              // width: "100%",
+              // justifyContent: "end",
+              // alignItems: "center",
             }}
           >
-            <p style={{ fontSize: "1.3vh", textAlign: "end" }}>
-              {category.split("_").join(" ")}
-            </p>
+            <h4 style={{ fontSize: h4_font_size }}>
+              {category.split("_").join(" ")} :
+            </h4>
           </div>
         </div>,
         <div
@@ -225,8 +225,7 @@ function MetadataFeaturesTable({ allFeaturesArray, sequenceLength, scaleAndOrigi
           <MetadataFeatureLane
             featureArray={cur_category_features}
             sequenceLength={sequenceLength}
-            isLastLane={idx === featureCategories.size - 1} // index starts from 0, size starts from 1
-            isFirstLane={idx === 0}
+            
             scaleAndOriginX={scaleAndOriginX}
             setScaleAndOriginX={setScaleAndOriginX}
             changeTooltipFeature={changeTooltipFeature}
@@ -287,12 +286,12 @@ function MetadataFeaturesTable({ allFeaturesArray, sequenceLength, scaleAndOrigi
     // can't give rowgap, because then the canvasses won't touch, and there will be dead zones for zoom, instead make canvas larger, and then not draw the figures to those areas
     <>
       <div
-        style={{
-          display: "grid",
-          columnGap: "10px",
-          // marginLeft:'20px', //
-          gridTemplateColumns: "10vw auto",
-        }}
+        // style={{
+        //   display: "grid",
+        //   columnGap: "10px",
+        //   // marginLeft:'20px', //
+        //   gridTemplateColumns: "10vw auto",
+        // }}
       >
         {featureCategoriesAndColumnsJsx}
       </div>

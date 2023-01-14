@@ -401,7 +401,7 @@ const ProteinPage = () => {
   );
 
   const selectorMetadataAccession = (
-    <div style={{ width: "9vw", marginLeft: "1vw", marginBottom: "1rem" }}>
+    <div style={{ marginBottom: "1rem", display:"flex" }}>
       <Select
         value={{
           value: curMetadataHumanIndex,
@@ -429,7 +429,7 @@ const ProteinPage = () => {
   const page_width_max_px = String(window.screen.width * 0.8) + "px"
   const page_width = "min(calc(" + page_width_max_px + "), 98%)";
   return (
-    <div id="whole_page" style={{ margin: "auto", width: page_width }}>
+    <div id="whole_page" style={{ margin: "0 auto 2rem", width: page_width }}>
       <div>
         {proteinNameJSX}
         {geneNameJSX}
