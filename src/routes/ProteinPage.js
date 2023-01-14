@@ -75,7 +75,7 @@ const ProteinPage = () => {
     return temp_color_lists_array;
   }, [currentPredictionToolParameters]);
 
-
+  
   const switchTool = (prediction_tool_parameters, all_protein_data) => {
     // Probably no need to use prev => prediction_tool_parameters
     // iterate over data and find minimum and maximum values
@@ -426,38 +426,45 @@ const ProteinPage = () => {
       return <li key={keyword.value}><p style={{fontSize:'1.3vh'}}> {keyword.value}</p></li>;
     }
   );
-
-  
+  const page_width_max_px = String(window.screen.width * 0.8) + "px"
+  const page_width = "min(calc(" + page_width_max_px + "), 98%)";
   return (
-    <>
-      <div style={{ marginLeft: "1vw", marginRight: "1vw" }}>
+    <div id="whole_page" style={{ margin: "auto", width: page_width }}>
+      <div>
         {proteinNameJSX}
         {geneNameJSX}
         {uniprotIdsJSX}
 
-        {currentPredictionToolParameters && (
-          <div>{selectorPredictionTools}</div>
-        )}
-
+       
         {currentPredictionToolParameters && (
           <div
             style={{
               display: "flex",
-              gap: "30px",
               justifyContent: "flex-end",
-              marginRight: "0px",
-              alignContent:'end'
+              alignItems: "end",
             }}
           >
-            <h2
-              style={{
-                marginLeft: "0px",
-                marginRight: "auto",
-                fontSize: h2_font_size,
-              }}
-            >
-              Current tool : {currentPredictionToolParameters.toolname}
-            </h2>
+            {currentPredictionToolParameters && (
+              <div
+                style={{
+                  marginLeft: "0px",
+                  marginRight: "auto",
+                  display:"flex",
+                  gap:"30px",
+                  alignItems:"center"
+                }}
+              >
+                <h2
+                  style={{
+                    fontSize: h2_font_size,
+                  }}
+                >
+                  Current tool :
+                </h2>
+
+                <div>{selectorPredictionTools}</div>
+              </div>
+            )}
             <ColorRangesLegend
               currentPredictionToolParameters={currentPredictionToolParameters}
               color_lists_array={color_lists_array}
@@ -465,7 +472,7 @@ const ProteinPage = () => {
           </div>
         )}
       </div>
-      <div style={{ marginBottom: "1.6vh", marginTop:'1.6vh' }}>
+      <div style={{ marginBottom: "1.6vh", marginTop: "1.6vh" }}>
         {currentPredictionToolParameters ? (
           <Heatmap
             currentPredictionToolParameters={currentPredictionToolParameters}
@@ -499,13 +506,13 @@ const ProteinPage = () => {
           setScaleAndOriginX={setScaleAndOriginX}
         />
       )}
-      {sequenceKeywordsJSX && (
+      {/* {sequenceKeywordsJSX && (
         <div style={{ marginLeft: "1vw", marginRight: "1vw" }}>
           <h3 style={{ fontSize: h3_font_size }}>Sequence Keywords:</h3>
           <ul style={{ listStyleType: "none" }}>{sequenceKeywordsJSX} </ul>
         </div>
-      )}
-    </>
+      )} */}
+    </div>
   );
 };
 export default ProteinPage;

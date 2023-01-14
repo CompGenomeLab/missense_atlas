@@ -10,6 +10,9 @@ const ColorRangesLegend = ({currentPredictionToolParameters, color_lists_array})
     font_size = 24;
   }
   const y_buffer_px = font_size * 2.2;
+  const x_buffer = 3; //6
+  const x_buffer_px = font_size * x_buffer //window.innerWidth/100 * x_buffer; // in pixels
+
   // let documentTotalHeight = document.body.scrollHeight; // force rerender when proteinmetadata loads
   useEffect(() => {
     // draw color ranges legend
@@ -23,8 +26,7 @@ const ColorRangesLegend = ({currentPredictionToolParameters, color_lists_array})
       }
       
       // width is dynamic; based on predicion tool
-      const x_buffer = 3; //6
-      const x_buffer_px = font_size * x_buffer //window.innerWidth/100 * x_buffer; // in pixels
+     
       // const width_vw = (currentPredictionToolParameters.score_ranges.length * colorRangesLegendRangeWidthCoef) + x_buffer; // 2vw is the x_buffer for writing scores
       // const vw_string = String(width_vw) + "vw";
       const width_vw = String(currentPredictionToolParameters.score_ranges.length * colorRangesLegendRangeWidthCoef) + "vw" ; // 2vw is the x_buffer for writing scores
@@ -114,7 +116,7 @@ const ColorRangesLegend = ({currentPredictionToolParameters, color_lists_array})
       return;
     };
     drawColorRangesLegend();
-  }, [currentPredictionToolParameters, color_lists_array,resizeCount,font_size,y_buffer_px]); // resizeCount Added to drawColorRangesLegend
+  }, [currentPredictionToolParameters, color_lists_array,resizeCount,font_size,y_buffer_px,x_buffer_px]); // resizeCount Added to drawColorRangesLegend
 
   useEffect(() => { // redraw on resize
     const handleResize = () => { // reset canvasScaleOrigin reference and draw in roughly 30 fps
@@ -140,7 +142,7 @@ const colorRangesLegendHeightJSX = "calc(" + height_vh + " + " + y_buffer_px + "
       id="color_ranges_legend"
       ref={colorRangesLegendRef}
       height={"85"}
-      style={{ width: "1px", height: colorRangesLegendHeightJSX, marginRight:'calc(6vw - 10px - 98vw + 100%)' }} // width is calculated based on how many score ranges the current tool has
+      style={{ width: "1px", height: colorRangesLegendHeightJSX, marginRight: "-" + String(x_buffer_px/2) + "px" }} // width is calculated based on how many score ranges the current tool has
     ></canvas>
   );
 };

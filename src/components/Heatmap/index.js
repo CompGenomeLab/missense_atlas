@@ -6,7 +6,6 @@ import {
   max_zoom_visible_aa_count,
   aminoacid_ordering,
   aa_visible_width_ratio,
-  aminoAcidLegendWidth,
   heatmapCellHeight,
   heatmapTotalNumRows,
   heatmapSpaceBtwnSummaryNumRows,
@@ -16,7 +15,6 @@ import {
   heatmapAminoAcidCharactersNumRows,
   all_prediction_tools_array,
   tools_negative_synonyms,
-  heatmapTooltipFontMultiplier,
   heatmap_grid_draw_threshold,
   heatmap_zooming_acceleration_coef
   // tools_positive_synonyms
@@ -68,6 +66,7 @@ function Heatmap( props ){
   const [prevTime, setPrevTime] = useState( () => Date.now() ); // limit number of drawings per second, must have for resizing window
 
   const [tooltip, setTooltip] = useState({status:'invisible',pageX:100, pageY:300, lines:[{color:'white',text:'a'},{color:'white',text:'b'},]});
+  const [aminoAcidLegendWidth, setAminoAcidLegendWidth] = useState("50px");
   // handles NaN
   // i starts from 1
   // returns string representation with 3 decimal places.
@@ -452,6 +451,7 @@ function Heatmap( props ){
     ctx.scale(1/canvas_scale,1);
     ctx.translate(30,0);
     ctx.textAlign ="center";
+    ctx.lineWidth = 1 * ratio * (window.innerWidth/1440);
     ctx.strokeStyle = "black"
     for (let i = 0; i< rightmost_visible_index; i+= step_size) // without leftmost (let i = 0; i< sequence_length; i+= step_size) 
     {
@@ -503,7 +503,7 @@ function Heatmap( props ){
     ctx.scale(ratio,ratio);
     ctx.clearRect(0,0,h,w);
 
-    // 80vw + 100px;
+    // 80% + 60px;
     ctx.translate(50,0); // shift by the amount of buffer on the left (for the number index to render)
     // - 100 is IMPORTANT, THE OFFSET FROM LEFT AND RIGHT
     const heatmapRect_width =  w - 100; // actually the same as current_view_window_rect.width
@@ -541,7 +541,12 @@ function Heatmap( props ){
    
     ctx.fillStyle = 'black';
     ctx.textBaseline = 'top';
-    ctx.font = String(window.innerHeight * heatmapCellHeight * 0.95 / 100) + "px Arial" // 1.4 vh didn't work, so I had to resort to this
+    // let font_size = 16;  // (window.innerHeight/ 100 *  heatmapCellHeight * heatmapTooltipFontMultiplier); //16
+    // if (window.screen.width > 1920){
+    //   font_size = 24;
+    // }
+    const font_size = String(window.innerHeight * heatmapCellHeight * 0.95 / 100);
+    ctx.font = font_size + "px Arial" // 1.4 vh didn't work, so I had to resort to this
 
     // if (((canvas_originX/heatmapRect_width * sequence_length) +1 ) > 10){ // if left most index is smaller than 20, textAlign to right;
     //     ctx.textAlign = 'right';
@@ -608,6 +613,7 @@ function Heatmap( props ){
   const drawAminoAcidLegend  = () => {  // will only run once on startup of useEffect
     const c = aminoAcidLegendRef.current;
     const ctx = c.getContext("2d");
+    
     // c.style.width = aminoAcidLegendWidth; 
     const legend_rect = c.getBoundingClientRect();
     const w = legend_rect.width;
@@ -623,23 +629,27 @@ function Heatmap( props ){
     const heatmapRect = cHeatmap.getBoundingClientRect();
     const cell_height = heatmapRect.height / heatmapTotalNumRows ; //!! must be same in drawtooltip and drwaheatmap //10, number 20 = aminoacids, also left 50 px space in the bottom;
     ctx.font = String(window.innerHeight * heatmapCellHeight * 0.95 / 100) + "px Arial" // 1.4 vh didn't work, so I had to resort to this
-    ctx.lineWidth = 1;
+    setAminoAcidLegendWidth(( Math.ceil(ctx.measureText("Position").width * 8/5) + 3)  + "px" ) ;
+    console.log("setted legendwidth");
+    ctx.lineWidth = 1 * (window.innerWidth/1440);
     ctx.textAlign = 'right';
     ctx.strokeStyle = "black";
+    ctx.textBaseline = "middle"
     for (let i = 0; i<20; i++)
     {
-      ctx.fillText(aminoacid_ordering[i] , w -30  , (cell_height * (i+1)) );
+      ctx.fillText(aminoacid_ordering[i] , w/2  , (cell_height * (i+0.5)) );
       ctx.beginPath();       // Start a new path
-      ctx.moveTo(w - 20 , cell_height * (i+0.5));    // Move the pen to (30, 50)
-      ctx.lineTo(w - 10 , cell_height * (i+0.5));  // Draw a line to (150, 100)
+      ctx.moveTo(w * (3/4) , cell_height * (i+0.5));    // Move the pen to (30, 50)
+      ctx.lineTo(w * (7/8) , cell_height * (i+0.5));  // Draw a line to (150, 100)
       ctx.stroke();          // Render the path
     }
     ctx.textBaseline = 'bottom';
-    ctx.fillText("Position" , w - 30 , cell_height*(20 + heatmapSpaceBtwnSummaryNumRows + heatmapSummaryNumRows/4) );
-    ctx.fillText("average" , w - 30 , cell_height* (20 + heatmapSpaceBtwnSummaryNumRows + heatmapSummaryNumRows*3/4) );
+    
+    ctx.fillText("Position" , w * (5/8) , cell_height*(20 + heatmapSpaceBtwnSummaryNumRows + heatmapSummaryNumRows/4), );
+    ctx.fillText("average" , w *(5/8) , cell_height* (20 + heatmapSpaceBtwnSummaryNumRows + heatmapSummaryNumRows*3/4), );
     ctx.beginPath();
-    ctx.moveTo(w - 20 ,  cell_height * (20 + heatmapSpaceBtwnSummaryNumRows + heatmapSummaryNumRows/2));
-    ctx.lineTo(w - 10, cell_height * (20 + heatmapSpaceBtwnSummaryNumRows + heatmapSummaryNumRows/2));
+    ctx.moveTo(w * (3/4) ,  cell_height * (20 + heatmapSpaceBtwnSummaryNumRows + heatmapSummaryNumRows/2));
+    ctx.lineTo(w * (7/8), cell_height * (20 + heatmapSpaceBtwnSummaryNumRows + heatmapSummaryNumRows/2));
     ctx.stroke();
     // ctx.fillText("Position average",20,(cell_height*(25+1)));
     // ctx.beginPath();
@@ -680,7 +690,7 @@ function Heatmap( props ){
           // let end_time = Date.now();
           // console.log("drawing hmap => " + String(end_time - s_time)); 
       } 
-  }, [scaleAndOriginX,sequence_length,drawHeatmap2,drawCurrentViewWindow,drawHeatmapPositions] );
+  }, [scaleAndOriginX,sequence_length,drawHeatmap2,drawCurrentViewWindow,drawHeatmapPositions,aminoAcidLegendWidth] );
 
   useEffect(() => { // redraw on resize
       const handleResize = () => { // reset canvasScaleOrigin reference and draw in roughly 30 fps
@@ -952,17 +962,56 @@ function Heatmap( props ){
   const heatmapHeightStyle = String(heatmapCellHeight * heatmapTotalNumRows) + 'vh';
   // const heatmapPlusCurrentViewWindowHeightJSX = String(heatmapCellHeight * (heatmapTotalNumRows + currentViewWindowNumRows)) + 'vh'
   const currentVisibleWindowHeightStyle = String(heatmapCellHeight * currentViewWindowNumRows) + 'vh'
+  console.log(aminoAcidLegendWidth);
+  // current_view_windows
   return (
-      <>
+      <div>
           <div style={{marginBottom: String(heatmapCellHeight) + 'vh'}}>  
             <canvas id="current_view_window" ref={currentViewWindowRef}
-                        style= {{marginLeft:"calc(" + aminoAcidLegendWidth + " - 40px" , width:'calc(80vw + 100px)', height:currentVisibleWindowHeightStyle}}  > 
+                        style= {{marginLeft:"calc(" + aminoAcidLegendWidth + " - 50px" , width:'calc( (100% - ' + aminoAcidLegendWidth + ") + 100px)", height:currentVisibleWindowHeightStyle}}  > 
             </canvas>
           </div>
           {/* Height of asds must be the same as max(amino_acid_legend,heatmap_canvas) */}
           {/* canvas width width ={window.innerwidth} is only for the initialization, then we change by reassigning the canvas width inside functions */}
           {/* asds is only there because canvas positions are absolute, So it acts as a filler, so that subsequent elements and canvases don't overlap */}
           {/* asds must have the same height as heatmap, for the ttolipt, and they must start at the same pos */}
+          <div id="asds" style={{ width:"100%", height:heatmapHeightStyle, position:'relative'}}> 
+                  { tooltipJSX} 
+                  <canvas  id="heatmap_canvas" ref={heatmapRef} style = {{position:"absolute",top:"0px", left: aminoAcidLegendWidth , zIndex:1, width:'calc(100% - ' + aminoAcidLegendWidth + " )" , height:heatmapHeightStyle}}
+                  // onClick={(e) => console.log("asfasfasfasfs")} //left:"calc("+ aminoAcidLegendWidth +  " + 0px)"
+                  // onclick or other functions don't work here as the topmost layers is the canvas below
+                  // scrolling is registered manually, so not given as props here
+                  onMouseMove = {(e) => drawTooltipOrPan2(e)}
+                  onDoubleClick= {(e) => setScaleAndOriginX({scale:1, originX:0})}
+                  onMouseLeave= {onMouseLeaveHelper} // a bit redundant, but nevertheless here just to make sure;
+                  >
+                  </canvas>
+                  <canvas  id="positions_canvas" ref={positionsRef} style = {{position:"absolute",top:String(heatmapCellHeight *20)+'vh' , left:"calc( "+ aminoAcidLegendWidth +  " - 30px )" , zIndex:2, width:"calc( ( 100% - " + aminoAcidLegendWidth +" ) + 60px)", height: String(heatmapCellHeight * heatmapSpaceBtwnSummaryNumRows) + 'vh' }}
+                  >
+                  </canvas>
+                  <canvas id="amino_acid_legend" ref={aminoAcidLegendRef} style={{position:"absolute",top:"0px", left:"0px",width:aminoAcidLegendWidth, height: heatmapHeightStyle ,zIndex:1 }}>
+                  </canvas>
+
+          </div>
+          
+      </div>
+      
+  )
+
+
+
+};
+
+export default Heatmap;
+
+
+{/* <div>
+          <div style={{marginBottom: String(heatmapCellHeight) + 'vh'}}>  
+            <canvas id="current_view_window" ref={currentViewWindowRef}
+                        style= {{marginLeft:"calc(" + aminoAcidLegendWidth + " - 40px" , width:'calc(80vw + 100px)', height:currentVisibleWindowHeightStyle}}  > 
+            </canvas>
+          </div>
+         
           <div id="asds" style={{ width:"calc(-25px + 100vw)", height:heatmapHeightStyle, position:'relative'}}> 
                   { tooltipJSX}
                   <canvas  id="heatmap_canvas" ref={heatmapRef} style = {{position:"absolute",top:"0px", left:"calc("+ aminoAcidLegendWidth +  " + 10px)" , zIndex:1, width:'80vw', height:heatmapHeightStyle}}
@@ -982,16 +1031,7 @@ function Heatmap( props ){
 
           </div>
           
-      </>
-      
-  )
-
-
-
-};
-
-export default Heatmap;
-
+      </div> */}
 
 
 // const heatmapColors = useMemo( () => {

@@ -7,11 +7,25 @@ export const database_url = "https://10.3.2.13:8080/database/"; // database base
 
 // heatmap
 //aminoacidlegend colorrangeslegend and heatmap fonts are tied to heatmapCellHeight
+let h1_f_size = "2rem";
+let h2_f_size = "1.5rem";
+let h3_f_size = "1.17rem";
+let h4_f_size = "1rem";
+if(window.screen.width > 1920){
+  h1_f_size = "4rem";
+  h2_f_size = "3rem";
+  h3_f_size = "2.34rem";
+  h4_f_size = "2rem";
+}
+export const h1_font_size = h1_f_size;
+export const h2_font_size = h2_f_size;
+export const h3_font_size = h3_f_size;
+export const h4_font_size = h4_f_size;
 
-export const h1_font_size = '3.2vh';
-export const h2_font_size = '2.4vh';
-export const h3_font_size = '1.8vh'; // selectors also use this fontsize
-export const h4_font_size = '1.6vh';
+// export const h1_font_size = '3.2vh';
+// export const h2_font_size = '2.4vh';
+// export const h3_font_size = '1.8vh'; // selectors also use this fontsize
+// export const h4_font_size = '1.6vh';
 
 
 export const heatmap_zooming_acceleration_coef = 180/563;
@@ -24,8 +38,8 @@ export const heatmapSummaryNumRows = 3.2;
 export const heatmapAminoAcidCharactersNumRows = 2;
 export const heatmapTotalNumRows = 20 + heatmapSpaceBtwnSummaryNumRows + heatmapSummaryNumRows + heatmapAminoAcidCharactersNumRows; // 20 cells rows for each aa + summary + space between heatmap and summary, (previous 2 rows)
 export const heatmapWidth = "80vw"; 
-export const aminoAcidLegendWidth = "10vw";
-export const heatmapTooltipFontMultiplier = 1.35; // colorRangesLegend can also use the same;
+export const aminoAcidLegendWidth = "90px"//"10%";//"10vw";
+// export const heatmapTooltipFontMultiplier = 1.35; // colorRangesLegend can also use the same;
 export const max_zoom_visible_aa_count = 10; // to determine maximum zoom value
 export const aa_position_notches_threshold = 10; // while drawing positions of the heatmap if step size of positions are smaller than threshold, draw small notches between the positions (like a ruler (cetvel)) 
 export const aa_visible_width_ratio = 0.8; // between 1 and 0; if size of aminoacid character is smaller than ratio * cellwidth, then draw;
