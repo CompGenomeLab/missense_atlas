@@ -159,21 +159,24 @@ function SearchBox(){
     let textBoxField;
     if (searchMethod === "Sequence") {
       textBoxField = (
-        <div style={{ margin: "0rem 0px" }}>
-          <h4 style={{ margin: "0.5rem 0px", fontSize: h4_font_size }}>
+        <div className="text-box-field">
+          <h4 style={{ margin: "1rem 0px", fontSize: h4_font_size }}>
             Sequence Length: {trimmedProteinSequence.length}
           </h4>
           <textarea
-            style={{ width: "50%", height: "30vh", fontSize: h4_font_size }}
+            style={{ width: "100%", height: "30vh", fontSize: h4_font_size, maxWidth:'90vw' }}
             placeholder="Enter protein sequence in fasta format"
             value={proteinSequence}
             onChange={(e) => setProteinSequence(() => e.target.value)}
           ></textarea>
+          <button style={{ marginTop: "1rem" }} onClick={handleSearchClicked}>
+            <span style={{ fontSize: h4_font_size }}> Search </span>
+          </button>
         </div>
       );
     } else if (searchMethod === "MD5Sum") {
       textBoxField = (
-        <div style={{ margin: "0rem auto" }}>
+        <div className="text-box-field">
           <h4 style={{ fontSize: h4_font_size }}>
             {inputMD5Sum.trim().length !== 32
               ? "Length of MD5Sum must be 32 characters"
@@ -200,17 +203,12 @@ function SearchBox(){
       );
     } else if (searchMethod === "Uniprot Gene ID") {
       textBoxField = (
-        <div
-          style={{
-            margin: "0rem auto",
-          }}
-        >
+        <div className="text-box-field">
           <h4 style={{ fontSize: h4_font_size }}>
             Enter the Uniprot Gene ID for the sequence
           </h4>
           <div
             style={{
-              margin: "0rem auto",
               display: "flex",
               gap: "1rem",
               alignItems: "center",
@@ -231,11 +229,7 @@ function SearchBox(){
       );
     } else if (searchMethod === "Uniprot Accession ID") {
       textBoxField = (
-        <div
-          style={{
-            margin: "0rem auto",
-          }}
-        >
+        <div className="text-box-field">
           <h4 style={{ fontSize: h4_font_size }}>
             Enter the Uniprot Accession ID of the sequence
           </h4>
@@ -264,7 +258,7 @@ function SearchBox(){
 
     return (
       <div>
-        <div style={{display:'flex', gap:'1rem', alignItems:'center'}}>
+        <div style={{display:'flex', gap:'1rem', alignItems:'center', justifyContent:'center'}}>
         <h1 style={{fontSize:h1_font_size}}>Search method: </h1>
         <div > 
           <Select
@@ -287,11 +281,16 @@ function SearchBox(){
         </div>
         </div>
         {textBoxField}
+        {/* { // the button is inside the textboxField in other search methods
+        searchMethod === 'Sequence' &&
+        <button style={{ marginTop:"1rem" }} onClick={handleSearchClicked}>
+          <span style={{fontSize:h4_font_size}}> Search </span>
+        </button>  } */}
         {errorMessage.length !== 0 && (
           <div
             key = {searchClickedCount}
             className="fade-in-search-box"
-            style={{ display: "flex", marginTop: "0rem", marginBottom: "0px"  }}
+            style={{ display: "flex", marginTop: "0.5rem", justifyContent:'center' }}
           >
             <p  style={{ color: "red",fontSize:h4_font_size  }}> {errorMessage}</p>
             <IconButton onClick={() => setErrorMessage("") } sx={{fontSize:h4_font_size, borderRadius:'0px'}}>
@@ -299,11 +298,7 @@ function SearchBox(){
             </IconButton>
           </div>
         )}
-        { // the button is inside the textboxField in other search methods
-          searchMethod === 'Sequence' &&
-        <button style={{ marginTop: "0.5rem" }} onClick={handleSearchClicked}>
-          <span style={{fontSize:h4_font_size}}> Search </span>
-        </button>  }
+      
       </div>
     );
 

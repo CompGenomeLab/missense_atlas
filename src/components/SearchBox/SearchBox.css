@@ -10,3 +10,11 @@
   -o-animation: fadeIn 0.5s;
   -ms-animation: fadeIn 0.5s;
 }
+
+.text-box-field{
+  margin: 0rem auto;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+}
