@@ -7,7 +7,7 @@ import axios from "axios";
 import { useNavigate } from "react-router-dom";
 import { database_url,aminoacid_ordering, h1_font_size, h4_font_size, h3_font_size } from "../../config/config";
 import Select from "react-select";
-
+import './SearchBox.css'
 
 function SearchBox(){
 
@@ -19,6 +19,7 @@ function SearchBox(){
     const [inputUniprotId, setInputUniprotId] = useState('');
 
     const [errorMessage, setErrorMessage] = useState('');
+    const [searchClickedCount, setSearchClickedCount] = useState(0);
     let trimmedProteinSequence = proteinSequence; // will be trimmed using helper_protein_sequence_trimmer
     // let test_hash = MD5(protein_sequence).toString();
     
@@ -94,6 +95,7 @@ function SearchBox(){
         navigate('/protein/' + search_method_api + "/" + String(input_id).toUpperCase());
     }
     const handleSearchClicked = () => {
+      setSearchClickedCount(prev => prev + 1);
       if (searchMethod === 'Sequence' || searchMethod === 'MD5Sum')
       {
         let final_md5Sum = inputMD5Sum;
@@ -287,10 +289,12 @@ function SearchBox(){
         {textBoxField}
         {errorMessage.length !== 0 && (
           <div
-            style={{ display: "flex", marginTop: "0rem", marginBottom: "0px", }}
+            key = {searchClickedCount}
+            className="fade-in-search-box"
+            style={{ display: "flex", marginTop: "0rem", marginBottom: "0px"  }}
           >
-            <p style={{ color: "red",fontSize:h4_font_size  }}> {errorMessage}</p>
-            <IconButton onClick={() => setErrorMessage("") } sx={{fontSize:h4_font_size}}>
+            <p  style={{ color: "red",fontSize:h4_font_size  }}> {errorMessage}</p>
+            <IconButton onClick={() => setErrorMessage("") } sx={{fontSize:h4_font_size, borderRadius:'0px'}}>
               <CloseIcon fontSize="inherit" />
             </IconButton>
           </div>
