@@ -421,11 +421,12 @@ const ProteinPage = () => {
     </div>
   );
 
-  const sequenceKeywordsJSX = metadata[curMetadataHumanIndex]?.keywords?.map(
-    (keyword) => {
-      return <li key={keyword.value}><p style={{fontSize:'1.3vh'}}> {keyword.value}</p></li>;
-    }
-  );
+  // const sequenceKeywordsJSX = metadata[curMetadataHumanIndex]?.keywords?.map(
+  //   (keyword) => {
+  //     return <li key={keyword.value}><p style={{fontSize:'1.3vh'}}> {keyword.value}</p></li>;
+  //   }
+  // );
+
   const page_width_max_px = String(window.screen.width * 0.8) + "px"
   const page_width = "min(calc(" + page_width_max_px + "), 98%)";
   return (
