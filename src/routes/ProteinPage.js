@@ -430,7 +430,7 @@ const ProteinPage = () => {
   const page_width_max_px = String(window.screen.width * 0.8) + "px"
   const page_width = "min(calc(" + page_width_max_px + "), 98%)";
   return (
-    <div id="whole_page" style={{ margin: "0 auto 2rem", width: page_width }}>
+    <div id="whole_page" style={{ margin: "0 auto 10rem", width: page_width }}>
       <div>
         {proteinNameJSX}
         {geneNameJSX}
@@ -499,6 +499,7 @@ const ProteinPage = () => {
       </div>
       {/* {metadataAccessionAndIndices?.length > 0 && changeMetadataButtons} */}
       {metadataAccessionAndIndices?.length > 1 && selectorMetadataAccession}
+      
       {metadataAccessionAndIndices?.length > 0 && (
         <MetadataFeaturesTable
           allFeaturesArray={metadata[curMetadataHumanIndex]?.features}
