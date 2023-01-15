@@ -342,7 +342,7 @@ function Heatmap( props ){
         const grid_alpha = "30"; // determined on zoom amount to make the borders seem smaller;
         ctx.strokeStyle = grid_base_color + grid_alpha;
         const browser_resize_ratio = (window.screen.availWidth/window.innerWidth); // min value is 1
-        ctx.lineWidth = 1 / (ratio * browser_resize_ratio) ; // no canvas scale needed as canvas scale is only for x direction;
+        ctx.lineWidth = 1 / (browser_resize_ratio) ; // no canvas scale needed as canvas scale is only for x direction;
         // horizontal lines
         for( let j = 1 ; j < 20 ; j++ )// for every position
         {
@@ -354,7 +354,7 @@ function Heatmap( props ){
           ctx.lineTo(heatmap_width, j * cell_height); 
           ctx.stroke()
         }
-        ctx.lineWidth = 1/(ratio * canvas_scale * browser_resize_ratio);
+        ctx.lineWidth = 1/(canvas_scale * browser_resize_ratio);
         for (let i = leftmost_visible_index; i< rightmost_visible_index; i++)// for every aminoacid
         {      
           ctx.beginPath(); 
@@ -451,7 +451,7 @@ function Heatmap( props ){
     ctx.scale(1/canvas_scale,1);
     ctx.translate(30,0);
     ctx.textAlign ="center";
-    ctx.lineWidth = 1 * ratio * (window.innerWidth/1440);
+    ctx.lineWidth = 1 * (window.innerWidth/1440);
     ctx.strokeStyle = "black"
     for (let i = 0; i< rightmost_visible_index; i+= step_size) // without leftmost (let i = 0; i< sequence_length; i+= step_size) 
     {
@@ -630,7 +630,6 @@ function Heatmap( props ){
     const cell_height = heatmapRect.height / heatmapTotalNumRows ; //!! must be same in drawtooltip and drwaheatmap //10, number 20 = aminoacids, also left 50 px space in the bottom;
     ctx.font = String(window.innerHeight * heatmapCellHeight * 0.95 / 100) + "px Arial" // 1.4 vh didn't work, so I had to resort to this
     setAminoAcidLegendWidth(( Math.ceil(ctx.measureText("Position").width * 8/5) + 3)  + "px" ) ;
-    console.log("setted legendwidth");
     ctx.lineWidth = 1 * (window.innerWidth/1440);
     ctx.textAlign = 'right';
     ctx.strokeStyle = "black";
@@ -962,8 +961,6 @@ function Heatmap( props ){
   const heatmapHeightStyle = String(heatmapCellHeight * heatmapTotalNumRows) + 'vh';
   // const heatmapPlusCurrentViewWindowHeightJSX = String(heatmapCellHeight * (heatmapTotalNumRows + currentViewWindowNumRows)) + 'vh'
   const currentVisibleWindowHeightStyle = String(heatmapCellHeight * currentViewWindowNumRows) + 'vh'
-  console.log(aminoAcidLegendWidth);
-  // current_view_windows
   return (
       <div>
           <div style={{marginBottom: String(heatmapCellHeight) + 'vh'}}>  
