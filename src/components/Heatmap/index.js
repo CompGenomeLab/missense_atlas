@@ -175,7 +175,6 @@ function Heatmap( props ){
   },[available_tools_list,helperGetPositionScore,proteinData]);
 
   const heatmapColors = useMemo( () => {
-    console.log("colors");
     if (currentPredictionToolParameters.score_ranges?.length !== color_lists_array.length){
       return
     }
@@ -225,7 +224,6 @@ function Heatmap( props ){
   },[color_lists_array,proteinData,currentPredictionToolParameters,number_of_colors,sequence_length,helperGetPositionAggregateScore,helperGetPositionScore])
 
   const heatmapMeanColors = useMemo( () => {
-    console.log("meancolors");
     if (currentPredictionToolParameters.score_ranges.length !== color_lists_array.length){
       return
     }

@@ -176,7 +176,6 @@ const ProteinPage = () => {
   //  });
     
     let request_url = "";
-    console.log(searchMethod);
     if(searchMethod.toLowerCase() === 'md5sum'){
       request_url = "all_scores/md5sum/" + String(searchString.toLowerCase());
       setMd5sum(searchString);

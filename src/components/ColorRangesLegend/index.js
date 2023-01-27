@@ -1,15 +1,15 @@
 import React, { useRef,useState,useEffect } from "react";
-import { number_of_colors,colorRangesLegendRangeWidthCoef,heatmapCellHeight, colorRangesLegendNumRows } from "../../config/config";
+import { number_of_colors,colorRangesLegendRangeWidthCoef} from "../../config/config";
 
 const ColorRangesLegend = ({currentPredictionToolParameters, color_lists_array}) => {
 
   const colorRangesLegendRef = useRef(null);
   const [resizeCount,setResizeCount] = useState(0);
   let font_size = 16;  // (window.innerHeight/ 100 *  heatmapCellHeight * heatmapTooltipFontMultiplier); //16
-  if (window.screen.width > 1920){
-    font_size = 24;
-  }
-  const y_buffer_px = font_size * 2.2;
+  // if (window.screen.width > 1920){
+  //   font_size = 24;
+  // }
+  const y_buffer_px = Math.ceil(font_size * 2.2);
   const x_buffer = 3; //6
   const x_buffer_px = font_size * x_buffer //window.innerWidth/100 * x_buffer; // in pixels
 
@@ -100,6 +100,7 @@ const ColorRangesLegend = ({currentPredictionToolParameters, color_lists_array})
       const range_px = (w - x_buffer_px)/num_score_ranges
       if ((ctx.measureText(basis_text).width ) >  (range_px / 3) )
       {
+        console.log(ctx.measureText("Confidently damaging").width);
         // console.log(basis_text);
         // console.log(ctx.measureText(cur_range_risk_assessment).width);
         // console.log(w-x_buffer_px)
@@ -120,7 +121,6 @@ const ColorRangesLegend = ({currentPredictionToolParameters, color_lists_array})
 
   useEffect(() => { // redraw on resize
     const handleResize = () => { // reset canvasScaleOrigin reference and draw in roughly 30 fps
-      console.log('resized');
       setResizeCount(prev => prev+1); // FORCE RE RENDER
     }
     window.addEventListener("resize" , handleResize )
@@ -129,8 +129,9 @@ const ColorRangesLegend = ({currentPredictionToolParameters, color_lists_array})
 
 },[resizeCount]) // draw heatmap again on resize //drawHeatmap2
 
-const height_vh = String(heatmapCellHeight * (colorRangesLegendNumRows))+ 'vh'
-const colorRangesLegendHeightJSX = "calc(" + height_vh + " + " + y_buffer_px + "px)" // +1 is for writing scores (y_buffer)
+  // const height_vh = String(heatmapCellHeight * (colorRangesLegendNumRows))+ 'vh'
+  // const colorRangesLegendHeightJSX = "calc(" + height_vh + " + " + y_buffer_px + "px)" // +1 is for writing scores (y_buffer)
+  const max_width_rems = String(currentPredictionToolParameters.score_ranges.length * 15) + "rem";
   return (
     // margin right 1 vw from proteinPage, xbuffer_px/2 , to make it align with heatmap we need 10vw - (10px )
     // to account for scrollbar, because parent's margin is 1vw each side, parents size is 100% - 2vw; // scrollbarWidth = 100vw - 100% of the document
@@ -141,8 +142,7 @@ const colorRangesLegendHeightJSX = "calc(" + height_vh + " + " + y_buffer_px + "
     <canvas
       id="color_ranges_legend"
       ref={colorRangesLegendRef}
-      height={"85"}
-      style={{ width: "1px", height: colorRangesLegendHeightJSX, marginRight: "-" + String(x_buffer_px/2) + "px" }} // width is calculated based on how many score ranges the current tool has
+      style={{ width: "1px", maxWidth: max_width_rems , height: "4.5rem", marginRight: "-" + String(x_buffer_px/2) + "px", marginBottom: y_buffer_px + "px"  }} // width is calculated based on how many score ranges the current tool has
     ></canvas>
   );
 };
