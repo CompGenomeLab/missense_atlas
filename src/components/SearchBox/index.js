@@ -5,7 +5,7 @@ import { IconButton } from "@mui/material";
 import CloseIcon from '@mui/icons-material/Close';
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
-import { database_url,aminoacid_ordering, h1_font_size, h4_font_size, h3_font_size } from "../../config/config";
+import { database_url,aminoacid_ordering, h4_font_size, h3_font_size } from "../../config/config";
 import Select from "react-select";
 import './SearchBox.css'
 
@@ -164,7 +164,7 @@ function SearchBox(){
             Sequence Length: {trimmedProteinSequence.length}
           </h4>
           <textarea
-            style={{ width: "100%", height: "30vh", fontSize: h4_font_size, maxWidth:'90vw' }}
+            style={{ width: "100%", height: "15rem", fontSize: h4_font_size, maxWidth:'90vw', maxHeight:'60vh', minHeight:"1.2rem" }}
             placeholder="Enter protein sequence in fasta format"
             value={proteinSequence}
             onChange={(e) => setProteinSequence(() => e.target.value)}
@@ -188,7 +188,7 @@ function SearchBox(){
                 color: MD5Sum_text_area_color,
                 fontSize: h4_font_size,
               }}
-              size="45"
+              size="40"
               placeholder="Enter MD5Sum"
               value={inputMD5Sum}
               onChange={(e) =>
@@ -259,7 +259,7 @@ function SearchBox(){
     return (
       <div>
         <div style={{display:'flex', gap:'1rem', alignItems:'center', justifyContent:'center'}}>
-        <h1 style={{fontSize:h1_font_size}}>Search method: </h1>
+        <h3 style={{fontSize:h3_font_size}}>Search method: </h3>
         <div > 
           <Select
             value={{

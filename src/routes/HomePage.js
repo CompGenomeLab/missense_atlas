@@ -4,13 +4,14 @@ import { h1_font_size } from "../config/config";
 
 const HomePage = () => {
   return (
-    <div >
+    <div style={{display:'grid', gridTemplateRows:'auto 1fr auto', minHeight:'100vh',}} >
       <h1 style={{textAlign:'center', fontSize:h1_font_size}}>
         Missense Atlas
       </h1>
-      <div >
+      <div style={{marginTop:'5rem'}}> 
         <SearchBox />
       </div>
+      
       
     </div>
   );

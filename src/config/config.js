@@ -11,12 +11,15 @@ let h1_f_size = "2rem";
 let h2_f_size = "1.5rem";
 let h3_f_size = "1.17rem";
 let h4_f_size = "1rem";
-if(window.screen.width > 1920){
-  h1_f_size = "4rem";
-  h2_f_size = "3rem";
-  h3_f_size = "2.34rem";
-  h4_f_size = "2rem";
-}
+// above are the default font_size of the html, 
+// if we comment out the below line, the font sizes will be the same in each screen
+// and these variables won't be needed as without giving any style, they will have the same fontsize
+// if(window.screen.width > 1920){
+//   h1_f_size = "4rem";
+//   h2_f_size = "3rem";
+//   h3_f_size = "2.34rem";
+//   h4_f_size = "2rem";
+// }
 export const h1_font_size = h1_f_size;
 export const h2_font_size = h2_f_size;
 export const h3_font_size = h3_f_size;
