@@ -94,7 +94,9 @@ function SearchBox(){
       }
         navigate('/protein/' + search_method_api + "/" + String(input_id).toUpperCase());
     }
-    const handleSearchClicked = () => {
+    const handleSearchClicked = (e) => {
+      console.log(e);
+      e.preventDefault()
       setSearchClickedCount(prev => prev + 1);
       if (searchMethod === 'Sequence' || searchMethod === 'MD5Sum')
       {
@@ -159,7 +161,7 @@ function SearchBox(){
     let textBoxField;
     if (searchMethod === "Sequence") {
       textBoxField = (
-        <div className="text-box-field">
+        <form className="text-box-field">
           <h4 style={{ margin: "1rem 0px", fontSize: h4_font_size }}>
             Sequence Length: {trimmedProteinSequence.length}
           </h4>
@@ -169,10 +171,10 @@ function SearchBox(){
             value={proteinSequence}
             onChange={(e) => setProteinSequence(() => e.target.value)}
           ></textarea>
-          <button style={{ marginTop: "1rem" }} onClick={handleSearchClicked}>
+          <button style={{ marginTop: "1rem" }} onClick={(e) => handleSearchClicked(e)}>
             <span style={{ fontSize: h4_font_size }}> Search </span>
           </button>
-        </div>
+        </form>
       );
     } else if (searchMethod === "MD5Sum") {
       textBoxField = (
@@ -182,7 +184,7 @@ function SearchBox(){
               ? "Length of MD5Sum must be 32 characters"
               : "Input MD5Sum is Correct Length"}
           </h4>
-          <div style={{ display: "flex", gap: "1rem", alignItems: "center" }}>
+          <form style={{ display: "flex", gap: "1rem", alignItems: "center" }}>
             <input
               style={{
                 color: MD5Sum_text_area_color,
@@ -195,10 +197,10 @@ function SearchBox(){
                 setInputMD5Sum(() => e.target.value.toLowerCase())
               }
             ></input>
-            <button onClick={handleSearchClicked}>
+            <button onClick={(e) => handleSearchClicked(e)}>
               <span style={{ fontSize: h4_font_size }}> Search </span>
             </button>
-          </div>
+          </form>
         </div>
       );
     } else if (searchMethod === "Uniprot Gene ID") {
@@ -207,7 +209,7 @@ function SearchBox(){
           <h4 style={{ fontSize: h4_font_size }}>
             Enter the Uniprot Gene ID for the sequence
           </h4>
-          <div
+          <form
             style={{
               display: "flex",
               gap: "1rem",
@@ -221,10 +223,10 @@ function SearchBox(){
               value={inputGeneId}
               onChange={(e) => setInputGeneId(() => e.target.value)}
             ></input>
-            <button onClick={handleSearchClicked}>
+            <button onClick={(e) => handleSearchClicked(e)}>
               <span style={{ fontSize: h4_font_size }}> Search </span>
             </button>
-          </div>
+          </form>
         </div>
       );
     } else if (searchMethod === "Uniprot Accession ID") {
@@ -234,7 +236,7 @@ function SearchBox(){
             Enter the Uniprot Accession ID of the sequence
           </h4>
 
-          <div
+          <form
             style={{
               display: "flex",
               gap: "1rem",
@@ -248,10 +250,10 @@ function SearchBox(){
               value={inputUniprotId}
               onChange={(e) => setInputUniprotId(() => e.target.value)}
             ></input>
-            <button onClick={handleSearchClicked}>
+            <button onClick={(e) => handleSearchClicked(e)}>
               <span style={{ fontSize: h4_font_size }}> Search </span>
             </button>
-          </div>
+          </form>
         </div>
       );
     }
@@ -266,6 +268,7 @@ function SearchBox(){
               value: searchMethod,
               label: searchMethod,
             }}
+            isSearchable={false}
             onChange={(new_option) =>
               { setSearchMethod(new_option.value); setErrorMessage("");}
             }

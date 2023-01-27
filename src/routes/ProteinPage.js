@@ -381,6 +381,7 @@ const ProteinPage = () => {
           value: currentPredictionToolParameters,
           label: currentPredictionToolParameters?.toolname,
         }}
+        isSearchable={false}
         onChange={(new_option) => switchTool(new_option.value, allProteinData)}
         options={selectorPredictionToolsOptions}
         maxMenuHeight={window.innerHeight}
@@ -408,6 +409,7 @@ const ProteinPage = () => {
           label:
             metadata?.[curMetadataHumanIndex]?.accession,
         }}
+        isSearchable={false}
         maxMenuHeight={window.innerHeight}
         onChange={(new_option) => setCurMetadataHumanIndex(new_option.value)}
         options={selectorMetadataAccessionOptions}
@@ -442,7 +444,7 @@ const ProteinPage = () => {
             style={{
               display: "flex",
               justifyContent: "flex-end",
-              alignItems: "end",
+              alignItems: "center",
             }}
           >
             {currentPredictionToolParameters && (
