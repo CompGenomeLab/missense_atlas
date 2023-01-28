@@ -100,7 +100,6 @@ const ColorRangesLegend = ({currentPredictionToolParameters, color_lists_array})
       const range_px = (w - x_buffer_px)/num_score_ranges
       if ((ctx.measureText(basis_text).width ) >  (range_px / 3) )
       {
-        console.log(ctx.measureText("Confidently damaging").width);
         // console.log(basis_text);
         // console.log(ctx.measureText(cur_range_risk_assessment).width);
         // console.log(w-x_buffer_px)

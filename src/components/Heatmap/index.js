@@ -756,9 +756,9 @@ function Heatmap( props ){
       ttLines.push({color:heatmapColors[original_aminoacid_idx -1 ][mutated_aminoacid_idx], text:risk_string})
     }
 
-    const mouse_ycor_pageY = mouse_ycor + heatmapRect_height; // is equal to e.clientY
-    const viewport_height = visualViewport.height;
-    setTooltip({status:'ok',pageX:mouse_xcor, pageY: viewport_height - mouse_ycor_pageY + 30, lines:ttLines});
+    const mouse_ycor_pageY = mouse_ycor + heatmapRect.top; // is equal to e.clientY
+    const page_bottom = visualViewport.height; // because position = fixed in tooltip, viewport height - e.clientY will be the position relative to the cursor
+    setTooltip({status:'ok',pageX:mouse_xcor, pageY: page_bottom - mouse_ycor_pageY + 30, lines:ttLines});
    
   }
 
@@ -768,7 +768,6 @@ function Heatmap( props ){
    
     //heatmap ref variables
     const heatmapRect_width = heatmapRect.width;
-    const heatmapRect_height = heatmapRect.height;
     const cell_width = (heatmapRect_width/sequence_length); //!! must be same in drawheatmap // if we use floor, it will result in 0 cell width when protein length is larger than c.width;
     const canvas_scale = scaleAndOriginX.scale; // value of zoom before scroll event
     const canvas_originX_prev = scaleAndOriginX.originX * heatmapRect_width; // QZY
@@ -842,10 +841,10 @@ function Heatmap( props ){
       ttLines.push({text:median_string_result, color: heatmapMeanColors[original_aminoacid_idx-1] })
       
     }
-    const mouse_ycor_pageY = mouse_ycor + heatmapRect_height; // is equal to e.clientY
-    const viewport_height = visualViewport.height;
-    setTooltip({status:'ok',pageX:mouse_xcor, pageY: viewport_height - mouse_ycor_pageY + 30, lines:ttLines});
-    
+    const mouse_ycor_pageY = mouse_ycor + heatmapRect.top; // is equal to e.clientY
+    const page_bottom = visualViewport.height;
+    console.log(mouse_xcor);
+    setTooltip({status:'ok',pageX:mouse_xcor, pageY: page_bottom - mouse_ycor_pageY + 30, lines:ttLines});
   }
 
   function drawTooltipOrPan2(e) // scale comes from top_canvas_scale
@@ -931,7 +930,7 @@ function Heatmap( props ){
     <div
       style={{
         position: "fixed",
-        left: tooltip.pageX + "px",
+        left: String(tooltip.pageX* 0.9) + "px", // so that it doens't go out of bounds
         bottom: tooltip.pageY + "px",
         backgroundColor: "black",
         pointerEvents: "none",
@@ -940,7 +939,7 @@ function Heatmap( props ){
         flexDirection: "column",
         alignItems: "center",
         userSelect: "none",
-        padding:'0.25rem 0.25rem'
+        padding:'0.25rem 0.25rem',
       }}
     >
       {tooltip.lines.map((line) => {
