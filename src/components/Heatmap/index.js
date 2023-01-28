@@ -755,7 +755,10 @@ function Heatmap( props ){
       ttLines.push({color:'white',text:position_string})
       ttLines.push({color:heatmapColors[original_aminoacid_idx -1 ][mutated_aminoacid_idx], text:risk_string})
     }
-    setTooltip({status:'ok',pageX:mouse_xcor, pageY:heatmapRect_height - mouse_ycor + 30, lines:ttLines})
+
+    const mouse_ycor_pageY = mouse_ycor + heatmapRect_height; // is equal to e.clientY
+    const viewport_height = visualViewport.height;
+    setTooltip({status:'ok',pageX:mouse_xcor, pageY: viewport_height - mouse_ycor_pageY + 30, lines:ttLines});
    
   }
 
@@ -839,7 +842,9 @@ function Heatmap( props ){
       ttLines.push({text:median_string_result, color: heatmapMeanColors[original_aminoacid_idx-1] })
       
     }
-    setTooltip({status:'ok',pageX:mouse_xcor, pageY:heatmapRect_height - mouse_ycor + 30, lines:ttLines});
+    const mouse_ycor_pageY = mouse_ycor + heatmapRect_height; // is equal to e.clientY
+    const viewport_height = visualViewport.height;
+    setTooltip({status:'ok',pageX:mouse_xcor, pageY: viewport_height - mouse_ycor_pageY + 30, lines:ttLines});
     
   }
 
@@ -869,8 +874,7 @@ function Heatmap( props ){
     // const aminoacid_legend_width = aminoAcidLegendRef.current.getBoundingClientRect().width;
     // const x_offset = heatmapRect.left - tooltipRect.left;
     // const y_offset = heatmapRect.top - tooltipRect.top;
-  
-
+    
     if (mouse_xcor > heatmapRect_width || mouse_xcor < 0 || mouse_ycor <= 0 || mouse_ycor >= (heatmapRect_height)) 
     { // boundary check for heatmap, -50 is for the space left for position indices
       // bigger or equal to, so that index finders don't go out of bounds, as maxwidth/cell_width = an index 1 bigger than the sequence length
@@ -926,7 +930,7 @@ function Heatmap( props ){
   const tooltipJSX = tooltip?.status !== "invisible" && (
     <div
       style={{
-        position: "absolute",
+        position: "fixed",
         left: tooltip.pageX + "px",
         bottom: tooltip.pageY + "px",
         backgroundColor: "black",
