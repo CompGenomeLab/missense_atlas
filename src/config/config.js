@@ -51,7 +51,7 @@ export const heatmap_grid_draw_threshold = 300;
 // may not need this, as it can be based on if text fits,
 
 // for feature lane
-export const laneHeight = 5; // will be 5vh
+export const laneHeight = "3rem"; // will be 5vh
 // export const laneWidth = '80vw'; // equal to heatmapWidth;
 //https://coolors.co/palette/001219-005f73-0a9396-94d2bd-e9d8a6-ee9b00-ca6702-bb3e03-ae2012-9b2226
 // const cp1 = ["#001219", "#005f73", "#0a9396", "#94d2bd", "#e9d8a6", "#ee9b00", "#ca6702", "#bb3e03", "#ae2012", "#9b2226"];

@@ -213,14 +213,14 @@ function MetadataFeaturesTable({ allFeaturesArray, sequenceLength, scaleAndOrigi
               // alignItems: "center",
             }}
           >
-            <h4 style={{ fontSize: h4_font_size }}>
+            <p style={{ fontSize: h4_font_size, marginBottom:'0px' }}>
               {category.split("_").join(" ")} :
-            </h4>
+            </p>
           </div>
         </div>,
         <div
           key={category + "metadataFeatureLane"}
-          style={{ height: String(laneHeight)+'vh', width: "100%" }}
+          style={{ height: laneHeight, width: "100%" }}
         >
           <MetadataFeatureLane
             featureArray={cur_category_features}
