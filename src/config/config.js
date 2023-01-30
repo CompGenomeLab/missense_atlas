@@ -33,7 +33,7 @@ export const h4_font_size = h4_f_size;
 
 export const heatmap_zooming_acceleration_coef = 180/563;
 export const heatmapCellHeight = 1.6 // "2h" will turn into vh in heatmap component;
-export const currentViewWindowNumRows = 2.5;
+export const currentViewWindowNumRows = 1.25;
 //export const colorRangesLegendNumRows = 2.5; will not scale with heatmap, so no longer needed;
 
 export const heatmapSpaceBtwnSummaryNumRows = 2.5;

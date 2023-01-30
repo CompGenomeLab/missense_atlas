@@ -11,7 +11,7 @@ const ColorRangesLegend = ({currentPredictionToolParameters, color_lists_array})
   // }
   const y_buffer_px = Math.ceil(font_size * 2.2);
   const x_buffer = 3; //6
-  const x_buffer_px = font_size * x_buffer //window.innerWidth/100 * x_buffer; // in pixels
+  const x_buffer_px = font_size * x_buffer
 
   // let documentTotalHeight = document.body.scrollHeight; // force rerender when proteinmetadata loads
   useEffect(() => {
@@ -37,11 +37,11 @@ const ColorRangesLegend = ({currentPredictionToolParameters, color_lists_array})
       const h = color_ranges_legend_rect.height; // is always the same
       const w = color_ranges_legend_rect.width;
       const ratio = window.devicePixelRatio;
-      c.width = w * ratio;
-      c.height = h * ratio;
+      c.width = w * ratio * 2 ; // no idea why, but looks better with this;
+      c.height = h * ratio * 2 ;
 
       const ctx = c.getContext("2d");
-      ctx.scale(ratio, ratio);
+      ctx.scale(ratio *2 , ratio *2 );
       ctx.textAlign = "center";
       ctx.textBaseline = "bottom"
       ctx.font = String(font_size) + "px Arial" ;
@@ -52,8 +52,9 @@ const ColorRangesLegend = ({currentPredictionToolParameters, color_lists_array})
       let current_x = x_buffer_px/2;
       ctx.fillStyle = "black";       
       ctx.fillRect(current_x, Math.floor(y_buffer_px/2), Math.ceil(step_size) + 1, h); // draw the divider
+
       ctx.fillStyle = "white";
-      ctx.fillRect(current_x + step_size, Math.floor(y_buffer_px/2) , w, h) // clear the overflow by using all the height;
+      ctx.fillRect(current_x + step_size, 0 , w, y_buffer_px) // clear the overflow by using all the height;
 
       ctx.fillStyle = "black";  // returning fillstyle to p
 
@@ -82,9 +83,11 @@ const ColorRangesLegend = ({currentPredictionToolParameters, color_lists_array})
         }
         ctx.fillStyle = "black";       
         ctx.fillRect(current_x, Math.floor(y_buffer_px/2), Math.ceil(step_size) + 1, h); // draw the divider
+
         ctx.fillStyle = "white";
         ctx.fillRect(current_x + step_size, Math.floor(y_buffer_px/2) , w, h) // clear the overflow by using all the height;
-        ctx.fillStyle = "black"; 
+
+        ctx.fillStyle="black"        
         // in previous rects we deliberately draw a bit more than enough to make sure there aren't any gaps between them;
         current_x += step_size;
         ctx.fillText(
@@ -107,13 +110,8 @@ const ColorRangesLegend = ({currentPredictionToolParameters, color_lists_array})
       }
       
       if (legend_text_flag === false){
-        ctx.fillStyle = "white";
-        ctx.fillRect(0,0,w,y_buffer_px);
+        ctx.clearRect(0,0,w,y_buffer_px);
       }
-
-
-
-      return;
     };
     drawColorRangesLegend();
   }, [currentPredictionToolParameters, color_lists_array,resizeCount,font_size,y_buffer_px,x_buffer_px]); // resizeCount Added to drawColorRangesLegend
