@@ -322,23 +322,36 @@ function Heatmap( props ){
       const rightmost_visible_index = Math.min(Math.floor( (canvas_originX/heatmap_width * sequence_length) + (sequence_length/canvas_scale) + 10) , sequence_length );   // + 10 just to make sure
       // math.min and max so that index doesn't go out of bounds
       // drawing the colored rectangles
-      let prev_fillstyle = "FFFFFF";
+      let prev_fillstyle = "FFFFFF";      
+      const drawCellWidth = Math.floor(cell_width + 1); // so that we only do Math.floor once; very very minor performance optimization
+      // actually doesn't make a difference
+
+      // let aa_cntr = (rightmost_visible_index - leftmost_visible_index) * 20;
+      // let draw_cntr = 0;
       for (let i = leftmost_visible_index; i< rightmost_visible_index; i++)// for every aminoacid
       {
         // if (i*cell_width >= canvas_originX && (i*cell_width <= (canvas_originX + heatmap_width/canvas_scale) ) ){ // currently viewing
           for( let j = 0 ; j < 20 ; j++ )// for every position
           {// sift value = protein_data_sift[i].data[j].y  //
             // constantly setting new fillstyle and fillRect is the performance bottlencks;
-            if (heatmapColors[i][j] !== prev_fillstyle){
-              ctx.fillStyle = heatmapColors[i][j];
-              prev_fillstyle = heatmapColors[i][j];
+            // draw the whole block as the median color, then change if it is different than median????
+            ctx.fillStyle = heatmapColors[i][j];
+            
+            const start_j = j;
+            while( j < 19){
+              if (heatmapColors[i][j] === heatmapColors[i][j+1]){
+                j += 1;
+              }
+              else{// breaks loop
+                break;
+              }
             }
-            ctx.fillRect(i * cell_width ,j * cell_height ,cell_width + 1  ,cell_height + 1  )
+            const num_rectangles = j - start_j + 1; // how many consecutive aminoacid rectangles will be drawn in a batch;
+            ctx.fillRect(i * cell_width ,start_j * cell_height , drawCellWidth , cell_height * num_rectangles + 1  ); // optimized batch drawing
           }
-          
       } 
-
       // drawing the grid
+      // console.log("aa_count =", aa_cntr, "draw_cntr = ", draw_cntr, "ratio = ", draw_cntr/aa_cntr);
       // vertical lines drawn only when visible number of aminoacids are small
       const num_visible = sequence_length/canvas_scale;
       if ( num_visible < heatmap_grid_draw_threshold){
