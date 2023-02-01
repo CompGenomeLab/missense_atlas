@@ -98,9 +98,86 @@ const ProteinPage = () => {
     return temp_color_lists_array;
   }, [currentPredictionToolParameters]);
 
+
+  
+
   const switchTool = (prediction_tool_parameters, all_protein_data) => {
     // Probably no need to use prev => prediction_tool_parameters
     // iterate over data and find minimum and maximum values
+    // doesn't work for aggreagator
+    const helper_find_minmax_median = () => {
+      let minimum_value = 100;
+      let maximum_value = -40;
+      const current_tool_protein_data =
+        all_protein_data[prediction_tool_parameters.toolname_json];
+      let i = 1;
+      let score_buckets = new Array(prediction_tool_parameters.score_ranges.length).fill(0).map( () => new Array(0));
+      while (Object.hasOwn(current_tool_protein_data, i)) {
+        // each position
+        for (let j = 0; j < 20; j++) {
+          // each aminoacid for that position
+          let current_score = "NaN"; // default value
+          const cur_amino_acid = aminoacid_ordering[j];
+          if (Object.hasOwn(current_tool_protein_data[i], cur_amino_acid)) {
+            current_score = parseFloat(current_tool_protein_data[i][cur_amino_acid]);
+            if (isNaN(current_score) === false) {
+              // current score is not NaN
+              // finding the correct bucket;
+              let score_range_index = 0; // so that we don't accidentally add a score that is equal to the threshold value into 2 median arrays
+              for (let k = 0; k< prediction_tool_parameters.score_ranges.length; k++){
+                if ( current_score >= prediction_tool_parameters.score_ranges[k].start && current_score <= prediction_tool_parameters.score_ranges[k].end ) {
+                  score_range_index = k;
+                }
+              }
+              score_buckets[score_range_index].push(current_score);
+
+              if (current_score > maximum_value) {
+                maximum_value = current_score;
+              }
+              if (current_score < minimum_value) {
+                minimum_value = current_score;
+              }
+            } 
+          }
+        }
+        i += 1;
+      }
+      // not taking account of case where number of elements is even, as we don't need to find the exact median vlaue
+      let temp_median_list = new Array(score_buckets.length).fill(0); // all zeros
+      for (let j = 0; j < score_buckets.length; j++ ){
+        const cur_bucket = score_buckets[j]
+        const cur_median_index = Math.floor(cur_bucket.length / 2);
+        // if bucket is empty, assign the middle value of the score range;
+        const cur_median = cur_bucket.sort()[cur_median_index] || (prediction_tool_parameters.score_ranges[j].end - prediction_tool_parameters.score_ranges[j].start);
+        temp_median_list[j] = cur_median;
+        console.log("j =", j, "median = ", cur_median, cur_bucket);
+      }
+      
+
+      return {
+        min_value: minimum_value,
+        max_value: maximum_value,
+        median_list: temp_median_list,
+      };
+      
+    }
+    const get_new_score_ranges = () => {
+      const { median_list } = helper_find_minmax_median();
+      // difference in provean is instead of range_start and end, we use min_value and max_value
+      let temp_score_ranges = [];
+      for(let i = 0; i< prediction_tool_parameters.score_ranges.length; i++){
+        const cur_score_range = prediction_tool_parameters.score_ranges[i];
+        const cur_range_start = cur_score_range.start;
+        const cur_range_end = cur_score_range.end;
+        const cur_range_size = cur_range_end - cur_range_start;
+        const cur_median = median_list[i] ; // if median bucket is empty median will be undefined;
+        const cur_gradient_ratio = (cur_median - cur_range_start) / cur_range_size;
+        const new_score_range = {...cur_score_range, gradient_ratio : cur_gradient_ratio};
+        temp_score_ranges.push(new_score_range);
+      }
+
+      return temp_score_ranges;
+    }
     const helper_find_minmax_median_of_provean = () => {
       let minimum_value = 100;
       let maximum_value = -40;
@@ -127,7 +204,7 @@ const ProteinPage = () => {
             ) {
               // assuming first score range is deleterious second is benign, this is the case for provean
               if (isNaN(current_score)) {
-                console.log("cs", current_score, "ind", i, j);
+                // console.log("cs", current_score, "ind", i, j);
               } else {
                 deleterious_scores_array.push(current_score);
               }
@@ -163,8 +240,8 @@ const ProteinPage = () => {
       };
     };
     if (prediction_tool_parameters.toolname_json === "provean") {
-      const { min_value, max_value, median_deleterious, median_benign } =
-        helper_find_minmax_median_of_provean();
+      const { min_value, max_value,
+         median_deleterious, median_benign } = helper_find_minmax_median_of_provean();
 
       // -2.5 is the transition value between benign and deleterius
       const deleterious_range = -2.5 - min_value;
@@ -201,10 +278,13 @@ const ProteinPage = () => {
         ],
       });
     } else {
-      setCurrentPredictionToolParameters(prediction_tool_parameters);
+      // these functions won't work for aggregator
+      const new_score_ranges = get_new_score_ranges();
+      console.log(new_score_ranges);
+      setCurrentPredictionToolParameters({...prediction_tool_parameters, score_ranges: new_score_ranges});
+      //setCurrentPredictionToolParameters(prev => prediction_tool_parameters);
     }
-    // setCurrentPredictionToolParameters((prev) => prediction_tool_parameters);
-    // drawColorRangesLegend();
+ 
   };
 
   useEffect(() => {

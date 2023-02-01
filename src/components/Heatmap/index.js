@@ -27,7 +27,6 @@ function Heatmap( props ){
     // maybe looping over the whole proteinData makes a differnece but probably not much
     // used use memo to not define a function and call it in the next line, because it is easier to read;
     // immediately invoked function expresssions can be used too, but there is no harm in useMemo I think
-
   const available_tools_list = useMemo( () => {
     if(currentPredictionToolParameters.toolname_json === 'AggregatorLocal'){
       return all_prediction_tools_array.filter( tool => Object.hasOwn(proteinData, tool.toolname_json) );
@@ -201,7 +200,7 @@ function Heatmap( props ){
         let range_start;
         let range_end;
         let range_size;
-        let color_lists_index;
+        let color_lists_index = 0; // so that it doesn't throw an error if some value is out of all ranges
         for (let k = 0; k< currentPredictionToolParameters.score_ranges.length; k++){
           const current_loop_range_start = currentPredictionToolParameters.score_ranges[k].start;
           const current_loop_range_end = currentPredictionToolParameters.score_ranges[k].end;
@@ -255,7 +254,7 @@ function Heatmap( props ){
         let range_start;
         let range_end;
         let range_size;
-        let color_lists_index;  
+        let color_lists_index = 0; // just in case some value is out of range, it doesn't throw an error;  
         for (let k = 0; k< currentPredictionToolParameters.score_ranges.length; k++){
           const current_loop_range_start = currentPredictionToolParameters.score_ranges[k].start;
           const current_loop_range_end = currentPredictionToolParameters.score_ranges[k].end;
@@ -334,7 +333,6 @@ function Heatmap( props ){
           for( let j = 0 ; j < 20 ; j++ )// for every position
           {// sift value = protein_data_sift[i].data[j].y  //
             // constantly setting new fillstyle and fillRect is the performance bottlencks;
-            // draw the whole block as the median color, then change if it is different than median????
             ctx.fillStyle = heatmapColors[i][j];
             
             const start_j = j;
@@ -604,10 +602,13 @@ function Heatmap( props ){
     const canvas_originX_prev = canvas_scale_and_originX.originX * heatmap_width; // QZY
     //const canvas_originX_prev = canvas_scale_and_originX.originX;
 
-
+  
     // console.log("originX prev = ")
     let max_zoom_value = sequence_length/max_zoom_visible_aa_count;
-    let canvas_scale_next = (1 - (e.deltaY/ (sequence_length * heatmap_zooming_acceleration_coef) )) * canvas_scale_prev; //new value of zoom after scroll
+    // zooming speed inversely proportional to protein length; (larger protein = slower zoom)
+    // let canvas_scale_next = (1 - (e.deltaY/ (sequence_length * heatmap_zooming_acceleration_coef) )) * canvas_scale_prev; //new value of zoom after scroll
+    // zoom speed independent of protein size
+    let canvas_scale_next = (1 - (e.deltaY/ (500 * heatmap_zooming_acceleration_coef) )) * canvas_scale_prev; //new value of zoom after scroll
 
 
     canvas_scale_next = Math.min(Math.max(1, canvas_scale_next), max_zoom_value); // 64 = max zoom value, calculation of zoom value should be based on protein size
@@ -939,7 +940,6 @@ function Heatmap( props ){
     }
     //ctx.resetTransform(); no need
   }
-  
   
   
 
