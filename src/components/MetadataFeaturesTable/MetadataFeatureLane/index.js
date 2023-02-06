@@ -156,7 +156,7 @@ function MetadataFeatureLane({
       const cur_end_x =
         (parseInt(extendedFeatureArray[i].end)) * cell_width;
       const cur_sub_lane = parseInt(extendedFeatureArray[i].sub_lane);
-      const fill_width = cur_end_x - cur_begin_x;
+      const fill_width = Math.max(cur_end_x - cur_begin_x,1);
       const start_height =
         lane_top_margin +
         (cur_sub_lane - 1) * (sub_lane_height + sub_lane_divider_height);
@@ -313,21 +313,27 @@ function MetadataFeatureLane({
   // 1 pixel'den kucuk oldugu icin position_idx oldugu zaman hepsini secemiyor
   const helper_find_feature = (position_idx,mouse_ycor,lane_height, lane_width) =>  {
 
+    const positionToPixel = lane_width/sequenceLength;
+    const pixelToPosition = sequenceLength/lane_width;
+
     const {sub_lane_height , lane_top_margin, sub_lane_divider_height } = calculateLaneMarginDividerandHeight(lane_height);
     let closest_ftr;
     let closest_distance = Infinity;
-
+  
     for(let i = 0; i< extendedFeatureArray.length; i++){
       const current_ftr = extendedFeatureArray[i];
       const cur_sub_lane = current_ftr.sub_lane;
         const cur_ftr_start_ycor = lane_top_margin + (cur_sub_lane - 1) * (sub_lane_height + sub_lane_divider_height);
         const cur_ftr_end_ycor = cur_ftr_start_ycor + sub_lane_height;
+      
+      
       if (cur_ftr_start_ycor <=  mouse_ycor && mouse_ycor <= cur_ftr_end_ycor ){
         if (position_idx >= current_ftr.begin && position_idx <= current_ftr.end){
           return current_ftr; // exact feature is found
         }
         // find closest feature, that is too small to click
-        else if ( ( (lane_width/sequenceLength) * (current_ftr.end - current_ftr.begin + 1) * scaleAndOriginX.scale)  < 3) {
+        
+        else if ( ( (positionToPixel) * (current_ftr.end - current_ftr.begin + 1) * scaleAndOriginX.scale)  < 3) {
           // if feature is smalelr than 3 pixels;
             const distance = Math.min(Math.abs(current_ftr.begin - position_idx), Math.abs(current_ftr.end - position_idx) );
             console.log("cur_dist = ", distance, " ftr_b&e = ", current_ftr.begin, current_ftr.end);
@@ -339,7 +345,8 @@ function MetadataFeatureLane({
     }
     }
     // may return closest feature if exact feature isn't found
-    if(closest_distance < 3){
+    // 3 pixel proximity
+    if(closest_distance < 3 * (pixelToPosition) ){
       console.log("pixsle size  = ", (lane_width/sequenceLength) * (closest_ftr.end - closest_ftr.begin + 1) * scaleAndOriginX.scale)
       console.log("clossets dist = ", closest_distance);
       return closest_ftr;
