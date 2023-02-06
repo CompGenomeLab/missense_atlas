@@ -38,7 +38,7 @@ function MetadataFeatureLane({
       let current_lane = 1;
       let lane_not_found = true;
       for (let j = 1; j <= lanes_last_endings.size && lane_not_found; j++) {
-        if (cur_begin < lanes_last_endings.get(j)) {
+        if (cur_begin <= lanes_last_endings.get(j)) {
           // can't put in this lane
           current_lane += 1;
         } else {
@@ -55,12 +55,11 @@ function MetadataFeatureLane({
     }
 
     return {
-      extended_feature_arr: temp_feature_array,
-      lane_count: lanes_needed,
+      extendedFeatureArray: temp_feature_array,
+      subLaneCount: lanes_needed,
     };
   };
-  const extendedFeatureArray = findSubLanesNeeded().extended_feature_arr;
-  const subLaneCount = findSubLanesNeeded().lane_count;
+  const {extendedFeatureArray, subLaneCount} = findSubLanesNeeded();
   const curCategory = extendedFeatureArray[0].category;
 
   let typesAndColors = {};
@@ -151,7 +150,8 @@ function MetadataFeatureLane({
     
     const {sub_lane_height , lane_top_margin, sub_lane_divider_height } = calculateLaneMarginDividerandHeight(laneHeight);
 
-    for (let i = 0; i < extendedFeatureArray.length; i++) { // -1, because begin is indexed from 1, not 0;
+    for (let i = 0; i < extendedFeatureArray.length; i++) { 
+      // -1, because begin is indexed from 1, not 0; also end doesn't need -1
       const cur_begin_x = (parseInt(extendedFeatureArray[i].begin) -1 )  * cell_width;
       const cur_end_x =
         (parseInt(extendedFeatureArray[i].end)) * cell_width;
@@ -311,22 +311,39 @@ function MetadataFeatureLane({
 
   // position_idx yerine raw pointerin valuesını yolla, brca2 gibi uzun sekanslarda 1 pozisyon uzunlugundaki feature'lar
   // 1 pixel'den kucuk oldugu icin position_idx oldugu zaman hepsini secemiyor
-  const helper_find_feature = (position_idx,mouse_ycor,lane_height) =>  {
+  const helper_find_feature = (position_idx,mouse_ycor,lane_height, lane_width) =>  {
 
     const {sub_lane_height , lane_top_margin, sub_lane_divider_height } = calculateLaneMarginDividerandHeight(lane_height);
+    let closest_ftr;
+    let closest_distance = Infinity;
+
     for(let i = 0; i< extendedFeatureArray.length; i++){
-      if (position_idx >= extendedFeatureArray[i].begin && position_idx <= extendedFeatureArray[i].end){
-        const cur_sub_lane = extendedFeatureArray[i].sub_lane;
-        const cur_ftr_start_ycor =
-        lane_top_margin +
-        (cur_sub_lane - 1) * (sub_lane_height + sub_lane_divider_height);
+      const current_ftr = extendedFeatureArray[i];
+      const cur_sub_lane = current_ftr.sub_lane;
+        const cur_ftr_start_ycor = lane_top_margin + (cur_sub_lane - 1) * (sub_lane_height + sub_lane_divider_height);
         const cur_ftr_end_ycor = cur_ftr_start_ycor + sub_lane_height;
-        if (cur_ftr_start_ycor <=  mouse_ycor && mouse_ycor <= cur_ftr_end_ycor ){
-          return extendedFeatureArray[i];
+      if (cur_ftr_start_ycor <=  mouse_ycor && mouse_ycor <= cur_ftr_end_ycor ){
+        if (position_idx >= current_ftr.begin && position_idx <= current_ftr.end){
+          return current_ftr; // exact feature is found
         }
-      }
+        // find closest feature, that is too small to click
+        else if ( ( (lane_width/sequenceLength) * (current_ftr.end - current_ftr.begin + 1) * scaleAndOriginX.scale)  < 3) {
+          // if feature is smalelr than 3 pixels;
+            const distance = Math.min(Math.abs(current_ftr.begin - position_idx), Math.abs(current_ftr.end - position_idx) );
+            console.log("cur_dist = ", distance, " ftr_b&e = ", current_ftr.begin, current_ftr.end);
+            if (distance < closest_distance){
+              closest_distance = distance;
+              closest_ftr = current_ftr;
+            } 
+        }
     }
-    console.log("Not a Feature");
+    }
+    // may return closest feature if exact feature isn't found
+    if(closest_distance < 3){
+      console.log("pixsle size  = ", (lane_width/sequenceLength) * (closest_ftr.end - closest_ftr.begin + 1) * scaleAndOriginX.scale)
+      console.log("clossets dist = ", closest_distance);
+      return closest_ftr;
+    }
     return 'invisible';
   }
 
@@ -356,7 +373,7 @@ function MetadataFeatureLane({
       const current_aminoacid_position = Math.max(Math.ceil(real_xcor/cell_width),1) 
 
       // find the feature that corresponds to that position
-      const feature = helper_find_feature(current_aminoacid_position,mouse_ycor,lane_height);
+      const feature = helper_find_feature(current_aminoacid_position,mouse_ycor,lane_height,lane_width);
       const ftr_color = typesAndColors[feature.type];
       let position_left = true;
       if (e.clientX > window.innerWidth/2){

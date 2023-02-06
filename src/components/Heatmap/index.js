@@ -712,7 +712,7 @@ function Heatmap( props ){
           // let end_time = Date.now();
           // console.log("drawing hmap => " + String(end_time - s_time)); 
       } 
-  }, [scaleAndOriginX,sequence_length,drawHeatmap2,drawCurrentViewWindow,drawHeatmapPositions] );
+  }, [sequence_length,drawHeatmap2,drawCurrentViewWindow,drawHeatmapPositions] );
 
   useEffect(() => { // redraw on resize
       const handleResize = () => { // reset canvasScaleOrigin reference and draw in roughly 30 fps
