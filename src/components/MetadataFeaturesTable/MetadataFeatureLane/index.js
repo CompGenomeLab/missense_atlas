@@ -4,7 +4,8 @@ import {
   top_margin_sl_coef,
   top_margin_ml_coef,
   sub_lane_divider_coef,
-  max_zoom_visible_aa_count
+  max_zoom_visible_aa_count,
+  featureLaneBackgroundColor
 } from "../../../config/config";
 // sl = single line, ml = multiline;
 //coef = coefficient
@@ -126,7 +127,8 @@ function MetadataFeatureLane({
     //ctx.resetTransform(); same as setTransform(1,0,0,1,0,0);
     ctx.setTransform(1, 0, 0, 1, 0, 0);
     ctx.scale(ratio, ratio);
-
+    ctx.fillStyle = featureLaneBackgroundColor;
+    ctx.fillRect(0,0,laneWidth + 5,laneHeight + 5);
     const lane_originX = scaleAndOriginX.originX * laneWidth; //!!QZY
     const lane_scale = scaleAndOriginX.scale;
     ctx.scale(lane_scale, 1);

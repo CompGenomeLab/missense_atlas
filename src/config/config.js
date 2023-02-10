@@ -69,6 +69,7 @@ export const c_palettes = [testcp3_1, testcp3_2, testcp3_3, testcp3_4];
 export const top_margin_sl_coef= 4;
 export const top_margin_ml_coef = 8;
 export const sub_lane_divider_coef = 4; // used to be divided by top margin, now divided by sub_lane height;
+export const featureLaneBackgroundColor = "seashell";
 // features tooltip
 // export const filtered_categories = ['category','sub_lane'];  // sub_lane is calculated by us;
 
