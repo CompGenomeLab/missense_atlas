@@ -72,7 +72,10 @@ const ColorRangesLegend = ({currentPredictionToolParameters, color_lists_array})
           ctx.fillRect(current_x, y_buffer_px , Math.ceil(step_size) + 1  , h); //current_x, h / 4, Math.ceil(step_size) + 1  , h / 2
           current_x += step_size;
           if (j === Math.floor(color_lists_array[i].length / 2)) {
-            // middle element
+            // middle element, risk assessment of the range
+            const gradient_ratio = currentPredictionToolParameters.score_ranges[i].gradient_ratio;
+            const middle_color_index = Math.min(Math.floor(number_of_colors * gradient_ratio), number_of_colors -1 );
+            ctx.fillStyle = color_lists_array[i][middle_color_index];
             ctx.fillText(
               currentPredictionToolParameters.score_ranges[i].risk_assessment,
               current_x,

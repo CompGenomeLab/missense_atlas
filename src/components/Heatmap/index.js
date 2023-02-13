@@ -833,12 +833,14 @@ function Heatmap( props ){
         }
         const mutation_risk_assessment = calculateRiskAssessment(mutation_risk_raw_value, currentPredictionToolParameters);
         risk_assessment_buckets[mutation_risk_assessment].add(mutated_aminoacid);
-      }
+      } // 0 1 2 3 => 4/2
       for(let i = 0; i< tool_parameters.score_ranges.length; i++){
         const cur_assessment = tool_parameters.score_ranges[i].risk_assessment;
         const num_of_cur_assessment = risk_assessment_buckets[cur_assessment].size;
         const cur_string = "" + cur_assessment + " : " + String(num_of_cur_assessment);
-        const cur_risk_string_color = String(color_lists_array[i][Math.floor(number_of_colors/2)]); 
+        const cur_gradient_ratio = tool_parameters.score_ranges[i].gradient_ratio;
+        const middle_color_index = Math.min(Math.floor(number_of_colors * cur_gradient_ratio), number_of_colors - 1 );
+        const cur_risk_string_color = String(color_lists_array[i][middle_color_index]); 
         ttLines.push({color:cur_risk_string_color,text:cur_string});
       }
       const cur_pos_median = calculateMedianOfPosition(original_aminoacid_idx,proteinData,currentPredictionToolParameters);
