@@ -276,7 +276,7 @@ function Heatmap( props ){
   // callback because it is in useEffect dependency array,
   const drawHeatmap2 = useCallback (() => { // scale is given as parameter right now;
       //// be careful, cell_height and width must be the same in the tooltio, if you change this also change tooltip;
-      const start_time = Date.now(); // takes 60 ms for 1610 aa protein at max zoom, then gets better while zoomed in;
+      // const start_time = Date.now(); // takes 60 ms for 1610 aa protein at max zoom, then gets better while zoomed in;
       if (currentPredictionToolParameters.score_ranges.length !== color_lists_array.length){
         return // only draw if these 2 parameters match, or else It will result in runtime error,
       }
@@ -430,9 +430,9 @@ function Heatmap( props ){
 
       }
 
-    const end_time = Date.now();
-    console.log("draw time = " + String(end_time - start_time));
-  },[scaleAndOriginX.originX,scaleAndOriginX.scale,sequence_length,color_lists_array,currentPredictionToolParameters,heatmapColors,heatmapMeanColors,proteinData,available_tools_list] );
+    // const end_time = Date.now();
+    // console.log("draw time = " + String(end_time - start_time));
+  },[scaleAndOriginX,sequence_length,color_lists_array,currentPredictionToolParameters,heatmapColors,heatmapMeanColors,proteinData,available_tools_list] );
   // callback because it is in useEffect dependency array;
 
   const drawHeatmapPositions = useCallback ( () => {
@@ -513,7 +513,7 @@ function Heatmap( props ){
     }
     ctx.scale(canvas_scale,1);
 
-  },[color_lists_array.length, currentPredictionToolParameters.score_ranges.length, scaleAndOriginX.scale, scaleAndOriginX.originX, sequence_length])
+  },[color_lists_array.length, currentPredictionToolParameters.score_ranges.length, scaleAndOriginX, sequence_length])
 
   const drawCurrentViewWindow = useCallback ( () => { // 50 px both left and right for the index number to display
     // const start_time = Date.now();      // takes 13 miliseconds for 1610 aa protein
@@ -575,7 +575,7 @@ function Heatmap( props ){
     ctx.fillText(rightmost_visible_index, canvas_originX  + heatmapRect_width/canvas_scale , 5 , 50   );  // rightmost visilbe of the window
     // const end_time = Date.now();
     // console.log("cur view widnow time = " + String(end_time - start_time));
-  },[scaleAndOriginX.originX,scaleAndOriginX.scale,sequence_length,heatmapMeanColors]);
+  },[scaleAndOriginX,sequence_length,heatmapMeanColors]);
 
   const wheelZoom2 =  useCallback ((e,canvas_scale_and_originX) =>{  // zoomig function
     // to limit the canvas re renderings to roughly 30 fps

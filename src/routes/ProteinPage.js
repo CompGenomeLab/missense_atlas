@@ -171,7 +171,8 @@ const ProteinPage = () => {
         const cur_range_end = cur_score_range.end;
         const cur_range_size = cur_range_end - cur_range_start;
         const cur_median = median_list[i] ; // if median bucket is empty median will be undefined;
-        const cur_gradient_ratio = (cur_median - cur_range_start) / cur_range_size;
+        let cur_gradient_ratio = (cur_median - cur_range_start) / cur_range_size;
+        cur_gradient_ratio = Math.max(Math.min(cur_gradient_ratio, 0.75), 0.25 );
         const new_score_range = {...cur_score_range, gradient_ratio : cur_gradient_ratio};
         temp_score_ranges.push(new_score_range);
       }
