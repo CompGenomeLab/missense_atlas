@@ -390,3 +390,11 @@ export const all_prediction_tools_array = [
   efin_swissprot_parameters,
   provean_parameters,
 ];
+
+
+export const examples_lookup = {
+  "Sequence": "Fasta format example to be added",
+  "MD5Sum": "3d3f7f772cf34ea5db1998fc0eae9f72",
+  "Uniprot Gene ID" : "PKLR",
+  "Uniprot Accession ID" : "Q9H9S4",
+};

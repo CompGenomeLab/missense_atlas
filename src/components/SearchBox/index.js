@@ -5,7 +5,7 @@ import { IconButton } from "@mui/material";
 import CloseIcon from '@mui/icons-material/Close';
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
-import { database_url,aminoacid_ordering, h4_font_size, h3_font_size } from "../../config/config";
+import { database_url,aminoacid_ordering, h4_font_size, h3_font_size,examples_lookup } from "../../config/config";
 import Select from "react-select";
 import './SearchBox.css'
 
@@ -13,7 +13,7 @@ function SearchBox(){
 
     const navigate = useNavigate();
     const [searchMethod,setSearchMethod] = useState('Sequence'); // sequence md5sum Uniprot Gene ID or UniprotId
-    const [proteinSequence,setProteinSequence] = useState(''); // .trim() the sequence to remove white spaces
+    const [proteinSequence,setInputProteinSequence] = useState(''); // .trim() the sequence to remove white spaces
     const [inputMD5Sum , setInputMD5Sum] = useState('');
     const [inputGeneId, setInputGeneId] = useState('');
     const [inputUniprotId, setInputUniprotId] = useState('');
@@ -138,6 +138,12 @@ function SearchBox(){
 
     }
 
+    const handleExampleClicked = (e,setterFunction) => {
+      e.preventDefault();
+      const example_value = examples_lookup[searchMethod];
+      setterFunction(example_value);
+    }
+
     const selectorSearchMethods = [
       {
         value: "Sequence",
@@ -157,19 +163,21 @@ function SearchBox(){
       },
     ];
 
-
     let textBoxField;
     if (searchMethod === "Sequence") {
       textBoxField = (
         <form className="text-box-field">
-          <h4 style={{ margin: "1rem 0px", fontSize: h4_font_size }}>
-            Sequence Length: {trimmedProteinSequence.length}
-          </h4>
+          <div style={{ display: "flex", gap: "1rem", alignItems: "center" }}>
+            <h4 style={{ margin: "1rem 0px", fontSize: h4_font_size }}>
+              Sequence Length: {trimmedProteinSequence.length}
+            </h4>
+            <button onClick={(e) => handleExampleClicked(e,setInputProteinSequence)}>Example</button>
+          </div> 
           <textarea
             style={{ width: "100%", height: "15rem", fontSize: h4_font_size, maxWidth:'90vw', maxHeight:'60vh', minHeight:"1.2rem" }}
             placeholder="Enter protein sequence in fasta format"
             value={proteinSequence}
-            onChange={(e) => setProteinSequence(() => e.target.value)}
+            onChange={(e) => setInputProteinSequence(() => e.target.value)}
           ></textarea>
           <button style={{ marginTop: "1rem" }} onClick={(e) => handleSearchClicked(e)}>
             <span style={{ fontSize: h4_font_size }}> Search </span>
@@ -179,11 +187,14 @@ function SearchBox(){
     } else if (searchMethod === "MD5Sum") {
       textBoxField = (
         <div className="text-box-field">
-          <h4 style={{ fontSize: h4_font_size }}>
-            {inputMD5Sum.trim().length !== 32
-              ? "Length of MD5Sum must be 32 characters"
-              : "Input MD5Sum is Correct Length"}
-          </h4>
+          <div  style={{ display: "flex", gap: "1rem", alignItems: "center" }} > 
+            <h4 style={{ fontSize: h4_font_size }}>
+              {inputMD5Sum.trim().length !== 32
+                ? "Length of MD5Sum must be 32 characters"
+                : "Input MD5Sum is Correct Length"}
+            </h4>
+            <button onClick={(e) => handleExampleClicked(e,setInputMD5Sum)}>Example</button>
+          </div>
           <form style={{ display: "flex", gap: "1rem", alignItems: "center" }}>
             <input
               style={{
@@ -206,9 +217,12 @@ function SearchBox(){
     } else if (searchMethod === "Uniprot Gene ID") {
       textBoxField = (
         <div className="text-box-field">
-          <h4 style={{ fontSize: h4_font_size }}>
-            Enter the Uniprot Gene ID for the sequence
-          </h4>
+          <div style={{ display: "flex", gap: "1rem", alignItems: "center" }}> 
+            <h4 style={{ fontSize: h4_font_size }}>
+              Enter the Uniprot Gene ID for the sequence
+            </h4>
+            <button onClick={(e) => handleExampleClicked(e,setInputGeneId)}>Example</button>
+          </div>
           <form
             style={{
               display: "flex",
@@ -232,9 +246,12 @@ function SearchBox(){
     } else if (searchMethod === "Uniprot Accession ID") {
       textBoxField = (
         <div className="text-box-field">
-          <h4 style={{ fontSize: h4_font_size }}>
-            Enter the Uniprot Accession ID of the sequence
-          </h4>
+          <div style={{ display: "flex", gap: "1rem", alignItems: "center" }}>
+            <h4 style={{ fontSize: h4_font_size }}>
+              Enter the Uniprot Accession ID of the sequence
+            </h4> 
+            <button onClick={(e) => handleExampleClicked(e,setInputUniprotId)}>Example</button>
+          </div>
 
           <form
             style={{
@@ -260,48 +277,47 @@ function SearchBox(){
 
     return (
       <div>
-        <div style={{display:'flex', gap:'1rem', alignItems:'center', justifyContent:'center'}}>
-        <h3 style={{fontSize:h3_font_size}}>Search method: </h3>
-        <div > 
-          <Select
-            value={{
-              value: searchMethod,
-              label: searchMethod,
-            }}
-            isSearchable={false}
-            onChange={(new_option) =>
-              { setSearchMethod(new_option.value); setErrorMessage("");}
-            }
-            maxMenuHeight={window.innerHeight}
-            options={selectorSearchMethods}
-            styles={{
-              menu: (provided) => ({ ...provided,fontSize:h3_font_size }),
-              control: (provided) => ({...provided, fontSize:h3_font_size })
-              
-            }}
-            
-          />
-        </div>
+        <div
+          style={{ display: "flex", gap: "1rem", alignItems: "center", justifyContent: "center" }}
+        >
+          <h3 style={{ fontSize: h3_font_size }}>Search method: </h3>
+          <div>
+            <Select
+              value={{
+                value: searchMethod,
+                label: searchMethod,
+              }}
+              isSearchable={false}
+              onChange={(new_option) => {
+                setSearchMethod(new_option.value);
+                setErrorMessage("");
+              }}
+              maxMenuHeight={window.innerHeight}
+              options={selectorSearchMethods}
+              styles={{
+                menu: (provided) => ({ ...provided, fontSize: h3_font_size }),
+                control: (provided) => ({ ...provided, fontSize: h3_font_size }),
+              }}
+            />
+          </div>
+         
         </div>
         {textBoxField}
-        {/* { // the button is inside the textboxField in other search methods
-        searchMethod === 'Sequence' &&
-        <button style={{ marginTop:"1rem" }} onClick={handleSearchClicked}>
-          <span style={{fontSize:h4_font_size}}> Search </span>
-        </button>  } */}
         {errorMessage.length !== 0 && (
           <div
-            key = {searchClickedCount}
+            key={searchClickedCount}
             className="fade-in-search-box"
-            style={{ display: "flex", marginTop: "0.5rem", justifyContent:'center' }}
+            style={{ display: "flex", marginTop: "0.5rem", justifyContent: "center" }}
           >
-            <p  style={{ color: "red",fontSize:h4_font_size  }}> {errorMessage}</p>
-            <IconButton onClick={() => setErrorMessage("") } sx={{fontSize:h4_font_size, borderRadius:'0px'}}>
+            <p style={{ color: "red", fontSize: h4_font_size }}> {errorMessage}</p>
+            <IconButton
+              onClick={() => setErrorMessage("")}
+              sx={{ fontSize: h4_font_size, borderRadius: "0px" }}
+            >
               <CloseIcon fontSize="inherit" />
             </IconButton>
           </div>
         )}
-      
       </div>
     );
 

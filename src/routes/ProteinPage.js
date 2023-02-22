@@ -38,10 +38,7 @@ const ProteinPage = () => {
   const findMetadataHumanAccAndIndices = (input_metadata) => {
     let temp_indices =
       input_metadata?.reduce((cur_list, cur_metadata, index) => {
-        if (
-          cur_metadata?.organism?.taxonomy === 9606 &&
-          cur_metadata.features?.length > 0
-        ) {
+        if (cur_metadata?.organism?.taxonomy === 9606 && cur_metadata.features?.length > 0) {
           cur_list.push({ accession: cur_metadata.accession, index: index });
         }
         return cur_list;
