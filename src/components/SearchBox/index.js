@@ -171,10 +171,19 @@ function SearchBox(){
             <h4 style={{ margin: "1rem 0px", fontSize: h4_font_size }}>
               Sequence Length: {trimmedProteinSequence.length}
             </h4>
-            <button onClick={(e) => handleExampleClicked(e,setInputProteinSequence)}>Example</button>
-          </div> 
+            <button onClick={(e) => handleExampleClicked(e, setInputProteinSequence)}>
+              Example
+            </button>
+          </div>
           <textarea
-            style={{ width: "100%", height: "15rem", fontSize: h4_font_size, maxWidth:'90vw', maxHeight:'60vh', minHeight:"1.2rem" }}
+            style={{
+              width: "100%",
+              height: "15rem",
+              fontSize: h4_font_size,
+              maxWidth: "90vw",
+              maxHeight: "60vh",
+              minHeight: "1.2rem",
+            }}
             placeholder="Enter protein sequence in fasta format"
             value={proteinSequence}
             onChange={(e) => setInputProteinSequence(() => e.target.value)}
@@ -187,13 +196,13 @@ function SearchBox(){
     } else if (searchMethod === "MD5Sum") {
       textBoxField = (
         <div className="text-box-field">
-          <div  style={{ display: "flex", gap: "1rem", alignItems: "center" }} > 
+          <div style={{ display: "flex", gap: "1rem", alignItems: "center" }}>
             <h4 style={{ fontSize: h4_font_size }}>
               {inputMD5Sum.trim().length !== 32
                 ? "Length of MD5Sum must be 32 characters"
                 : "Input MD5Sum is Correct Length"}
             </h4>
-            <button onClick={(e) => handleExampleClicked(e,setInputMD5Sum)}>Example</button>
+            <button onClick={(e) => handleExampleClicked(e, setInputMD5Sum)}>Example</button>
           </div>
           <form style={{ display: "flex", gap: "1rem", alignItems: "center" }}>
             <input
@@ -204,9 +213,7 @@ function SearchBox(){
               size="40"
               placeholder="Enter MD5Sum"
               value={inputMD5Sum}
-              onChange={(e) =>
-                setInputMD5Sum(() => e.target.value.toLowerCase())
-              }
+              onChange={(e) => setInputMD5Sum(() => e.target.value.toLowerCase())}
             ></input>
             <button onClick={(e) => handleSearchClicked(e)}>
               <span style={{ fontSize: h4_font_size }}> Search </span>
@@ -217,11 +224,9 @@ function SearchBox(){
     } else if (searchMethod === "Uniprot Gene ID") {
       textBoxField = (
         <div className="text-box-field">
-          <div style={{ display: "flex", gap: "1rem", alignItems: "center" }}> 
-            <h4 style={{ fontSize: h4_font_size }}>
-              Enter the Uniprot Gene ID for the sequence
-            </h4>
-            <button onClick={(e) => handleExampleClicked(e,setInputGeneId)}>Example</button>
+          <div style={{ display: "flex", gap: "1rem", alignItems: "center" }}>
+            <h4 style={{ fontSize: h4_font_size }}>Enter the Uniprot Gene ID for the sequence</h4>
+            <button onClick={(e) => handleExampleClicked(e, setInputGeneId)}>Example</button>
           </div>
           <form
             style={{
@@ -249,8 +254,8 @@ function SearchBox(){
           <div style={{ display: "flex", gap: "1rem", alignItems: "center" }}>
             <h4 style={{ fontSize: h4_font_size }}>
               Enter the Uniprot Accession ID of the sequence
-            </h4> 
-            <button onClick={(e) => handleExampleClicked(e,setInputUniprotId)}>Example</button>
+            </h4>
+            <button onClick={(e) => handleExampleClicked(e, setInputUniprotId)}>Example</button>
           </div>
 
           <form
