@@ -307,15 +307,15 @@ const ProteinPage = () => {
 
     let request_url = "";
     if (searchMethod.toLowerCase() === "md5sum") {
-      request_url = "all_scores/md5sum/" + String(searchString.toLowerCase());
+      request_url = "AllScores/md5sum/" + String(searchString.toLowerCase());
       setMd5sum(searchString);
     }
     if (searchMethod.toLowerCase() === "uniprotid") {
       request_url =
-        "all_scores/uniprotid/" + String(searchString.toUpperCase());
+        "AllScores/uniprotid/" + String(searchString.toUpperCase());
     }
     if (searchMethod.toLowerCase() === "geneid") {
-      request_url = "all_scores/geneid/" + String(searchString.toUpperCase());
+      request_url = "AllScores/geneid/" + String(searchString.toUpperCase());
     }
     // just making sure request url exists
     if (request_url.length > 0) {
