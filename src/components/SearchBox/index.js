@@ -115,6 +115,7 @@ function SearchBox(){
           final_md5Sum = MD5(trimmedProteinSequence).toString();
             // console.log(final_md5Sum);
         }
+        setErrorMessage('');
         callApiMD5Sum(final_md5Sum);
       }
       else if (searchMethod === 'Uniprot Gene ID' || searchMethod === 'Uniprot Accession ID' ) { 
@@ -130,6 +131,7 @@ function SearchBox(){
           setErrorMessage(searchMethod + " can not be empty");
           return;
         }
+        setErrorMessage('');
         callApiById(searchMethod, userInputId)
       }
       else{
