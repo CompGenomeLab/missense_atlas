@@ -556,11 +556,11 @@ const ProteinPage = () => {
     </div>
   );
 
-  // const sequenceKeywordsJSX = metadata[curMetadataHumanIndex]?.keywords?.map(
-  //   (keyword) => {
-  //     return <li key={keyword.value}><p style={{fontSize:'1.3vh'}}> {keyword.value}</p></li>;
-  //   }
-  // );
+  const sequenceKeywordsJSX = metadata[curMetadataHumanIndex]?.keywords?.map(
+    (keyword) => {
+      return <li key={keyword.value}><p style={{fontSize:'1.3vh'}}> {keyword.value}</p></li>;
+    }
+  );
 
   const page_width_max_px = String(window.screen.width * 0.8) + "px";
   const page_width = "min(" + page_width_max_px + ", (100% - 100px))";
@@ -642,76 +642,14 @@ const ProteinPage = () => {
             setScaleAndOriginX={setScaleAndOriginX}
           />
         )}
-        {/* {sequenceKeywordsJSX && (
+        {sequenceKeywordsJSX && (
           <div style={{ marginLeft: "1vw", marginRight: "1vw" }}>
             <h3 style={{ fontSize: h3_font_size }}>Sequence Keywords:</h3>
             <ul style={{ listStyleType: "none" }}>{sequenceKeywordsJSX} </ul>
           </div>
-        )} */}
+        )}
       </div>
     </div>
   );
 };
 export default ProteinPage;
-
- // const changeMetadataButtons = (
-  //   <ul
-  //     style={{
-  //       listStyleType: "none",
-  //       display: "flex",
-  //       gap: "0.25rem",
-  //       paddingInlineStart: "1rem",
-  //     }}
-  //   >
-  //     {metadataAccessionAndIndices.map((accession) => {
-  //       let cur_button_color = "white";
-  //       if (
-  //         metadata[curMetadataHumanIndex]?.accession === accession.accession
-  //       ) {
-  //         cur_button_color = "green";
-  //       }
-  //       return (
-  //         <li key={accession.accession}>
-  //           <button
-  //             style={{ backgroundColor: cur_button_color }}
-  //             onClick={() => {
-  //               setCurMetadataHumanIndex(accession.index);
-  //             }}
-  //           >
-  //             {accession.accession}
-  //           </button>
-  //         </li>
-  //       );
-  //     })}
-  //   </ul>
-  // );
-
-
-
-  // const changePredictionToolButtons = all_prediction_tools_array
-  //   .filter((tool , idx) => ( idx === 0 || Object.hasOwn(allProteinData, tool.toolname_json) ))
-  //   .map((tool) => {
-  //     let cur_button_color = "white";
-  //     if (
-  //       tool.toolname_json === currentPredictionToolParameters?.toolname_json
-  //     ) {
-  //       cur_button_color = "green";
-  //     }
-  //     return (
-  //       <li key={tool.toolname_json}>
-  //         <button
-  //           style={{ backgroundColor: cur_button_color }}
-  //           onClick={() => switchTool(tool,allProteinData)}
-  //         >
-  //           {tool.toolname}
-  //         </button>
-  //       </li>
-  //     );
-  //   });
-
-
- 
-
-
-
-

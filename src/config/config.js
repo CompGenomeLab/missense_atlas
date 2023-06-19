@@ -42,17 +42,13 @@ export const heatmapAminoAcidCharactersNumRows = 2;
 export const heatmapTotalNumRows = 20 + heatmapSpaceBtwnSummaryNumRows + heatmapSummaryNumRows + heatmapAminoAcidCharactersNumRows; // 20 cells rows for each aa + summary + space between heatmap and summary, (previous 2 rows)
 export const heatmapWidth = "80vw"; 
 export const aminoAcidLegendWidth = "90px"//"10%";//"10vw";
-// export const heatmapTooltipFontMultiplier = 1.35; // colorRangesLegend can also use the same;
 export const max_zoom_visible_aa_count = 10; // to determine maximum zoom value
 export const aa_position_notches_threshold = 10; // while drawing positions of the heatmap if step size of positions are smaller than threshold, draw small notches between the positions (like a ruler (cetvel)) 
 export const aa_visible_width_ratio = 0.8; // between 1 and 0; if size of aminoacid character is smaller than ratio * cellwidth, then draw;
 export const heatmap_grid_draw_threshold = 300;
-// export const aa_visible_threshold = 999; // the threshold under which aminoacids become visible
-// may not need this, as it can be based on if text fits,
 
 // for feature lane
 export const laneHeight = "3rem"; // will be 5vh
-// export const laneWidth = '80vw'; // equal to heatmapWidth;
 //https://coolors.co/palette/001219-005f73-0a9396-94d2bd-e9d8a6-ee9b00-ca6702-bb3e03-ae2012-9b2226
 // const cp1 = ["#001219", "#005f73", "#0a9396", "#94d2bd", "#e9d8a6", "#ee9b00", "#ca6702", "#bb3e03", "#ae2012", "#9b2226"];
 // //https://coolors.co/palette/ffadad-ffd6a5-fdffb6-caffbf-9bf6ff-a0c4ff-bdb2ff-ffc6ff-fffffc
@@ -74,16 +70,6 @@ export const featureLaneBackgroundColor = "seashell";
 // export const filtered_categories = ['category','sub_lane'];  // sub_lane is calculated by us;
 
 export const colorRangesLegendRangeWidthCoef = 10; // each range will be this variable 'vw';
-// export const colorRangesLegendHeight = '85px';
-
-// prediction tool parameters
-// The substitutions with scores below and above this threshold (0.679) were assumed to be pathogenic and neutral,
-//start_color: "#ffa500",
-      // // start_color: "#fcedaa",
-      // end_color: "#981e2a",
-      // start_color: "#2c663c",
-      // end_color: "#ffa500",
-
 
 export const tools_negative_synonyms = ["pathogenic","deleterious","possibly damaging","confidently damaging"];
 export const tools_positive_synonyms = ["neutral", "benign"];

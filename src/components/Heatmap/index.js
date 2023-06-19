@@ -17,17 +17,15 @@ import {
   tools_negative_synonyms,
   heatmap_grid_draw_threshold,
   heatmap_zooming_acceleration_coef
-  // tools_positive_synonyms
 } from "../../config/config";
-// const number_of_colors = 30;
-// heatmap offset from config.js
-// yukleme ekranı
+
 function Heatmap( props ){
   const {currentPredictionToolParameters,proteinData,color_lists_array,number_of_colors, scaleAndOriginX, setScaleAndOriginX } = props;
+    
+  const available_tools_list = useMemo( () => {
     // maybe looping over the whole proteinData makes a differnece but probably not much
     // used use memo to not define a function and call it in the next line, because it is easier to read;
     // immediately invoked function expresssions can be used too, but there is no harm in useMemo I think
-  const available_tools_list = useMemo( () => {
     if(currentPredictionToolParameters.toolname_json === 'AggregatorLocal'){
       return all_prediction_tools_array.filter( tool => Object.hasOwn(proteinData, tool.toolname_json) );
     }
@@ -58,13 +56,10 @@ function Heatmap( props ){
   const aminoAcidLegendRef = useRef(null);
 
   const currentViewWindowRef = useRef(null);
-  // const [panningStartX,setPanningStartX] = useState(0); 
-  // const [scaleAndOriginX,setScaleAndOriginX] = useState({scale:1,originX:0}); // so that we update both of them at the smae time instead of seperately,;
 
   const [prevTime, setPrevTime] = useState( () => Date.now() ); // limit number of drawings per second, must have for resizing window
 
   const [tooltip, setTooltip] = useState({status:'invisible',pageX:100, pageY:300, lines:[{color:'white',text:'a'},{color:'white',text:'b'},]});
-  // const [aminoAcidLegendWidth, setAminoAcidLegendWidth] = useState("50px");
   const aminoAcidLegendWidth = "96px"; // 96 is Space needed for 16px Arial "Position average text"
   // handles NaN
   // i starts from 1
@@ -77,7 +72,7 @@ function Heatmap( props ){
         let current_score = "Missing";
         if (Object.hasOwn(input_protein_data[i] , aminoacid_ordering[j]  )  ){
           current_score = parseFloat(input_protein_data[i][aminoacid_ordering[j]]);
-          if(isNaN(current_score) ){ // typeof(current_score) !== 'number'
+          if(isNaN(current_score) ){ 
             // NaN value reached Nan nan
             return "There is a NaN value"; // used in heatmap median colors
           }
@@ -275,8 +270,6 @@ function Heatmap( props ){
   },[color_lists_array,currentPredictionToolParameters,number_of_colors,sequence_length,available_tools_list,proteinData] )
   // callback because it is in useEffect dependency array,
   const drawHeatmap2 = useCallback (() => { // scale is given as parameter right now;
-      //// be careful, cell_height and width must be the same in the tooltio, if you change this also change tooltip;
-      // const start_time = Date.now(); // takes 60 ms for 1610 aa protein at max zoom, then gets better while zoomed in;
       if (currentPredictionToolParameters.score_ranges.length !== color_lists_array.length){
         return // only draw if these 2 parameters match, or else It will result in runtime error,
       }
@@ -293,26 +286,19 @@ function Heatmap( props ){
       const ratio = window.devicePixelRatio;
       c.width = heatmap_width * ratio;
       c.height = heatmap_height * ratio;
-      // console.log(heatmap_width);
-      // Probably not but calc syntax should be correct 100vw-200px wont work 
-      // c.style.height = heatmap_height + "px"; // will change !!!
-      // console.log(canvas_originX);
+      
 
       //ctx.resetTransform(); same as setTransform(1,0,0,1,0,0);
       ctx.setTransform(1, 0, 0, 1, 0, 0);
       ctx.scale(ratio,ratio); 
       ctx.clearRect(0,0,heatmap_width,heatmap_height); // actually not needed because of c.width = heatmap_width lines
-      ctx.imageSmoothingEnabled = false; // doesn't actually do anything as this command is for imported images
 
-      // ctx.clearRect(0,0,heatmap_width,heatmap_height); 
-      const canvas_originX = scaleAndOriginX.originX * heatmap_width ; //!!QZY
+      const canvas_originX = scaleAndOriginX.originX * heatmap_width ; 
       const canvas_scale = scaleAndOriginX.scale;
       ctx.scale(canvas_scale,1); 
       ctx.translate(-canvas_originX,0); 
-      // console.log("orignx = " + canvas_originX);
-      const cell_height = heatmap_height / heatmapTotalNumRows; //!! must be same in drawtooltip //10, number 20 = aminoacids, also left 70 px space in the bottom;
+      const cell_height = heatmap_height / heatmapTotalNumRows; 
       const cell_width = (heatmap_width/sequence_length); // sequence_length can not be 0
-      // !! must be same in draw tooltip !!!! THIS IS THE REASON OF BORDERS BETWEEN SQUARES !!!
       // cell width changes on resize, because heamtap_width also changes;
 
       // copied from currentviewWindow, minus 10 just to make sure, and no +1, because this won't be shown, only used as index of the array
@@ -322,20 +308,18 @@ function Heatmap( props ){
       // math.min and max so that index doesn't go out of bounds
       // drawing the colored rectangles
       let prev_fillstyle = "FFFFFF";      
-      const drawCellWidth = Math.floor(cell_width + 1); // so that we only do Math.floor once; very very minor performance optimization
-      // actually doesn't make a difference
+      const drawCellWidth = Math.floor(cell_width + 1); 
 
-      // let aa_cntr = (rightmost_visible_index - leftmost_visible_index) * 20;
-      // let draw_cntr = 0;
       for (let i = leftmost_visible_index; i< rightmost_visible_index; i++)// for every aminoacid
       {
-        // if (i*cell_width >= canvas_originX && (i*cell_width <= (canvas_originX + heatmap_width/canvas_scale) ) ){ // currently viewing
+          // currently viewing
           for( let j = 0 ; j < 20 ; j++ )// for every position
-          {// sift value = protein_data_sift[i].data[j].y  //
+          {
             // constantly setting new fillstyle and fillRect is the performance bottlencks;
             ctx.fillStyle = heatmapColors[i][j];
             
             const start_j = j;
+            // if 2 neighbor values are the same I am drawing them in a single FillRect to improve performanace
             while( j < 19){
               if (heatmapColors[i][j] === heatmapColors[i][j+1]){
                 j += 1;
@@ -349,8 +333,6 @@ function Heatmap( props ){
           }
       } 
       // drawing the grid
-      // console.log("aa_count =", aa_cntr, "draw_cntr = ", draw_cntr, "ratio = ", draw_cntr/aa_cntr);
-      // vertical lines drawn only when visible number of aminoacids are small
       const num_visible = sequence_length/canvas_scale;
       if ( num_visible < heatmap_grid_draw_threshold){
         const grid_base_color = "#FFFFFF" // white
@@ -364,7 +346,7 @@ function Heatmap( props ){
           //ctx.moveTo(0, Math.floor(j * cell_height) + (0.5 / ratio) ) ; 
           // drawing at half the pixel to get a crisp line https://stackoverflow.com/questions/9311428/draw-single-pixel-line-in-html5-canvas
           // decided not to draw at half line, because of Math.floor, fillRects may be cut prematurely
-          ctx.beginPath(); //  - (0.5/ (canvas_scale * ratio) )
+          ctx.beginPath(); 
           ctx.moveTo(0, j * cell_height ) ; 
           ctx.lineTo(heatmap_width, j * cell_height); 
           ctx.stroke()
@@ -399,7 +381,7 @@ function Heatmap( props ){
       const aa_character_text_metrics = ctx.measureText("M"); // widest character
       const aa_character_width = aa_character_text_metrics.width;
       const aa_character_height = aa_character_text_metrics.actualBoundingBoxAscent + aa_character_text_metrics.actualBoundingBoxDescent;
-      // 1 problem is aa_character_height will always be constant, so If we set the font size too big, it will never draw aminoacid characters.
+      // !!! IMPORTANT 1 problem is aa_character_height will always be constant, so If we set the font size too big, it will never draw aminoacid characters.
       if (aa_character_width < (cell_width * canvas_scale * aa_visible_width_ratio) && aa_character_height < (cell_height* heatmapSummaryNumRows ) )
       {
         ctx.fillStyle = 'black';
@@ -429,9 +411,6 @@ function Heatmap( props ){
         ctx.scale(canvas_scale,1);
 
       }
-
-    // const end_time = Date.now();
-    // console.log("draw time = " + String(end_time - start_time));
   },[scaleAndOriginX,sequence_length,color_lists_array,currentPredictionToolParameters,heatmapColors,heatmapMeanColors,proteinData,available_tools_list] );
   // callback because it is in useEffect dependency array;
 
@@ -623,12 +602,11 @@ function Heatmap( props ){
       e.preventDefault();
       setScaleAndOriginX( {scale:canvas_scale_next, originX: canvas_originX_next} );
       setPrevTime(cur_time); // should it stay here or at the end??
-
     }
  
     
   },[prevTime,setScaleAndOriginX,sequence_length]);
-  const drawAminoAcidLegend  = () => {  // will only run once on startup of useEffect
+  const drawAminoAcidLegend  = () => {
     const c = aminoAcidLegendRef.current;
     const ctx = c.getContext("2d");
     
@@ -642,7 +620,6 @@ function Heatmap( props ){
     // c.style.height = h + "px";
     ctx.scale(ratio,ratio);
     ctx.clearRect(0,0,w + 1, h+ 1 );
-    //{'A': 0, 'R': 1, 'N': 2, 'D': 3, 'C': 4, 'Q': 5, 'E': 6, 'G': 7, 'H': 8, 'I': 9, 'L': 10, 'K': 11, 'M': 12, 'F': 13, 'P': 14, 'S': 15, 'T': 16, 'W': 17, 'Y': 18, 'V': 19}    
     const cHeatmap = heatmapRef.current;
     const heatmapRect = cHeatmap.getBoundingClientRect();
     const cell_height = heatmapRect.height / heatmapTotalNumRows ; //!! must be same in drawtooltip and drwaheatmap //10, number 20 = aminoacids, also left 50 px space in the bottom;
@@ -650,10 +627,9 @@ function Heatmap( props ){
     if (font_size > 16){
       font_size = 16;
     }
-    ctx.font = font_size + "px Arial" // 1.4 vh didn't work, so I had to resort to this
-    // setAminoAcidLegendWidth(( Math.ceil(ctx.measureText("Position").width * 8/5) + 3)  + "px" ) ;
-    
-    ctx.lineWidth = 1 //browser_resize_ratio * (window.innerWidth/1440); // so that lines are always 1px
+    ctx.font = font_size + "px Arial" 
+
+    ctx.lineWidth = 1 
     ctx.textAlign = 'right';
     ctx.strokeStyle = "black";
     ctx.textBaseline = "middle"
@@ -673,16 +649,10 @@ function Heatmap( props ){
     ctx.moveTo(w * (3/4) ,  cell_height * (20 + heatmapSpaceBtwnSummaryNumRows + heatmapSummaryNumRows/2));
     ctx.lineTo(w * (7/8), cell_height * (20 + heatmapSpaceBtwnSummaryNumRows + heatmapSummaryNumRows/2));
     ctx.stroke();
-    // ctx.fillText("Position average",20,(cell_height*(25+1)));
-    // ctx.beginPath();
-    // ctx.moveTo(105,  cell_height * (25+0.5) );
-    // ctx.lineTo(115,  cell_height *  (25+0.5) );
-    // ctx.stroke();
 } ;
 
   // wheelzoom event registeration
   useEffect(()=>{ 
-      // console.log("zlistener");
       
       const zoomListener = (e) => wheelZoom2(e,scaleAndOriginX);
       let hMapRefValue = null;
@@ -704,7 +674,7 @@ function Heatmap( props ){
   useEffect( () => {
     if (heatmapRef && heatmapRef.current &&  sequence_length > 0) // Object.keys(proteinData).length !== 0 &&
       { 
-          // let s_time = Date.now();
+          // let s_time = Date.now(); // to measure how long it takes to redraw, comment out this and the last 2 lines
           drawHeatmap2();
           drawHeatmapPositions();
           drawAminoAcidLegend();
@@ -745,7 +715,7 @@ function Heatmap( props ){
     const cell_width = (heatmapRect_width/sequence_length); //!! must be same in drawheatmap // if we use floor, it will result in 0 cell width when protein length is larger than c.width;
     
     const canvas_scale = scaleAndOriginX.scale; // value of zoom before scroll event
-    const canvas_originX_prev = scaleAndOriginX.originX * heatmapRect_width; // QZY
+    const canvas_originX_prev = scaleAndOriginX.originX * heatmapRect_width; 
     
     //const canvas_originX_prev = scaleAndOriginX.originX;
     let real_xcor =  canvas_originX_prev + (mouse_xcor/canvas_scale); // real x coordinate of the mouse pointer, this line and the if else block is reused in tooltip function
@@ -789,14 +759,11 @@ function Heatmap( props ){
 
   const drawTooltipHeatmapSummary = (mouse_xcor,mouse_ycor,heatmapRect) => { // to be completd
     const tool_parameters = currentPredictionToolParameters;
-    // tooltip ref variables
    
-    //heatmap ref variables
     const heatmapRect_width = heatmapRect.width;
     const cell_width = (heatmapRect_width/sequence_length); //!! must be same in drawheatmap // if we use floor, it will result in 0 cell width when protein length is larger than c.width;
     const canvas_scale = scaleAndOriginX.scale; // value of zoom before scroll event
-    const canvas_originX_prev = scaleAndOriginX.originX * heatmapRect_width; // QZY
-    //const canvas_originX_prev = scaleAndOriginX.originX;
+    const canvas_originX_prev = scaleAndOriginX.originX * heatmapRect_width; 
     
 
     let real_xcor =  canvas_originX_prev + (mouse_xcor/canvas_scale); // real x coordinate of the mouse pointer, this line and the if else block is reused in tooltip function
@@ -895,15 +862,11 @@ function Heatmap( props ){
     
     const canvas_scale = scaleAndOriginX.scale; // value of zoom before scroll event
     const canvas_originX_prev = scaleAndOriginX.originX * heatmapRect_width; // QZY
-    
-    // const aminoacid_legend_width = aminoAcidLegendRef.current.getBoundingClientRect().width;
-    // const x_offset = heatmapRect.left - tooltipRect.left;
-    // const y_offset = heatmapRect.top - tooltipRect.top;
+   
     
     if (mouse_xcor > heatmapRect_width || mouse_xcor < 0 || mouse_ycor <= 0 || mouse_ycor >= (heatmapRect_height)) 
     { // boundary check for heatmap, -50 is for the space left for position indices
       // bigger or equal to, so that index finders don't go out of bounds, as maxwidth/cell_width = an index 1 bigger than the sequence length
-      // setIsDown(prev => false);// so that panning point resets when mouse goes out of bounds;
       if (tooltip?.status !== 'invisible'){
         setTooltip({status:'invisible',pageX:0,pageY:0,lines:[]})
       }
@@ -927,9 +890,6 @@ function Heatmap( props ){
     {
       const dx_normalized = (e.movementX * -1) / canvas_scale; // change in X direction
       let canvas_originX_next = canvas_originX_prev + dx_normalized;
-      // console.log("temp_top_canvas_priginX_prev = " + temp_top_canvas_originX_prev);
-      // console.log("tooltip panStartX , mouse_xcor , topcanvasscaleprev =  " + panningStartX + " " + mouse_xcor + " " + topCanvasScalePrev);
-      // console.log("tooltip originXprev at start of Pan = " + topCanvasOriginXPrev);
       canvas_originX_next = Math.max(canvas_originX_next,0); // origin not smaller than 0
       canvas_originX_next = Math.min(canvas_originX_next, (heatmapRect_width - heatmapRect_width/canvas_scale)); // origin not larger than heatmap rightmost point;
       canvas_originX_next = canvas_originX_next / heatmapRect_width; // QZY
@@ -938,9 +898,7 @@ function Heatmap( props ){
           {scale: canvas_scale ,originX: canvas_originX_next }
         )
         } );
-      // setPanningStartX(prev => mouse_xcor); 
     }
-    //ctx.resetTransform(); no need
   }
   
   
@@ -949,8 +907,7 @@ function Heatmap( props ){
     setTooltip({status:'invisible',pageX:0,pageY:0,lines:[]})
 
   }
-  //left:'100px', bottom:'300px', 
-//left:tooltip.pageX +'px' ,bottom:(tooltip.pageY-120) + 'px',
+ 
   const tooltipJSX = tooltip?.status !== "invisible" && (
     <div
       style={{
@@ -1001,9 +958,7 @@ function Heatmap( props ){
           <div id="asds" style={{ width:"100%", height:heatmapHeightStyle, position:'relative'}}> 
                   { tooltipJSX} 
                   <canvas  id="heatmap_canvas" ref={heatmapRef} style = {{position:"absolute",top:"0px", left: aminoAcidLegendWidth , zIndex:1, width:'calc(100% - ' + aminoAcidLegendWidth + " )" , height:heatmapHeightStyle}}
-                  // onClick={(e) => console.log("asfasfasfasfs")} //left:"calc("+ aminoAcidLegendWidth +  " + 0px)"
-                  // onclick or other functions don't work here as the topmost layers is the canvas below
-                  // scrolling is registered manually, so not given as props here
+                  // scrolling is registered manually, because e.preventDefault() doesn't work if given here (it will be a passive event listener) so not given as props here
                   onMouseMove = {(e) => drawTooltipOrPan2(e)}
                   onDoubleClick= {(e) => setScaleAndOriginX({scale:1, originX:0})}
                   onMouseLeave= {onMouseLeaveHelper} // a bit redundant, but nevertheless here just to make sure;
