@@ -21,11 +21,7 @@ function SearchBox(){
     const [errorMessage, setErrorMessage] = useState('');
     const [searchClickedCount, setSearchClickedCount] = useState(0);
     let trimmedProteinSequence = proteinSequence; // will be trimmed using helper_protein_sequence_trimmer
-    // let test_hash = MD5(protein_sequence).toString();
     
-    // doesn't actually need to take sequence as input, as proteinSequence is reachable 
-    // asd D  ARNDC Q E G H I J K L M N
-    // !(a != 1 &&  a != 2)
     const helper_protein_sequence_trimmer = () => {
       let trimmedSequence = "";
       let string_lines = proteinSequence.split('\n');
@@ -50,9 +46,7 @@ function SearchBox(){
     }
 
     trimmedProteinSequence = helper_protein_sequence_trimmer();
-    // console.log("test_hash = " + test_hash);
-    // console.log("method = ");
-    // console.log(searchMethod);
+  
     
     let MD5Sum_text_area_color = 'red';
     if (inputMD5Sum.trim().length === 32){
@@ -62,8 +56,8 @@ function SearchBox(){
     
     
     const callApiMD5Sum = (final_md5Sum) => {
-        const request_url = "md5sum_to_sequence/" + String(final_md5Sum); // may also add this to configjs
-        axios.get(database_url + request_url ) // cors policy
+        const request_url = "md5sum_to_sequence/" + String(final_md5Sum); // can extract these function calls in another file.
+        axios.get(database_url + request_url ) 
         .then(function (response) {
           // handle success
           console.log('FOUND IN DB')
@@ -75,7 +69,6 @@ function SearchBox(){
           // handle error
           console.log('NOT found');
           setErrorMessage("MD5Sum : " + final_md5Sum + ' was not found in database');
-        //   console.log(error);
         })
         .then(function () {
           console.log("api called for " + database_url + request_url);
@@ -113,7 +106,6 @@ function SearchBox(){
             return;
           }
           final_md5Sum = MD5(trimmedProteinSequence).toString();
-            // console.log(final_md5Sum);
         }
         setErrorMessage('');
         callApiMD5Sum(final_md5Sum);
@@ -334,76 +326,3 @@ function SearchBox(){
 
 
 export default SearchBox;
-
-// <button
-// onClick={() => setSearchMethod("Sequence")}
-// style={
-//   searchMethod === "Sequence" ? { color: "green" } : { color: "red" }
-// }
-// >
-// Sequence
-// </button>
-// <button
-// onClick={() => setSearchMethod("MD5Sum")}
-// style={
-//   searchMethod === "MD5Sum" ? { color: "green" } : { color: "red" }
-// }
-// >
-// MD5Sum
-// </button>
-// <button
-// onClick={() => setSearchMethod("Uniprot Gene ID")}
-// style={
-//   searchMethod === "Uniprot Gene ID" ? { color: "green" } : { color: "red" }
-// }
-// >
-// Uniprot Gene ID
-// </button>
-// <button
-// onClick={() => setSearchMethod("Uniprot Accession ID")}
-// style={
-//   searchMethod === "Uniprot Accession ID" ? { color: "green" } : { color: "red" }
-// }
-// >
-// Uniprot Accession ID
-// </button>
-// const textBoxField = () => {
-    //     if(searchMethod === 'MD5Sum'){
-    //         return(
-    //             <div style={{ margin:'2rem auto'}}>
-    //                 <h4> 
-    //                     { inputMD5Sum.trim().length !== 32 ? 'Length of MD5Sum must be 32' 
-    //                     :'MD5Sum is Correct Length' }
-    //                 </h4>
-    //                 <input 
-    //                 style={{height:'1rem', width:'25rem', color: MD5Sum_text_area_color }}
-    //                 placeholder="Enter MD5Sum"
-    //                 value={inputMD5Sum}
-    //                 onChange={(e) => setInputMD5Sum(() => e.target.value)}
-    //                 >
-    //                 </input>
-    //             </div>
-    //         )
-    //     }
-    //     else if (searchMethod === 'Sequence'){ 
-    //         return(
-    //             <div style={{ margin:'2rem 0px'}}>
-    //                 <h4 style={{margin:'0.5rem 0px'}}> Sequence Length: {trimmedProteinSequence.length}</h4>
-    //                 <textarea 
-    //                 style={{width:'50%',height:'30vh'}}
-    //                 placeholder="Enter protein sequence. The lines containing sequence can only contain aminoacid characters and spaces"
-    //                 value={proteinSequence}
-    //                 onChange={(e) => setProteinSequence(() => e.target.value)}
-    //                 >
-    //                 </textarea>
-    //             </div>
-    //         )
-    //     }
-    //     else{ // searchmethod isn't selected;
-    //         return(
-    //             <div>
-    //                 ERROR Search method not found
-    //             </div>
-    //         )
-    //     }
-    // }

@@ -9,10 +9,6 @@ import ProteinPage from './routes/ProteinPage.js'
 
 
 function App() {
-
-
-  // make pages urls dependent on md5sum values of proteins or another name like uniprot ID;
-
   return (
     <>
       <Router>

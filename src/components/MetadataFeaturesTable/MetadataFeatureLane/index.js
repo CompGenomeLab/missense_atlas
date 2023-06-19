@@ -90,14 +90,6 @@ function MetadataFeatureLane({
          const k = sub_lane_divider_coef; // to make the next line shorter
          sub_lane_divider_height = non_margin_height/( (subLaneCount * k) + subLaneCount - 1  );
          sub_lane_height = sub_lane_divider_height * k;
-
-        // OLD calculation, divider_coef, related to lane_top_margin size,
-        // sub_lane_divider_height = lane_top_margin / sub_lane_divider_coef; // the coefficient we divide with can be part of config.js
-        // sub_lane_height =
-        //   (laneHeight -
-        //     lane_top_margin * 2 -
-        //     sub_lane_divider_height * (subLaneCount - 1)) /
-        //   subLaneCount;
       }
       return {
         lane_top_margin: lane_top_margin,
@@ -111,7 +103,6 @@ function MetadataFeatureLane({
 
 
   const drawLane = useCallback(() => {
-    // let s_time = Date.now();
     const c = metadataFeatureLaneRef.current;
     const ctx = c.getContext("2d");
     c.style.width = "100%"; //lane_width + "px"; //'calc(100vw - 200px)'; // !!! IMPORTANT for sizing MUST BE SAME IN THE HTML CODE
@@ -122,8 +113,6 @@ function MetadataFeatureLane({
     const ratio = window.devicePixelRatio;
     c.width = laneWidth * ratio; // width is taken from 100%
     c.height = laneHeight * ratio; // height is predetermined;
-    // Probably not but calc syntax should be correct 100vw-200px wont work
-    // console.log(lane_originX);
     //ctx.resetTransform(); same as setTransform(1,0,0,1,0,0);
     ctx.setTransform(1, 0, 0, 1, 0, 0);
     ctx.scale(ratio, ratio);
@@ -134,7 +123,6 @@ function MetadataFeatureLane({
     ctx.scale(lane_scale, 1);
     ctx.translate(-lane_originX, 0);
 
-    // ctx.fillRect(0,0,lane_width,lane_height/2);
     const cell_width = laneWidth / sequenceLength;
     ctx.strokeStyle = "maroon";
     ctx.lineWidth = 2;
@@ -182,10 +170,7 @@ function MetadataFeatureLane({
         );
         ctx.scale(lane_scale, 1);
       }
-      // ctx.fillRect(0,0,999,999);
     }
-    // let e_time = Date.now();
-    // console.log("drawing => " + String(e_time - s_time));
   }, [
     extendedFeatureArray,
     sequenceLength,
@@ -203,13 +188,7 @@ function MetadataFeatureLane({
       const c = metadataFeatureLaneRef.current;
       const rect = c.getBoundingClientRect();
       const lane_width = rect.width;
-      // const lane_height = rect.height;
       const mouse_xcor = e.clientX - rect.left;
-      // const mouse_ycor = e.clientY - rect.top;
-      
-      // ((a&b) || (c&d)) & (f>1000) => ( (a || b) & (c || d) ) || (f<1000)
-      // !((a&b) || (c&d)) =>  !(a&b) & !(c&d) => ((!a || !b) & (!c || !b)) || f<1000
-      // deltaY => 0 => scrolling down; = zoom out
       // if code goes into the if block, then actual scrolling of the page is allowed, else the scroll is blocked;
       // allow scroll after a set time from last zoom or scale change
 
@@ -242,7 +221,6 @@ function MetadataFeatureLane({
       lane_originX_next = lane_originX_next / lane_width; // !!QZY
       if (lane_scale_next !== lane_scale_prev) {
         e.preventDefault();
-        // changeTooltipFeature('invisible',0,0,'#FFFFFF');
         setScaleAndOriginX({
           scale: lane_scale_next,
           originX: lane_originX_next,
@@ -256,9 +234,7 @@ function MetadataFeatureLane({
   
   // zoom listener registration
   useEffect(() => {
-    // console.log("zlistener");
 
-    // tooltipRef.current.addEventListener("wheel" , (e) => wheelZoom(e,topCanvasScalePrevRef)); // to cancel scrolling while on heatmap
     const zoomListener = (e) => wheelZoomLane(e, scaleAndOriginX);
     let ttRefValue = null;
     if (metadataFeatureLaneRef.current) {
@@ -267,14 +243,12 @@ function MetadataFeatureLane({
     }
 
     return () => {
-      // console.log("cleanup runs");
       if (ttRefValue) {
         ttRefValue.removeEventListener("wheel", zoomListener);
       }
     };
   }, [wheelZoomLane, scaleAndOriginX]);
 
-  // redraw, drawLane already depends on"Scale and Origin"
   useEffect(() => {
     drawLane();
   }, [drawLane]);
@@ -311,8 +285,6 @@ function MetadataFeatureLane({
   };
 
 
-  // position_idx yerine raw pointerin valuesını yolla, brca2 gibi uzun sekanslarda 1 pozisyon uzunlugundaki feature'lar
-  // 1 pixel'den kucuk oldugu icin position_idx oldugu zaman hepsini secemiyor
   const helper_find_feature = (position_idx,mouse_ycor,lane_height, lane_width) =>  {
 
     const positionToPixel = lane_width/sequenceLength;
@@ -357,15 +329,13 @@ function MetadataFeatureLane({
   }
 
   const onMouseDownHelper = (e) => {
-    const c = metadataFeatureLaneRef.current; // if goes out of feature lanes bounds
+    const c = metadataFeatureLaneRef.current; 
     const rect = c.getBoundingClientRect()
     const lane_width = rect.width;
     const lane_height = rect.height;
     const mouse_xcor = e.clientX - rect.left;
     const mouse_ycor = e.clientY - rect.top;
-   
-    //console.log("mouse xcor_point = " +mouse_xcor);
-    //console.log("mouse_ycor " + mouse_ycor);
+    // if goes out of feature lanes bounds
     // impossible to be out of them I guess
     if (mouse_xcor > lane_width || mouse_xcor < 0 || mouse_ycor > lane_height || mouse_ycor < 0 )  // lane boundaries;
     {
@@ -376,8 +346,7 @@ function MetadataFeatureLane({
       //find the currently pointed position in the sequence
       const cell_width = lane_width/sequenceLength;
       const lane_scale = scaleAndOriginX.scale; 
-      const lane_originX_prev = scaleAndOriginX.originX * lane_width; // QZY
-      //const canvas_originX_prev = scaleAndOriginX.originX;
+      const lane_originX_prev = scaleAndOriginX.originX * lane_width;
       let real_xcor =  lane_originX_prev + (mouse_xcor/lane_scale);
       const current_aminoacid_position = Math.max(Math.ceil(real_xcor/cell_width),1) 
 
@@ -399,7 +368,6 @@ function MetadataFeatureLane({
   const onDoubleClickHelper = () => {
     if(scaleAndOriginX.scale !== 1){
       setScaleAndOriginX({ scale: 1, originX: 0 })
-      // changeTooltipFeature('invisible',0,0,'black') // remove tooltip because it will point to a location that is not the mouse;
     }
   }
 
@@ -417,35 +385,12 @@ function MetadataFeatureLane({
             id={"Lane " + curCategory}
             ref={metadataFeatureLaneRef}
             style={{ position: "absolute", top: "0px", left: "0px" }}
-            // zoom is added manually to prevent scrolling
+            // zoom is added manually to prevent scrolling, e.preventDefault() doesn't work if added here
             onDoubleClick={() => onDoubleClickHelper()}
             onMouseDown={(e) => onMouseDownHelper(e)}
             onMouseMove={(e) => panLane(e)}
           ></canvas>
-
-          {/* <canvas
-            id={"Lane " + curCategory + "Ttip"}
-            ref={metadataFeatureLaneRef}
-            style={{ position: "absolute", top: "0px", left: "0px", height:'100%', width:'100%', zIndex:100 }}
-            height={window.innerHeight/20} // doesn't matter, as we are giving height and width in style part;
-            width={window.innerWidth} // doesn't matter as well, Also, after the initial run styles are overriden by the drawToolTipOrPan function
-            
-          ></canvas> */}
     </div>
   );
 }
-//style = {{position:"absolute",top:"40px", left: aminoAcidLegendWidth + "px"}} height={270} width={window.innerWidth - 200}
 export default MetadataFeatureLane;
-
-
-// // allow scrolling if not zooming deprecated
-// if ( ((lane_scale_and_originX.scale === 1 && e.deltaY >= 0) || (lane_scale_and_originX.scale === max_zoom_value && e.deltaY <= 0 ))
-// && ((cur_time - prevTime) > 750 ) ){
-//   return; // so that it scrolls, when it is at max zoom and user does zoom out, 
-// }
-// e.preventDefault(); // so that it doesn't scroll while zooming
-
-// if (cur_time - prevTime < 32) {
-//   // to limit fps;
-//   return;
-// }

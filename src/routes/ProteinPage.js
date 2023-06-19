@@ -16,7 +16,6 @@ import {
 } from "../config/config";
 
 const ProteinPage = () => {
-  // add ?q=1, to the url to get uniprot metadata
   //searchMethod is either md5sum, geneId, or uniprotId
   const { searchMethod, searchString } = useParams(); // searchString is either md5sum, geneid or uniprotId
   const [md5sum, setMd5sum] = useState("");
@@ -48,6 +47,7 @@ const ProteinPage = () => {
   const metadataAccessionAndIndices = findMetadataHumanAccAndIndices(metadata);
   const color_lists_array = useMemo(() => {
     //color lists to use in drawing heatmap
+    // https://gka.github.io/chroma.js/ chroma.js functions explained
     let temp_color_lists_array = []; // generate 30 colors between the score ranges
     for (
       let i = 0;
@@ -63,11 +63,6 @@ const ProteinPage = () => {
       //   chroma.scale(['yellow', 'lightgreen', '008ae5']).domain([0,0.25,1]);
       const gradient_ratio =
         currentPredictionToolParameters.score_ranges[i].gradient_ratio; // between 0 and 1,
-
-      // const test = chroma.scale([current_range_start_color, current_range_end_color]).colors(5);
-      // console.log(test);
-      // const test2 =
-      // console.log(test2);
       //  number_of_colors * gradient_ratio => where the 50/50 mix of the blend will be located in the gradient
       const middle_color = chroma
         .mix(
@@ -99,14 +94,12 @@ const ProteinPage = () => {
   
 
   const switchTool = (prediction_tool_parameters, all_protein_data) => {
-    // Probably no need to use prev => prediction_tool_parameters
     // iterate over data and find minimum and maximum values
     // doesn't work for aggreagator
     const helper_find_minmax_median = () => {
       let minimum_value = 100;
       let maximum_value = -40;
-      const current_tool_protein_data =
-        all_protein_data[prediction_tool_parameters.toolname_json];
+      const current_tool_protein_data = all_protein_data[prediction_tool_parameters.toolname_json];
       let i = 1;
       let score_buckets = new Array(prediction_tool_parameters.score_ranges.length).fill(0).map( () => new Array(0));
       while (Object.hasOwn(current_tool_protein_data, i)) {
@@ -202,7 +195,6 @@ const ProteinPage = () => {
             ) {
               // assuming first score range is deleterious second is benign, this is the case for provean
               if (isNaN(current_score)) {
-                // console.log("cs", current_score, "ind", i, j);
               } else {
                 deleterious_scores_array.push(current_score);
               }
@@ -278,33 +270,12 @@ const ProteinPage = () => {
     } else {
       // these functions won't work for aggregator
       const new_score_ranges = get_new_score_ranges();
-      console.log(new_score_ranges);
       setCurrentPredictionToolParameters({...prediction_tool_parameters, score_ranges: new_score_ranges});
-      //setCurrentPredictionToolParameters(prev => prediction_tool_parameters);
     }
  
   };
 
   useEffect(() => {
-    // to fetch protein data
-    // const axios_config = {
-    //   // httpsAgent: new https.Agent({ rejectUnauthorized: false })
-
-    //     rejectUnauthorized: false,
-    //     requestCert: false,
-    //     agent: false,
-    // }
-    // const agent = new https.Agent({
-    //     rejectUnauthorized: false,
-    //     requestCert: false,
-    //     agent: false,
-    //  });
-    //   } const agent = new https.Agent({
-    //     rejectUnauthorized: false,
-    //     requestCert: false,
-    //     agent: false,
-    //  });
-
     let request_url = "";
     if (searchMethod.toLowerCase() === "md5sum") {
       request_url = "AllScores/md5sum/" + String(searchString.toLowerCase());
@@ -322,22 +293,14 @@ const ProteinPage = () => {
       axios
         .get(database_url + request_url) // cors policy
         .then(function (response) {
-          // console.log(response);
-          // const first_available_tool = all_prediction_tools_array.filter((tool) =>
-          //   Object.hasOwn(response.data, tool.toolname_json)
-          // )[0];
-          // setCurrentPredictionToolParameters(first_available_tool);
           setAllProteinData(response.data);
-          // default tool is the
+          // default tool is the aggregator
           switchTool(all_prediction_tools_array[0], response.data);
 
           setProteinDataLoadingStatus("Protein data loaded successfully");
           setMd5sum(response.data?.md5sum);
-          // console.log("pdata = ");
-          // console.log(response.data);
         })
         .catch(function (error) {
-          // handle error
           console.log(error);
           setProteinDataLoadingStatus("Error loading sequence data");
         })
@@ -556,11 +519,11 @@ const ProteinPage = () => {
     </div>
   );
 
-  const sequenceKeywordsJSX = metadata[curMetadataHumanIndex]?.keywords?.map(
-    (keyword) => {
-      return <li key={keyword.value}><p style={{fontSize:'1.3vh'}}> {keyword.value}</p></li>;
-    }
-  );
+  // const sequenceKeywordsJSX = metadata[curMetadataHumanIndex]?.keywords?.map(
+  //   (keyword) => {
+  //     return <li key={keyword.value}><p style={{fontSize:'1.3vh'}}> {keyword.value}</p></li>;
+  //   }
+  // );
 
   const page_width_max_px = String(window.screen.width * 0.8) + "px";
   const page_width = "min(" + page_width_max_px + ", (100% - 100px))";
@@ -612,7 +575,6 @@ const ProteinPage = () => {
           <Heatmap
             currentPredictionToolParameters={currentPredictionToolParameters}
             proteinData={heatmapProteinDataProp}
-            // proteinData={proteinData} // if we want to fetch one by one;
             color_lists_array={color_lists_array}
             number_of_colors={number_of_colors}
             scaleAndOriginX={scaleAndOriginX}
@@ -642,12 +604,12 @@ const ProteinPage = () => {
             setScaleAndOriginX={setScaleAndOriginX}
           />
         )}
-        {sequenceKeywordsJSX && (
+        {/* {sequenceKeywordsJSX && (
           <div style={{ marginLeft: "1vw", marginRight: "1vw" }}>
             <h3 style={{ fontSize: h3_font_size }}>Sequence Keywords:</h3>
             <ul style={{ listStyleType: "none" }}>{sequenceKeywordsJSX} </ul>
           </div>
-        )}
+        )} */}
       </div>
     </div>
   );
